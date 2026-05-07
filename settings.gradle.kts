@@ -24,4 +24,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "Snoffee"
 include(":app")
- 
+include(":wear")
