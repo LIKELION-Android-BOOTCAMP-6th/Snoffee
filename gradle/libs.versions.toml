@@ -13,6 +13,8 @@ hilt = "2.59.2"
 ksp = "2.2.10-2.0.2"  # kotlin 버전 2.2.10에 맞는 버전
 googleServices = "4.4.2"
 firebaseBom = "34.13.0"
+retrofit = "2.11.0"
+okhttp = "4.12.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -41,6 +43,11 @@ firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore
 firebase-database = { group = "com.google.firebase", name = "firebase-database" }
 # 5. Analytics (분석 및 연결 확인용)
 firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics" }
+
+# Retrofit & OkHttp
+retrofit-main = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
+retrofit-converter-gson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "retrofit" }
+okhttp-logging = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "okhttp" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
