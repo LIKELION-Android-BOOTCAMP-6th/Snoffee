@@ -61,4 +61,10 @@ dependencies {
     // hilt
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
+
+    //firebase
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.firestore) // 최신 DB
+    implementation(libs.firebase.database)  // 실시간 DB
+    implementation(libs.firebase.analytics) // 분석
 }

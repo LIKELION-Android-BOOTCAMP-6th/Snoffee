@@ -11,6 +11,8 @@ composeBom = "2024.09.00"
 playServicesWearable = "19.0.0"
 hilt = "2.59.2"
 ksp = "2.2.10-2.0.2"  # kotlin 버전 2.2.10에 맞는 버전
+googleServices = "4.4.2"
+firebaseBom = "34.13.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -30,6 +32,15 @@ androidx-compose-material3 = { group = "androidx.compose.material3", name = "mat
 play-services-wearable = { group = "com.google.android.gms", name = "play-services-wearable", version.ref = "playServicesWearable" }
 hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
 hilt-compiler = { group = "com.google.dagger", name = "hilt-android-compiler", version.ref = "hilt" }
+
+# Firebase BoM (버전 관리 통합 도구)
+firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
+# 2. Firestore (NoSQL 데이터베이스 - 최신 추천)
+firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore-ktx" }
+# 3. Realtime Database (실시간 데이터베이스 - 채팅 등)
+firebase-database = { group = "com.google.firebase", name = "firebase-database-ktx" }
+# 5. Analytics (분석 및 연결 확인용)
+firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics-ktx" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
