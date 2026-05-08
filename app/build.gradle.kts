@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -63,7 +64,7 @@ dependencies {
     ksp(libs.hilt.compiler)
 
     //firebase
-    implementation(platform(libs.firebase.bom))
+    implementation(platform("com.google.firebase:firebase-bom:34.12.0"))
     implementation(libs.firebase.firestore) // 최신 DB
     implementation(libs.firebase.database)  // 실시간 DB
     implementation(libs.firebase.analytics) // 분석
