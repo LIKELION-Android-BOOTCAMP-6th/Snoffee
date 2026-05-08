@@ -64,8 +64,13 @@ dependencies {
     ksp(libs.hilt.compiler)
 
     //firebase
-    implementation(platform("com.google.firebase:firebase-bom:34.12.0"))
+    implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.firestore) // 최신 DB
     implementation(libs.firebase.database)  // 실시간 DB
     implementation(libs.firebase.analytics) // 분석
+
+    // Retrofit (네트워크 통신)
+    implementation(libs.retrofit.main)
+    implementation(libs.retrofit.converter.gson)
+    implementation(libs.okhttp.logging) // 네트워크 로그 확인용
 }
