@@ -36,11 +36,11 @@ hilt-compiler = { group = "com.google.dagger", name = "hilt-android-compiler", v
 # Firebase BoM (버전 관리 통합 도구)
 firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
 # 2. Firestore (NoSQL 데이터베이스 - 최신 추천)
-firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore-ktx" }
+firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore" }
 # 3. Realtime Database (실시간 데이터베이스 - 채팅 등)
-firebase-database = { group = "com.google.firebase", name = "firebase-database-ktx" }
+firebase-database = { group = "com.google.firebase", name = "firebase-database" }
 # 5. Analytics (분석 및 연결 확인용)
-firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics-ktx" }
+firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
