@@ -1,12 +1,24 @@
-package com.snoffee.app.data.di
+package com.snoffee.app.di
 
 import dagger.Module
+import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+import javax.inject.Singleton
 
-// Retrofit, OkHttp 인스턴스를 Hilt에 등록하는 모듈
-// SingletonComponent → 앱 전체에서 하나의 네트워크 인스턴스만 사용
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
+
+    @Provides
+    @Singleton
+    fun provideRetrofit(): Retrofit {
+        return Retrofit.Builder()
+            // 임시 서버
+            .baseUrl("https://jsonplaceholder.typicode.com/")
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+    }
 }
