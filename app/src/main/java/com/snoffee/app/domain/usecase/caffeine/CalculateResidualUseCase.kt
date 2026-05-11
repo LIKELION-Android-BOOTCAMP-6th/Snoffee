@@ -1,32 +1,34 @@
 package com.snoffee.app.domain.usecase.caffeine
 
-import com.snoffee.app.domain.model.CaffeineRecord
-import com.snoffee.app.domain.model.CaffeineSensitivity
-import com.snoffee.app.domain.util.CaffeineCalculator
 import com.snoffee.app.domain.repository.CaffeineRepository
 import com.snoffee.app.domain.repository.UserProfileRepository
+import com.snoffee.app.domain.util.CaffeineCalculator
 import javax.inject.Inject
 import kotlin.math.roundToInt
 
-// 현재 체내 카페인 잔류량 계산 UseCase
-// CaffeineCalculator를 통해 반감기 기반 잔류량 계산
-// HomeViewModel에서 5분 주기로 호출
 class CalculateResidualUseCase @Inject constructor(
-    private val caffeineRepository: CaffeineRepository,     // Hilt가 자동 주입
-    private val userProfileRepository: UserProfileRepository, // Hilt가 자동 주입
-    private val calculator: CaffeineCalculator              // Hilt가 자동 주입
+    private val caffeineRepository: CaffeineRepository,
+    private val userProfileRepository: UserProfileRepository,
+    private val calculator: CaffeineCalculator
 ) {
-    suspend operator fun invoke(): Double {
-        records: List<CaffeineRecord>,
-        sensitivity: CaffeineSensitivity,
-        currentTimeMillis: Long = System.currentTimeMillis()
-    ): Int {
+    suspend operator fun invoke(): Int {
+        val records =
+            caffeineRepository.getTodayCaffeineRecords()
+        val userProfile =
+            userProfileRepository.getUserProfile()
+        val halfLifeHours = when (
+            userProfile?.sensitivity
+        ) {
+            1 -> 6.0 // 민감
+            2 -> 5.0 // 적당
+            3 -> 4.0 // 낮음
+            else -> 5.0
+        }
         return records.sumOf { record ->
-            CaffeineCalculator.calculateResidualCaffeine(
+            calculator.calculateResidualCaffeine(
                 intakeCaffeine = record.intakeCaffeine,
                 consumedAt = record.consumedAt,
-                currentTimeMillis = currentTimeMillis,
-                halfLifeHours = sensitivity.halfLifeHours
+                halfLifeHours = halfLifeHours
             )
         }.roundToInt()
     }

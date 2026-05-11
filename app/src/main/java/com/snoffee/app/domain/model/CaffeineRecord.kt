@@ -10,5 +10,5 @@ data class CaffeineRecord(
     val brandName: String,                  // 브랜드명
     val intakeSize: Double,                 // 섭취 용량
     val intakeCaffeine: Double,             // 섭취 카페인 (mg)
-    val consumedAt: LocalDateTime           // 섭취 시각
+    val consumedAt: Long                    // 섭취 시각
 )
