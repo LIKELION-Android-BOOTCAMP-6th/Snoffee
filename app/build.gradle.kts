@@ -62,6 +62,7 @@ dependencies {
     // hilt
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
+    implementation(libs.hilt.navigation.compose)
 
     //firebase
     implementation(platform(libs.firebase.bom))
