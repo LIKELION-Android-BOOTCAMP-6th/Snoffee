@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -61,4 +62,15 @@ dependencies {
     // hilt
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
+
+    //firebase
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.firestore) // 최신 DB
+    implementation(libs.firebase.database)  // 실시간 DB
+    implementation(libs.firebase.analytics) // 분석
+
+    // Retrofit (네트워크 통신)
+    implementation(libs.retrofit.main)
+    implementation(libs.retrofit.converter.gson)
+    implementation(libs.okhttp.logging) // 네트워크 로그 확인용
 }

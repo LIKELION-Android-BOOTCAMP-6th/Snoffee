@@ -11,6 +11,10 @@ composeBom = "2024.09.00"
 playServicesWearable = "19.0.0"
 hilt = "2.59.2"
 ksp = "2.2.10-2.0.2"  # kotlin 버전 2.2.10에 맞는 버전
+googleServices = "4.4.2"
+firebaseBom = "34.13.0"
+retrofit = "2.11.0"
+okhttp = "4.12.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -30,6 +34,24 @@ androidx-compose-material3 = { group = "androidx.compose.material3", name = "mat
 play-services-wearable = { group = "com.google.android.gms", name = "play-services-wearable", version.ref = "playServicesWearable" }
 hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
 hilt-compiler = { group = "com.google.dagger", name = "hilt-android-compiler", version.ref = "hilt" }
+retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
+retrofit-gson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "retrofit" }
+okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
+okhttp-logging = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "okhttp" }
+
+# Firebase BoM (버전 관리 통합 도구)
+firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
+# 2. Firestore (NoSQL 데이터베이스 - 최신 추천)
+firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore" }
+# 3. Realtime Database (실시간 데이터베이스 - 채팅 등)
+firebase-database = { group = "com.google.firebase", name = "firebase-database" }
+# 5. Analytics (분석 및 연결 확인용)
+firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics" }
+
+# Retrofit & OkHttp
+retrofit-main = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
+retrofit-converter-gson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "retrofit" }
+okhttp-logging = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "okhttp" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
