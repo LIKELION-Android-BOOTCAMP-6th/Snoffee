@@ -15,6 +15,7 @@ googleServices = "4.4.2"
 firebaseBom = "34.13.0"
 retrofit = "2.11.0"
 okhttp = "4.12.0"
+room = "2.8.4"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -48,6 +49,13 @@ firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics
 retrofit-main = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
 retrofit-converter-gson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "retrofit" }
 okhttp-logging = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "okhttp" }
+
+# Room
+room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
+room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
+
+
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
