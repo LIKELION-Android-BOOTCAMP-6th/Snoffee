@@ -1,21 +1,40 @@
 {
   "project_info": {
-    "project_number": "103734035525",
-    "project_id": "db01-74adf",
-    "storage_bucket": "db01-74adf.firebasestorage.app"
+    "project_number": "849065805594",
+    "project_id": "drink-information",
+    "storage_bucket": "drink-information.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:103734035525:android:0139a041143f1a384a0f2c",
+        "mobilesdk_app_id": "1:849065805594:android:9d1fc7014de8625aca0ea3",
         "android_client_info": {
-          "package_name": "com.example.ch5_db"
+          "package_name": "com.example.api_saving"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyD41kFJutqljuKCPFag7AgovODxHAjNbiU"
+          "current_key": "AIzaSyB9Nmk4b0qCFcuZIOiAXj5mcU6nB_p_Zbc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:849065805594:android:910b933b5fed5034ca0ea3",
+        "android_client_info": {
+          "package_name": "com.snoffee.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB9Nmk4b0qCFcuZIOiAXj5mcU6nB_p_Zbc"
         }
       ],
       "services": {
