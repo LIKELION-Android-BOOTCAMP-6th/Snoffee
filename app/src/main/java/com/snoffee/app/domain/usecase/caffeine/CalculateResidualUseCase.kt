@@ -1,9 +1,12 @@
 package com.snoffee.app.domain.usecase.caffeine
 
+import com.snoffee.app.domain.model.CaffeineRecord
+import com.snoffee.app.domain.model.CaffeineSensitivity
+import com.snoffee.app.domain.util.CaffeineCalculator
 import com.snoffee.app.domain.repository.CaffeineRepository
 import com.snoffee.app.domain.repository.UserProfileRepository
-import com.snoffee.app.domain.util.CaffeineCalculator
 import javax.inject.Inject
+import kotlin.math.roundToInt
 
 // 현재 체내 카페인 잔류량 계산 UseCase
 // CaffeineCalculator를 통해 반감기 기반 잔류량 계산
@@ -14,7 +17,17 @@ class CalculateResidualUseCase @Inject constructor(
     private val calculator: CaffeineCalculator              // Hilt가 자동 주입
 ) {
     suspend operator fun invoke(): Double {
-        // TODO: 오늘 섭취 기록 + 사용자 프로필 기반으로 잔류량 계산
-        return 0.0
+        records: List<CaffeineRecord>,
+        sensitivity: CaffeineSensitivity,
+        currentTimeMillis: Long = System.currentTimeMillis()
+    ): Int {
+        return records.sumOf { record ->
+            CaffeineCalculator.calculateResidualCaffeine(
+                intakeCaffeine = record.intakeCaffeine,
+                consumedAt = record.consumedAt,
+                currentTimeMillis = currentTimeMillis,
+                halfLifeHours = sensitivity.halfLifeHours
+            )
+        }.roundToInt()
     }
 }
