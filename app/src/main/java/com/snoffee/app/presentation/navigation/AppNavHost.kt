@@ -5,8 +5,8 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.snoffee.app.presentation.home.HomeScreen
 import com.snoffee.app.presentation.caffeine.CaffeineInputScreen
+import com.snoffee.app.presentation.home.HomeScreen
 
 object Routes {
     // 변수명: UPPER_SNAKE_CASE, 값: snake_case (예: const val SLEEP_MAIN = "sleep_main")
@@ -36,7 +36,7 @@ fun AppNavHost(
     ) {
         composable(Routes.HOME) {
             HomeScreen(
-                onNavigateToCaffeineInput = {
+                onAddCaffeineClick = {
                     navController.navigate(Routes.CAFFEINE_INPUT)
                 }
             )
