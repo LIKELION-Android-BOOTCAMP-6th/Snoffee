@@ -1,10 +1,25 @@
 package com.snoffee.app.presentation.caffeine
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -21,10 +36,18 @@ private val dummyDrinks = listOf(
 
 @Composable
 fun CaffeineInputScreen(
+    onNavigateBack: () -> Unit,
     viewModel: CaffeineInputViewModel = hiltViewModel()
 ) {
     val saveState by viewModel.saveState.collectAsState()
     var selectedDrink by remember { mutableStateOf<DrinkItem?>(null) }
+
+    // saveState의 값이 Success이면 뒤로 가게 됨 (일종의 트리거 추가)
+    LaunchedEffect(saveState) {
+        if (saveState is SaveState.Success) {
+            onNavigateBack()
+        }
+    }
 
     Column(
         modifier = Modifier
