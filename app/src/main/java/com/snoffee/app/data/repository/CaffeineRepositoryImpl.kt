@@ -16,14 +16,16 @@ class CaffeineRepositoryImpl @Inject constructor(
 
     override suspend fun saveCaffeineRecord(record: CaffeineRecord) {
         // TODO: Domain Model → DTO 변환 후 저장
+        val entity = mapper.toEntity(record)
+        localDataSource.insertCaffeineRecord(entity)
     }
 
     override suspend fun getTodayCaffeineRecords(): List<CaffeineRecord> {
-        // TODO: DTO 조회 후 Domain Model로 변환해서 반환
+        // Flow → List 변환 필요 (추후 처리)
         return emptyList()
     }
 
     override suspend fun deleteCaffeineRecord(id: Long) {
-        // TODO: id로 기록 삭제
+        localDataSource.deleteCaffeineRecord(id)
     }
 }
