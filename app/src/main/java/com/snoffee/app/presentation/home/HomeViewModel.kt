@@ -1,19 +1,83 @@
 package com.snoffee.app.presentation.home
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.snoffee.app.domain.usecase.caffeine.CalculateResidualUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-/**
- * 홈 화면 ViewModel
- * @HiltViewModel → Hilt가 ViewModel 생성 및 의존성 주입 관리
- * @Inject constructor → 필요한 UseCase를 Hilt가 자동으로 주입
- * 5분 주기 잔류량 갱신, CalculateResidualUseCase 호출
- */
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    private val calculateResidualUseCase: CalculateResidualUseCase  // Hilt가 자동 주입
+    private val calculateResidualUseCase:
+    CalculateResidualUseCase
 ) : ViewModel() {
-    // TODO: 잔류량 상태 관리
+    private val _uiState =
+        MutableStateFlow(
+            HomeUiState(isLoading = true)
+        )
+    val uiState: StateFlow<HomeUiState> =
+        _uiState.asStateFlow()
+    private var refreshJob: Job? = null
+    init {
+        startResidualRefresh()
+    }
+    private fun startResidualRefresh() {
+        refreshJob?.cancel()
+        refreshJob = viewModelScope.launch {
+            while (true) {
+                loadResidualCaffeine()
+                delay(5 * 60 * 1000L)
+            }
+        }
+    }
+    fun loadResidualCaffeine() {
+        viewModelScope.launch {
+            _uiState.value =
+                _uiState.value.copy(
+                    isLoading = true,
+                    errorMessage = null
+                )
+            runCatching {
+                calculateResidualUseCase()
+            }.onSuccess { residual ->
+                _uiState.value =
+                    HomeUiState(
+                        residualCaffeineMg = residual,
+                        riskLevel = getRiskLevel(residual),
+                        isLoading = false,
+                        isEmpty = residual <= 0
+                    )
+            }.onFailure { throwable ->
+                _uiState.value =
+                    _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage =
+                            throwable.message
+                                ?: "잔류량 계산 실패"
+                    )
+            }
+        }
+    }
+    private fun getRiskLevel(
+        residualMg: Int
+    ): CaffeineRiskLevel {
+        return when {
+            residualMg < 50 ->
+                CaffeineRiskLevel.SAFE
+            residualMg < 150 ->
+                CaffeineRiskLevel.CAUTION
+            else ->
+                CaffeineRiskLevel.DANGER
+        }
+    }
+    override fun onCleared() {
+        refreshJob?.cancel()
+        super.onCleared()
+    }
 }
