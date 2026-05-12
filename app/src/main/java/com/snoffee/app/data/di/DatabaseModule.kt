@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.snoffee.app.data.local.SnoffeeDatabase
 import com.snoffee.app.data.local.dao.CaffeineDao
+import com.snoffee.app.data.local.dao.DrinkDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -31,5 +32,11 @@ object DatabaseModule {
     @Singleton
     fun provideCaffeineDao(db: SnoffeeDatabase): CaffeineDao {
         return db.caffeineDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideDrinkDao(db: SnoffeeDatabase): DrinkDao {
+        return db.drinkDao()
     }
 }
