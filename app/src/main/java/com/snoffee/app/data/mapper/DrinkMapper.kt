@@ -40,6 +40,7 @@ class DrinkMapper @Inject constructor() {
     //리스트 변환
     //fun mapToDomainList(dtoList: List<DrinkDto>) = dtoList.map { mapToDomain(it) }
 
+
     //Firebase DTO -> Room Entity (로컬 저장용)
     fun mapToEntity(dto: DrinkDto): DrinkEntity {
         return DrinkEntity(
