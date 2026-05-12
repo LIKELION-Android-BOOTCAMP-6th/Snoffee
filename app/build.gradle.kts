@@ -62,6 +62,7 @@ dependencies {
     // hilt
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
+    implementation(libs.hilt.navigation.compose)
 
     //firebase
     implementation(platform(libs.firebase.bom))
@@ -73,4 +74,9 @@ dependencies {
     implementation(libs.retrofit.main)
     implementation(libs.retrofit.converter.gson)
     implementation(libs.okhttp.logging) // 네트워크 로그 확인용
+
+    // Room
+    implementation(libs.room.runtime)
+    ksp(libs.room.compiler)
+    implementation(libs.room.ktx)
 }

@@ -1,7 +1,5 @@
 package com.snoffee.app.domain.model
 
-import java.time.LocalDateTime
-
 // 카페인 섭취 기록
 data class CaffeineRecord(
     val id: Long = 0,                       // PK, 자동생성
