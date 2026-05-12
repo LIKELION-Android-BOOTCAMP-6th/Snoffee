@@ -15,5 +15,4 @@ data class DrinkEntity(
     val servingSize: Double,     // 기준 용량
     val totalCaffeine: Double,   // 전체 용량당 카페인 함량
     val totalSize: Double,        // 전체 용량
-    val unit: String = "ml"
 )

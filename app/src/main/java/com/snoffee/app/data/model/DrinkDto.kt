@@ -11,5 +11,5 @@ data class DrinkDto(
     //Firebase와 필드명 일치
     val serving_size: Double = 0.0,   // 기준 용량
     val total_caffeine: Double = 0.0, // 전체 용량당 카페인 함량
-    val total_size: Double = 0.0,     // 전체 용량
+    val total_size: Double = 0.0       // 전체 용량
 )

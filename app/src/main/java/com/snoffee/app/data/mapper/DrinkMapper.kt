@@ -17,8 +17,7 @@ class DrinkMapper @Inject constructor() {
             caffeineMg = dto.caffeinemg,
             servingSize = dto.serving_size,
             totalCaffeine = dto.total_caffeine,
-            totalSize = dto.total_size,
-            unit = "ml" // DTO에 단위가 없어도 기본값 부여
+            totalSize = dto.total_size
         )
     }
 
@@ -32,8 +31,7 @@ class DrinkMapper @Inject constructor() {
             caffeineMg = entity.caffeineMg,
             servingSize = entity.servingSize,
             totalCaffeine = entity.totalCaffeine,
-            totalSize = entity.totalSize,
-            unit = entity.unit // DB에 저장된 단위를 가져옴
+            totalSize = entity.totalSize
         )
     }
 
@@ -50,8 +48,7 @@ class DrinkMapper @Inject constructor() {
             caffeineMg = dto.caffeinemg,
             servingSize = dto.serving_size,
             totalCaffeine = dto.total_caffeine,
-            totalSize = dto.total_size,
-            unit = "ml" // 저장할 때 기본적으로 ml로 고정 저장
+            totalSize = dto.total_size
         )
     }
 }
