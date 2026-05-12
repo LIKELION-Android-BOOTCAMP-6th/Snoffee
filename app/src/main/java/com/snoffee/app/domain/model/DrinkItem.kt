@@ -8,8 +8,7 @@ data class DrinkItem(
     val category: String,                   // 카테고리
     val brand: String,                      // 브랜드명
     val caffeineMg: Double,                 // 기준 용량당 카페인 함량 (mg)
-    val caffeinePer: Double,                // 기준 용량
+    val servingSize: Double,                // 기준 용량
     val totalCaffeine: Double,              // 전체 용량당 카페인 함량
-    val servingSize: Double,                // 전체 용량
-    val servingUnit: String                 // 단위 (ml, g 등)
+    val totalSize: Double                // 전체 용량
 )
