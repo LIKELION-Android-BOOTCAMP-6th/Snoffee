@@ -8,4 +8,8 @@ interface CaffeineRepository {
     suspend fun saveCaffeineRecord(record: CaffeineRecord)  // 카페인 섭취 기록 저장
     suspend fun getTodayCaffeineRecords(): List<CaffeineRecord>  // 오늘 섭취 목록 조회
     suspend fun deleteCaffeineRecord(id: Long)              // 카페인 섭취 기록 삭제
+    suspend fun getCaffeineRecordsByDateRange(
+        startTimeMillis: Long,
+        endTimeMillis: Long
+    ): List<CaffeineRecord>
 }
