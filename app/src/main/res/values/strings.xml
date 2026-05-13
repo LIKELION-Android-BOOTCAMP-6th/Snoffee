@@ -1,3 +1,17 @@
 <resources>
     <string name="app_name">Snoffee</string>
+
+    <!-- 카페인 -->
+    <string name="caffeine_main_appbar_title">카페인 리포트</string>
+    <string name="caffeine_record_button">카페인 기록하기</string>
+    <string name="caffeine_today_summary_label">하루 섭취량</string>
+    <string name="caffeine_today_intake">%s 섭취량: </string>
+    <string name="caffeine_daily_limit">한도: %dmg</string>
+    <string name="caffeine_remain_label">남은 카페인 허용량</string>
+    <string name="caffeine_remain_amount">%dmg</string>
+    <string name="caffeine_activity_log_title">활동 로그</string>
+    <string name="caffeine_empty_log">오늘 기록된 카페인이 없어요</string>
+    <string name="caffeine_prev_month_desc">이전 달</string>
+    <string name="caffeine_next_month_desc">다음 달</string>
+    <string name="caffeine_more_options_desc">더보기</string>
 </resources>
