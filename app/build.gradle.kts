@@ -9,7 +9,7 @@ plugins {
 android {
     namespace = "com.snoffee.app"
     compileSdk {
-        version = release(36) {
+        version = release(35) {
             minorApiLevel = 1
         }
     }
@@ -17,7 +17,7 @@ android {
     defaultConfig {
         applicationId = "com.snoffee.app"
         minSdk = 24
-        targetSdk = 36
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
@@ -80,4 +80,7 @@ dependencies {
     implementation(libs.room.runtime)
     ksp(libs.room.compiler)
     implementation(libs.room.ktx)
+
+    //확장 아이콘 라이브러리
+    implementation("androidx.compose.material:material-icons-extended:1.7.8")
 }
