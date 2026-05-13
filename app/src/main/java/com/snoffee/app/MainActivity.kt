@@ -13,6 +13,7 @@ import com.snoffee.app.core.navigation.AppNavHost
 import com.snoffee.app.core.navigation.Screen
 import com.snoffee.app.core.navigation.SnoffeeBottomBar
 import com.snoffee.app.core.ui.component.SnoffeeAppBar
+import com.snoffee.app.core.ui.theme.SnoffeeBgBase
 import com.snoffee.app.core.ui.theme.SnoffeeTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -45,7 +46,8 @@ class MainActivity : ComponentActivity() {
                         if (currentRoute != Screen.Onboarding.route) {
                             SnoffeeBottomBar(navController = navController)
                         }
-                    }
+                    },
+                    containerColor = SnoffeeBgBase
                 ) { innerPadding ->
                     // 4. 중앙 콘텐츠 영역 (NavHost)
                     // innerPadding을 통해 콘텐츠가 앱바나 탭바에 가려지지 않도록 설정

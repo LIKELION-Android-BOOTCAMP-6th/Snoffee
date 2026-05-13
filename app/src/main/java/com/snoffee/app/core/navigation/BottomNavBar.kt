@@ -15,6 +15,7 @@ import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.compose.ui.unit.dp
+import com.snoffee.app.core.ui.theme.*
 
 @Composable
 fun SnoffeeBottomBar(navController: NavController) {
@@ -22,8 +23,8 @@ fun SnoffeeBottomBar(navController: NavController) {
     val currentDestination = navBackStackEntry?.destination
 
     NavigationBar(
-        containerColor = Color.White,
-        tonalElevation = 8.dp
+        containerColor = SnoffeeNavBar,
+        tonalElevation = 0.dp
     ) {
         val items = listOf(
             BottomNavItem.Dashboard,
@@ -34,18 +35,20 @@ fun SnoffeeBottomBar(navController: NavController) {
 
         items.forEach { item ->
             val isSelected = currentDestination?.hierarchy?.any { it.route == item.route } == true
-
+            val activeColor = if (isSelected) SnoffeePrimaryDark else SnoffeeTheme.colors.textDisabled
             NavigationBarItem(
                 icon = {
                     Icon(
                         imageVector = item.icon,
-                        contentDescription = item.title
+                        contentDescription = item.title,
+                        tint = activeColor
                     )
                 },
                 label = {
                     Text(
                         text = item.title,
-                        style = MaterialTheme.typography.labelSmall
+                        style = MaterialTheme.typography.labelSmall,
+                        color = activeColor
                     )
                 },
                 selected = isSelected,
@@ -60,11 +63,11 @@ fun SnoffeeBottomBar(navController: NavController) {
                     }
                 },
                 colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = Color(0xFF4E342E),
-                    selectedTextColor = Color(0xFF4E342E),
-                    indicatorColor = Color(0xFFF5EBE0), // 선택 시 나타나는 연한 배경색
-                    unselectedIconColor = Color.Gray,
-                    unselectedTextColor = Color.Gray
+                    selectedIconColor = SnoffeePrimaryDark,
+                    selectedTextColor = SnoffeePrimaryDark,
+                    indicatorColor = SnoffeePrimarySubtle, // 선택 시 나타나는 연한 배경색
+                    unselectedIconColor = SnoffeeTextDisabled,
+                    unselectedTextColor = SnoffeeTextDisabled
                 )
             )
         }
