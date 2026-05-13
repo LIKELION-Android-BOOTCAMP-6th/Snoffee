@@ -16,7 +16,9 @@ val SnoffeeBgMuted        = Color(0xFFE2E0DC)  // 비활성 영역
 val SnoffeeBgDim          = Color(0xFFD2D0CB)  // 구분 테두리 안쪽
 
 // ── Surface ───────────────────────────────────────────────────────────
-val SnoffeeSurface        = Color(0xFFFFFFFF)  // 카드, 바텀시트
+val SnoffeeSurface        = Color(0xFFFFFFFF)  // 카드
+val SnoffeeAppbar         = Color(0xFFF2EBE3)
+val SnoffeeNavBar         = Color(0xFFEDE4DB)
 val SnoffeeSurfaceElevated= Color(0xFFFAFAF9)  // 떠 있는 카드, 다이얼로그
 val SnoffeeSurfaceOverlay = Color(0xFFF3F2F0)  // 입력창, 리스트 아이템
 val SnoffeeSurfacePressed = Color(0xFFE8E7E4)  // 탭·버튼 눌린 상태

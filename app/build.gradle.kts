@@ -8,16 +8,12 @@ plugins {
 
 android {
     namespace = "com.snoffee.app"
-    compileSdk {
-        version = release(35) {
-            minorApiLevel = 1
-        }
-    }
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.snoffee.app"
         minSdk = 24
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
 

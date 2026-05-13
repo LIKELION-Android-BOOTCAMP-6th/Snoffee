@@ -15,6 +15,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.snoffee.app.R
+import com.snoffee.app.core.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,7 +38,7 @@ fun SnoffeeAppBar(
                     text = "Snoffee",
                     style = MaterialTheme.typography.titleLarge.copy(
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF4E342E) // 진한 갈색
+                        color = SnoffeeTextMain
                     )
                 )
             }
@@ -47,12 +48,14 @@ fun SnoffeeAppBar(
                 Icon(
                     imageVector = Icons.Outlined.Notifications,
                     contentDescription = "알림",
-                    tint = Color(0xFF4E342E)
+                    tint = SnoffeePrimary
                 )
             }
         },
         colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-            containerColor = Color.White
+            containerColor = SnoffeeAppbar,
+            titleContentColor = SnoffeeTextMain,
+            actionIconContentColor = SnoffeePrimary
         )
     )
 }
