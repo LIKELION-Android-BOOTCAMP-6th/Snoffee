@@ -1,59 +1,52 @@
 package com.snoffee.app.core.navigation
 
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.BarChart
-import androidx.compose.material.icons.filled.GridView
-import androidx.compose.material.icons.filled.AddCircleOutline
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.compose.ui.unit.dp
 import com.snoffee.app.core.ui.theme.*
+import androidx.compose.ui.res.painterResource
+import com.snoffee.app.R
 
 @Composable
 fun SnoffeeBottomBar(navController: NavController) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
 
+    val items = listOf(
+        Triple(Screen.Home.route, "홈", R.drawable.main_bottombar_home),
+        Triple(Screen.Caffeine.route, "카페인", R.drawable.main_bottombar_cafe),
+        Triple(Screen.Sleep.route, "수면", R.drawable.main_bottombar_sleep),
+        Triple(Screen.Report.route, "리포트", R.drawable.main_bottombar_report),
+        Triple(Screen.MySetting.route, "설정", R.drawable.main_bottombar_setting)
+    )
+
     NavigationBar(
         containerColor = SnoffeeNavBar,
         tonalElevation = 0.dp
     ) {
-        val items = listOf(
-            BottomNavItem.Dashboard,
-            BottomNavItem.Log,
-            BottomNavItem.Analysis,
-            BottomNavItem.Settings
-        )
-
-        items.forEach { item ->
-            val isSelected = currentDestination?.hierarchy?.any { it.route == item.route } == true
-            val activeColor = if (isSelected) SnoffeePrimaryDark else SnoffeeTheme.colors.textDisabled
+        items.forEach { (route, title, iconRes) ->
+            val isSelected = currentDestination?.hierarchy?.any { it.route == route } == true
             NavigationBarItem(
                 icon = {
                     Icon(
-                        imageVector = item.icon,
-                        contentDescription = item.title,
-                        tint = activeColor
+                        painter = painterResource(id = iconRes),
+                        contentDescription = title
                     )
                 },
                 label = {
                     Text(
-                        text = item.title,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = activeColor
+                        text = title,
+                        style = MaterialTheme.typography.labelSmall
                     )
                 },
                 selected = isSelected,
                 onClick = {
-                    navController.navigate(item.route) {
+                    navController.navigate(route) {
                         // 스택이 쌓이는 것을 방지하기 위해 시작 화면으로 팝업
                         popUpTo(navController.graph.findStartDestination().id) {
                             saveState = true
@@ -72,12 +65,4 @@ fun SnoffeeBottomBar(navController: NavController) {
             )
         }
     }
-}
-
-// 네비게이션 아이템 정의
-sealed class BottomNavItem(val route: String, val title: String, val icon: ImageVector) {
-    object Dashboard : BottomNavItem(Screen.Home.route, "Dashboard", Icons.Default.GridView)
-    object Log : BottomNavItem(Screen.Caffeine.route, "Log", Icons.Default.AddCircleOutline)
-    object Analysis : BottomNavItem(Screen.Report.route, "Analysis", Icons.Default.BarChart)
-    object Settings : BottomNavItem(Screen.MySetting.route, "Settings", Icons.Default.Settings)
 }
