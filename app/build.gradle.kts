@@ -32,6 +32,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+        isCoreLibraryDesugaringEnabled = true
     }
     buildFeatures {
         compose = true
@@ -77,6 +78,6 @@ dependencies {
     ksp(libs.room.compiler)
     implementation(libs.room.ktx)
 
-    //확장 아이콘 라이브러리
-    implementation("androidx.compose.material:material-icons-extended:1.7.8")
+    // Desugaring 를 통해서 min SDK 24 에서도 일부 코드 안정하게 동작 도와주는 패키지
+    coreLibraryDesugaring(libs.android.desugar)
 }
