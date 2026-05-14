@@ -28,4 +28,10 @@
     <string name="caffeine_drink_time">섭취 시간</string>
     <string name="caffeine_drink_time_info">터치하여 정확한 시간을 선택하세요</string>
     <string name="caffeine_drink_time_choose">시간 선택</string>
+    <string name="caffeine_drink_save">카페인 추가</string>
+    <string name="caffeine_drink_back">뒤로가기</string>
+    <string name="caffeine_drink_search_result_count">검색 결과 %d개</string>
+    <string name="caffeine_drink_input_info">원하는 음료가 없으신가요?</string>
+    <string name="caffeine_drink_input_self">직접 등록하기</string>
+    <string name="caffeine_search_drink_info">음료를 검색해 주세요</string>
 </resources>
