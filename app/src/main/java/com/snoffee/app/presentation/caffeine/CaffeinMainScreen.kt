@@ -648,7 +648,7 @@ private fun CaffeineLogItemCard(
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
-                        painter = painterResource(id = R.drawable.outline_expand_circle_down_24),
+                        painter = painterResource(id = R.drawable.ic_outline_coffee),
                         contentDescription = null,
                         tint = iconTintColor,
                         modifier = Modifier.size(22.dp),
