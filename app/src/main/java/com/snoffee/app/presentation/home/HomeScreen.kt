@@ -1,35 +1,25 @@
 package com.snoffee.app.presentation.home
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.snoffee.app.core.ui.theme.*
 import com.snoffee.app.presentation.home.component.CaffeineGauge
 
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
-    onAddCaffeineClick: () -> Unit = {}
+    onAddCaffeineClick: () -> Unit = {},
+    onViewAllClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -37,199 +27,109 @@ fun HomeScreen(
         viewModel.loadResidualCaffeine()
     }
 
-    HomeContent(
-        uiState = uiState,
-        onAddCaffeineClick = onAddCaffeineClick,
-        onRetryClick = {
-            viewModel.loadResidualCaffeine()
-        }
-    )
-}
-
-@Composable
-private fun HomeContent(
-    uiState: HomeUiState,
-    onAddCaffeineClick: () -> Unit,
-    onRetryClick: () -> Unit
-) {
-    Column(
+    LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF8F5F2))
-            .padding(20.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .background(SnoffeeBgBase),
+        contentPadding =PaddingValues(horizontal = 16.dp, vertical = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Text(
-            text = "Snoffee",
-            style = MaterialTheme.typography.headlineMedium,
-            color = Color(0xFF2E2A2A)
-        )
 
-        Spacer(modifier = Modifier.height(24.dp))
-
-        when {
-            uiState.isLoading -> {
-                LoadingState()
-            }
-
-            uiState.errorMessage != null -> {
-                ErrorState(
-                    message = uiState.errorMessage,
-                    onRetryClick = onRetryClick
-                )
-            }
-
-            uiState.isEmpty -> {
-                EmptyState(
-                    onAddCaffeineClick = onAddCaffeineClick
-                )
-            }
-
-            else -> {
-                SuccessState(
+        item {
+            val error = uiState.errorMessage
+            when {
+                uiState.isLoading -> LoadingState()
+                error != null -> ErrorState(error) { viewModel.loadResidualCaffeine() }
+                else -> SuccessState(
                     uiState = uiState,
                     onAddCaffeineClick = onAddCaffeineClick
                 )
             }
         }
-    }
-}
 
-@Composable
-private fun SuccessState(
-    uiState: HomeUiState,
-    onAddCaffeineClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = Color.White
-        )
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = "현재 잔류 카페인",
-                style = MaterialTheme.typography.titleMedium,
-                color = Color(0xFF2E2A2A)
-            )
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            CaffeineGauge(
-                residualCaffeineMg = uiState.residualCaffeineMg,
-                riskLevel = uiState.riskLevel
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Button(
-                onClick = onAddCaffeineClick,
-                modifier = Modifier.fillMaxWidth()
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth().height(100.dp),
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = SnoffeeSurface)
             ) {
-                Text(text = "카페인 추가")
+                Box(Modifier.fillMaxSize(), Alignment.Center) {
+                    Text("데일리 권고 섭취량", color = SnoffeeTextDisabled)
+                }
+            }
+        }
+
+        item {
+            Row(modifier = Modifier.fillMaxWidth().padding(start = 4.dp, top = 8.dp, bottom = 4.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Text("최근 기록", style = MaterialTheme.typography.titleLarge, color = SnoffeeTextMain)
+                TextButton(onClick = onViewAllClick) {
+                    Text("전체보기", color = SnoffeeTextMuted)
+                }
+            }
+        }
+
+        items(uiState.recentLogs.size) { index ->
+            Card(
+                modifier = Modifier.fillMaxWidth().padding(bottom = 1.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = SnoffeeSurface)
+            ) {
+                Text(text = uiState.recentLogs[index], modifier = Modifier.padding(18.dp), color = SnoffeeTextMain)
             }
         }
     }
 }
 
 @Composable
-private fun EmptyState(
-    onAddCaffeineClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = Color.White
-        )
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = "아직 기록이 없어요",
-                style = MaterialTheme.typography.titleMedium,
-                color = Color(0xFF2E2A2A)
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = "오늘 마신 카페인을 기록해보세요.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color(0xFF8C6E63)
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Button(
-                onClick = onAddCaffeineClick,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(text = "카페인 입력하기")
+private fun SuccessState(uiState: HomeUiState, onAddCaffeineClick: () -> Unit) {
+    Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = SnoffeeSurface)) {
+        Column(modifier = Modifier.padding(vertical = 30.dp, horizontal = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text("현재 체내 카페인 잔량", style = MaterialTheme.typography.titleLarge, color = SnoffeeTextMain)
+            Spacer(modifier = Modifier.height(30.dp))
+            CaffeineGauge(uiState.residualCaffeineMg, uiState.riskLevel)
+            Spacer(modifier = Modifier.height(48.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                InfoColumn("대사 예상 시간", uiState.metabolismTime)
+                Box(modifier = Modifier.width(1.dp).height(30.dp).background(SnoffeeDivider))
+                InfoColumn("잔류 농도", uiState.concentrationLevel)
             }
+            Spacer(modifier = Modifier.height(30.dp))
+            Button(onClick = onAddCaffeineClick, modifier = Modifier.fillMaxWidth()) { Text("카페인 추가") }
+        }
+    }
+}
+
+@Composable
+private fun EmptyState(onAddCaffeineClick: () -> Unit) {
+    Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = SnoffeeSurface)) {
+        Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text("아직 기록이 없어요", style = MaterialTheme.typography.titleMedium)
+            Button(onClick = onAddCaffeineClick, modifier = Modifier.fillMaxWidth()) { Text("카페인 입력하기") }
         }
     }
 }
 
 @Composable
 private fun LoadingState() {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(260.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        CircularProgressIndicator()
+    Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
+        CircularProgressIndicator(color = SnoffeePrimary)
     }
 }
 
 @Composable
-private fun ErrorState(
-    message: String,
-    onRetryClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = Color.White
-        )
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = "잔류량을 불러오지 못했어요",
-                style = MaterialTheme.typography.titleMedium,
-                color = Color(0xFFD96C6C)
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = message,
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color(0xFF2E2A2A)
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Button(
-                onClick = onRetryClick,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(text = "다시 시도")
-            }
+private fun ErrorState(message: String, onRetryClick: () -> Unit) {
+    Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = SnoffeeSurface)) {
+        Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text("오류 발생: $message", color = SnoffeeError)
+            Button(onClick = onRetryClick) { Text("다시 시도") }
         }
+    }
+}
+
+@Composable
+private fun InfoColumn(label: String, value: String) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(label, style = MaterialTheme.typography.labelSmall, color = SnoffeeTextHint)
+        Text(value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = SnoffeeTextMain)
     }
 }

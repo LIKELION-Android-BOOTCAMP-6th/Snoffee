@@ -33,6 +33,10 @@ fun AppNavHost(
 //        composable(Screen.Caffeine.route) {
 //            CaffeineMainScreen() // presentation.caffeine.CaffeineMainScreen
 //        }
+//        //수면 화면
+//        composable(Screen.Report.route) {
+//            SleepScreen() // presentation.report.ReportScreen
+//        }
 //
 //        //리포트 화면
 //        composable(Screen.Report.route) {

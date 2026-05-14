@@ -29,12 +29,23 @@ class MainActivity : ComponentActivity() {
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentRoute = navBackStackEntry?.destination?.route
 
+                val topBarTitle = when (currentRoute) {
+                    Screen.Home.route -> "Snoffee"
+                    Screen.Caffeine.route -> "카페인 리포트"
+                    Screen.Sleep.route -> "수면 리포트"
+                    Screen.Report.route -> "리포트"
+                    Screen.MySetting.route -> "설정"
+                    else -> "Snoffee"
+                }
+
                 //앱 전체 레이아웃
                 Scaffold(
                     topBar = {
                         // 온보딩 화면이 아닐 때만 상단 앱바 표시
                         if (currentRoute != Screen.Onboarding.route) {
                             SnoffeeAppBar(
+                                //탭바에 따른 제목 변경
+                                title = topBarTitle,
                                 onNotificationClick = {
                                     // 알림 아이콘 클릭 시 로직 (알림 화면 이동 등)
                                 }
@@ -49,7 +60,7 @@ class MainActivity : ComponentActivity() {
                     },
                     containerColor = SnoffeeBgBase
                 ) { innerPadding ->
-                    // 4. 중앙 콘텐츠 영역 (NavHost)
+                    //중앙 콘텐츠 영역 (NavHost)
                     // innerPadding을 통해 콘텐츠가 앱바나 탭바에 가려지지 않도록 설정
                     AppNavHost(
                         navController = navController,

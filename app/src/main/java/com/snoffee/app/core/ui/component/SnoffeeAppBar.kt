@@ -20,22 +20,26 @@ import com.snoffee.app.core.ui.theme.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SnoffeeAppBar(
+    title: String,
     onNotificationClick: () -> Unit = {}
 ) {
     CenterAlignedTopAppBar(
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                // 앱 로고 아이콘
-                Icon(
-                    //로고 교체 필요
-                    painter = painterResource(id = R.drawable.ic_launcher_foreground),
-                    contentDescription = null,
-                    modifier = Modifier.size(32.dp),
-                    tint = Color.Unspecified
-                )
-                Spacer(modifier = Modifier.width(8.dp))
+                // 홈에서만 로고 출력
+                if (title == "Snoffee") {
+                    Icon(
+                        //로고 변경
+                        painter = painterResource(id = R.drawable.ic_launcher_foreground),
+                        contentDescription = null,
+                        modifier = Modifier.size(32.dp),
+                        tint = Color.Unspecified
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
+
                 Text(
-                    text = "Snoffee",
+                    text = title,
                     style = MaterialTheme.typography.titleLarge.copy(
                         fontWeight = FontWeight.Bold,
                         color = SnoffeeTextMain

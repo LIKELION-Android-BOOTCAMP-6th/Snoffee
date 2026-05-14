@@ -19,7 +19,11 @@ class HomeViewModel @Inject constructor(
 ) : ViewModel() {
     private val _uiState =
         MutableStateFlow(
-            HomeUiState(isLoading = true)
+            HomeUiState(
+                residualCaffeineMg = 0,
+                isEmpty = true,
+                isLoading = false
+            )
         )
     val uiState: StateFlow<HomeUiState> =
         _uiState.asStateFlow()
@@ -51,7 +55,10 @@ class HomeViewModel @Inject constructor(
                         residualCaffeineMg = residual,
                         riskLevel = getRiskLevel(residual),
                         isLoading = false,
-                        isEmpty = residual <= 0
+                        isEmpty = residual <= 0,
+                        metabolismTime = "02:45 AM", // 추후 DB 값
+                        concentrationLevel = "높음",    // 추후 DB 값
+                        recentLogs = listOf("더블 에스프레소", "플랫 화이트", "아메리카노") // 추후 DB 값
                     )
             }.onFailure { throwable ->
                 _uiState.value =
