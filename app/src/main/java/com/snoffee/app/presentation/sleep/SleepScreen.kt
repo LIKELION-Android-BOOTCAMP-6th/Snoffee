@@ -1,6 +1,7 @@
 package com.snoffee.app.presentation.sleep
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -13,6 +14,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -31,16 +33,23 @@ data class SleepCalendarDay(
     val isCurrentMonth: Boolean = true,
     val isSelected: Boolean = false,
     val isToday: Boolean = false,
-    val hasDot: Boolean = false,        // 수면 기록 있는 날
+    val hasDot: Boolean = false,
+    val score: Int? = null
 )
 
 @Composable
 fun SleepScreen(viewModel: SleepViewModel = hiltViewModel()) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    //수면 화면 전용 캘린더 그리드 로직
-    val sleepGrid = remember(uiState.currentYearMonth, uiState.selectedDate) {
-        buildSleepCalendarGrid(uiState.currentYearMonth, uiState.selectedDate)
+    val selectedScore = uiState.dailyScores[uiState.selectedDate] ?: 0
+    val selectedTime = uiState.dailySleepTimes[uiState.selectedDate] ?: "--"
+
+    val sleepGrid = remember(uiState.currentYearMonth, uiState.selectedDate, uiState.dailyScores) {
+        buildSleepCalendarGrid(
+            uiState.currentYearMonth,
+            uiState.selectedDate,
+            uiState.dailyScores
+        )
     }
 
     Scaffold(containerColor = SnoffeeBgBase) { padding ->
@@ -52,7 +61,6 @@ fun SleepScreen(viewModel: SleepViewModel = hiltViewModel()) {
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
-            //수면 전용 캘린더 카드
             SleepCalendarCard(
                 monthLabel = uiState.currentYearMonth.format(DateTimeFormatter.ofPattern("M월 yyyy")),
                 onPrev = viewModel::onPrevMonth,
@@ -63,10 +71,33 @@ fun SleepScreen(viewModel: SleepViewModel = hiltViewModel()) {
                 }
             )
 
-            //수면 요약
-            SleepSummarySection(uiState.averageSleepTime, uiState.averageScore)
+            Text(
+                text = "${uiState.selectedDate.format(DateTimeFormatter.ofPattern("M월 d일"))} 수면 리포트",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = SnoffeeTextMain
+            )
+            SleepInfoCard(
+                time = selectedTime,
+                score = selectedScore,
+                labelPrefix = "기록된"
+            )
 
-            // 수면 추가 버튼
+            // Warning 해결: HorizontalDivider 사용
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = SnoffeeDivider)
+
+            Text(
+                text = "${uiState.currentYearMonth.monthValue}월 전체 평균",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = SnoffeeTextMuted
+            )
+            SleepInfoCard(
+                time = uiState.averageSleepTime,
+                score = uiState.averageScore,
+                labelPrefix = "평균"
+            )
+
             Button(
                 onClick = { /* TODO */ },
                 modifier = Modifier.fillMaxWidth().height(54.dp),
@@ -79,8 +110,11 @@ fun SleepScreen(viewModel: SleepViewModel = hiltViewModel()) {
     }
 }
 
-// 수면 전용 캘린더 생성 로직
-private fun buildSleepCalendarGrid(yearMonth: YearMonth, selectedDate: LocalDate): List<SleepCalendarDay> {
+private fun buildSleepCalendarGrid(
+    yearMonth: YearMonth,
+    selectedDate: LocalDate,
+    dailyScores: Map<LocalDate, Int>
+): List<SleepCalendarDay> {
     val today = LocalDate.now()
     val firstDay = yearMonth.atDay(1)
     val startOffset = firstDay.dayOfWeek.value % 7
@@ -92,9 +126,9 @@ private fun buildSleepCalendarGrid(yearMonth: YearMonth, selectedDate: LocalDate
         val date = yearMonth.atDay(day)
         grid.add(SleepCalendarDay(
             date = date,
-            // 선택된 날짜와 오늘 날짜 확인
             isSelected = date == selectedDate,
-            isToday = date == today
+            isToday = date == today,
+            score = dailyScores[date]
         ))    }
     while (grid.size < 42) { grid.add(SleepCalendarDay(date = null)) }
     return grid
@@ -116,14 +150,12 @@ private fun SleepCalendarCard(
                 TextButton(onClick = onNext) { Text(">") }
             }
 
-            // 요일
             Row(modifier = Modifier.fillMaxWidth()) {
                 listOf("일", "월", "화", "수", "목", "금", "토").forEach {
                     Text(it, modifier = Modifier.weight(1f), textAlign = TextAlign.Center, color = Color.Gray)
                 }
             }
 
-            // 날짜 그리드
             grid.chunked(7).forEach { week ->
                 Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
                     week.forEach { day ->
@@ -132,7 +164,6 @@ private fun SleepCalendarCard(
                 }
             }
 
-            // 범례
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                 LegendItem(GoodSleep, "좋은 수면")
                 Spacer(modifier = Modifier.width(16.dp))
@@ -143,62 +174,59 @@ private fun SleepCalendarCard(
 }
 
 @Composable
-private fun SleepDayCell(day: SleepCalendarDay, modifier: Modifier,
-                         onClick: () -> Unit) {
-    val bgColor = when {
-        day.isSelected -> SnoffeePrimary
-        day.isToday -> SnoffeePrimarySubtle
+private fun SleepDayCell(
+    day: SleepCalendarDay,
+    modifier: Modifier,
+    onClick: () -> Unit
+) {
+    val statusColor = when {
+        day.score != null && day.score >= 85 -> GoodSleep
+        day.score != null && day.score <= 59 -> BadSleep
         else -> Color.Transparent
     }
+
+    // Warning 해결: contentColor를 Text의 color에 적용
+    val contentColor = when {
+        statusColor != Color.Transparent -> Color.White
+        day.isSelected -> SnoffeePrimary
+        else -> SnoffeeTextMain
+    }
+
     Box(
         modifier = modifier
-            .size(36.dp)
-            .background(bgColor, CircleShape)
+            .aspectRatio(1f)
+            .padding(2.dp)
+            .clip(CircleShape)
+            .background(statusColor)
+            .then(
+                if (day.isSelected) Modifier.border(2.dp, SnoffeePrimary, CircleShape)
+                else Modifier
+            )
             .clickable(enabled = day.date != null, onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
-        Text(
-            text = day.date?.dayOfMonth?.toString() ?: "",
-            fontSize = 14.sp,
-            color = if (day.isSelected) Color.White else SnoffeeTextMain
-        )
-    }
-}
-
-@Composable
-private fun SleepSummarySection(time: String, score: Int) {
-    Surface(shape = RoundedCornerShape(24.dp), shadowElevation = 2.dp, color = SnoffeeSurface) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(
-                modifier = Modifier.weight(1f),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(time, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = SnoffeeTextMain)
-                Text("평균 수면 시간", fontSize = 13.sp, color = SnoffeeTextMuted)
-            }
-
-            // 중앙 구분선
-            Box(
-                modifier = Modifier
-                    .width(1.dp)
-                    .height(40.dp)
-                    .background(SnoffeeDivider)
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                text = day.date?.dayOfMonth?.toString() ?: "",
+                fontSize = 14.sp,
+                color = contentColor // contentColor 사용
             )
-            Column(
-                modifier = Modifier.weight(1f),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text("${score}점", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = SnoffeeTextMain)
-                Text("평균 수면 점수", fontSize =13.sp, color = SnoffeeTextMuted)
+
+            if (day.score != null) {
+                Box(
+                    modifier = Modifier
+                        .size(4.dp)
+                        .background(
+                            if (day.isSelected) Color.White else statusColor,
+                            CircleShape
+                        )
+                )
             }
         }
     }
 }
+
+// Warning 해결: 사용되지 않는 SleepSummarySection 함수 삭제
 
 @Composable
 private fun LegendItem(color: Color, text: String) {
@@ -206,5 +234,29 @@ private fun LegendItem(color: Color, text: String) {
         Box(modifier = Modifier.size(8.dp).background(color, CircleShape))
         Spacer(modifier = Modifier.width(4.dp))
         Text(text, fontSize = 12.sp, color = Color.Gray)
+    }
+}
+
+@Composable
+private fun SleepInfoCard(time: String, score: Int, labelPrefix: String) {
+    Surface(
+        shape = RoundedCornerShape(20.dp),
+        color = SnoffeeSurface,
+        tonalElevation = 2.dp
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(20.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(time, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = SnoffeeTextMain)
+                Text("$labelPrefix 시간", fontSize = 12.sp, color = SnoffeeTextMuted)
+            }
+            Box(modifier = Modifier.width(1.dp).height(40.dp).background(SnoffeeDivider))
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("${score}점", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = SnoffeeTextMain)
+                Text("$labelPrefix 점수", fontSize = 12.sp, color = SnoffeeTextMuted)
+            }
+        }
     }
 }
