@@ -14,4 +14,11 @@
     <string name="caffeine_prev_month_desc">이전 달</string>
     <string name="caffeine_next_month_desc">다음 달</string>
     <string name="caffeine_more_options_desc">더보기</string>
+
+    <!-- 탭바 -->
+    <string name="main_tabBar_homeTitle">홈</string>
+    <string name="main_tabBar_caffeineTitle">카페인</string>
+    <string name="main_tabBar_sleepTitle">수면</string>
+    <string name="main_tabBar_reportTitle">리포트</string>
+    <string name="main_tabBar_settingTitle">설정</string>
 </resources>

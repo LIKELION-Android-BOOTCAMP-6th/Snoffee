@@ -10,6 +10,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.compose.ui.unit.dp
 import com.snoffee.app.core.ui.theme.*
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import com.snoffee.app.R
 
 @Composable
@@ -18,11 +19,11 @@ fun SnoffeeBottomBar(navController: NavController) {
     val currentDestination = navBackStackEntry?.destination
 
     val items = listOf(
-        Triple(Screen.Home.route, "홈", R.drawable.main_bottombar_home),
-        Triple(Screen.Caffeine.route, "카페인", R.drawable.main_bottombar_cafe),
-        Triple(Screen.Sleep.route, "수면", R.drawable.main_bottombar_sleep),
-        Triple(Screen.Report.route, "리포트", R.drawable.main_bottombar_report),
-        Triple(Screen.MySetting.route, "설정", R.drawable.main_bottombar_setting)
+        Triple(Screen.Home.route, stringResource(R.string.main_tabBar_homeTitle), R.drawable.main_bottombar_home),
+        Triple(Screen.Caffeine.route, stringResource(R.string.main_tabBar_caffeineTitle), R.drawable.main_bottombar_cafe),
+        Triple(Screen.Sleep.route, stringResource(R.string.main_tabBar_sleepTitle), R.drawable.main_bottombar_sleep),
+        Triple(Screen.Report.route, stringResource(R.string.main_tabBar_reportTitle), R.drawable.main_bottombar_report),
+        Triple(Screen.MySetting.route, stringResource(R.string.main_tabBar_settingTitle), R.drawable.main_bottombar_setting)
     )
 
     NavigationBar(
