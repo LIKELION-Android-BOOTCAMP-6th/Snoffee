@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -22,6 +23,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -39,18 +42,22 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.snoffee.app.R
 import com.snoffee.app.core.ui.theme.SnoffeeTheme
 import com.snoffee.app.domain.model.DrinkItem
 import com.snoffee.app.presentation.caffeine.component.DrinkListItem
 import com.snoffee.app.presentation.caffeine.component.SearchBar
 import com.snoffee.app.presentation.caffeine.component.TimePickerBox
+import com.snoffee.app.presentation.caffeine.input.dialog.CaffeineInputDialog
 import java.time.LocalTime
 
 // Preview용 더미 데이터 (로직 미연결)
@@ -210,11 +217,10 @@ fun CaffeineInputScreen(
             Spacer(modifier = Modifier.height(12.dp))
 
             if (!hasQuery) {
-                EmptySearchState(onRegisterClick = onNavigateToDirectInput)
+                EmptySearchState()
             } else {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
@@ -254,10 +260,12 @@ fun CaffeineInputScreen(
 }
 
 // Empty 상태 UI
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun EmptySearchState(onRegisterClick: () -> Unit) {
+private fun EmptySearchState() {
     val colorScheme = MaterialTheme.colorScheme
     val extColors = SnoffeeTheme.colors
+    var showDialog by remember { mutableStateOf(false) }                    // 다이얼로그 표시 여부
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -275,6 +283,7 @@ private fun EmptySearchState(onRegisterClick: () -> Unit) {
                 fontSize = 17.sp,
                 color = extColors.textHint
             )
+
             Text(
                 text = stringResource(R.string.caffeine_drink_input_self),
                 fontSize = 17.sp,
@@ -282,17 +291,47 @@ private fun EmptySearchState(onRegisterClick: () -> Unit) {
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier
                     .padding(top = 4.dp)
-                    .clickable { onRegisterClick() }
             )
 
             Spacer(modifier = Modifier.height(30.dp))
             Surface(
                 shape = CircleShape,
                 color = colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                modifier = Modifier.size(60.dp)
+                modifier = Modifier.size(60.dp),
+                onClick = { showDialog = true }
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Text(text = "➕", fontSize = 24.sp)
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_add),
+                        contentDescription = "추가하기",
+                        tint = colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(30.dp),
+                    )
+                }
+            }
+
+            // 상태가 true일 때만 다이얼로그를 화면에 배치
+            if (showDialog) {
+                Dialog(
+                    onDismissRequest = { showDialog = false },
+                    properties = DialogProperties(
+                        usePlatformDefaultWidth = false
+                    )
+                ) {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth(0.9f)
+                            .wrapContentHeight(),
+                        shape = RoundedCornerShape(24.dp),
+                        colors = CardDefaults.cardColors(containerColor = SnoffeeTheme.colors.surfaceElevated)
+                    ) {
+                        CaffeineInputDialog(
+                            onDismiss = { showDialog = false },
+                            onConfirm = { record ->
+                                showDialog = false
+                            }
+                        )
+                    }
                 }
             }
 
@@ -308,15 +347,20 @@ private fun EmptySearchState(onRegisterClick: () -> Unit) {
 
 // 직접 등록하기 배너 (검색 결과 상단)
 @Composable
-private fun DirectRegisterBanner(onClick: () -> Unit) {
+private fun DirectRegisterBanner(onClick: () -> Unit) { // onClick은 기존 유지
     val colorScheme = MaterialTheme.colorScheme
     val extColors = SnoffeeTheme.colors
+
+    // 다이얼로그 노출 상태 변수 추가
+    var showDialog by remember { mutableStateOf(false) }
 
     Surface(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(10.dp))
-            .clickable { onClick() },
+            .clickable {
+                showDialog = true
+            },
         shape = RoundedCornerShape(10.dp),
         color = colorScheme.surface,
     ) {
@@ -338,6 +382,31 @@ private fun DirectRegisterBanner(onClick: () -> Unit) {
                     textDecoration = TextDecoration.Underline
                 )
             )
+        }
+    }
+
+    // 상태가 true일 때 다이얼로그 표시
+    if (showDialog) {
+        Dialog(
+            onDismissRequest = { showDialog = false },
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth(0.9f)
+                    .wrapContentHeight(),
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = SnoffeeTheme.colors.surfaceElevated
+                )
+            ) {
+                CaffeineInputDialog(
+                    onDismiss = { showDialog = false },
+                    onConfirm = { record ->
+                        showDialog = false
+                    }
+                )
+            }
         }
     }
 }
