@@ -22,7 +22,7 @@
     <string name="caffeine_next_month_desc">다음 달</string>
     <string name="caffeine_more_options_desc">더보기</string>
 
-    <!--카페인 입력 검색 화면-->
+    <!-- 카페인 입력 검색 화면 -->
     <string name="caffeine_search_drink">음료를 검색해 주세요</string>
     <string name="caffeine_search_delete">검색어 지우기</string>
     <string name="caffeine_drink_time">섭취 시간</string>
@@ -34,4 +34,11 @@
     <string name="caffeine_drink_input_info">원하는 음료가 없으신가요?</string>
     <string name="caffeine_drink_input_self">직접 등록하기</string>
     <string name="caffeine_search_drink_info">음료를 검색해 주세요</string>
+
+    <!-- 카페인 입력 화면 -->
+    <string name="caffeine_drink_input_dialog_title">직접 입력</string>
+    <string name="caffeine_drink_input_dialog_drink_name_subtitle">음료명</string>
+    <string name="caffeine_drink_input_dialog_drink_name_hint">음료 이름을 입력하세요.</string>
+    <string name="caffeine_drink_input_dialog_drink_caffeine_amount_subtitle">카페인 함량</string>
+    <string name="caffeine_drink_input_dialog_drink_save">기록하기</string>
 </resources>
