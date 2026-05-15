@@ -62,3 +62,6 @@ val SleepStageRem        = SnoffeePrimaryTint    // REM 수면 바
 val CaffeineSafe         = SnoffeeSuccess
 val CaffeineAlert        = SnoffeeWarning
 val CaffeineOver         = SnoffeeError
+
+val GoodSleep           = Color(0xFFE6CCB2)
+val BadSleep            = Color(0xFFF4E1D2)

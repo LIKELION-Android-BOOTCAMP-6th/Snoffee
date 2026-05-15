@@ -28,4 +28,12 @@ class CaffeineRepositoryImpl @Inject constructor(
     override suspend fun deleteCaffeineRecord(id: Long) {
         localDataSource.deleteCaffeineRecord(id)
     }
+
+    override suspend fun getCaffeineRecordsByDateRange(
+        startTimeMillis: Long,
+        endTimeMillis: Long
+    ): List<CaffeineRecord> {
+        // TODO: DTO → Domain Model 변환 후 반환
+        return emptyList()
+    }
 }
