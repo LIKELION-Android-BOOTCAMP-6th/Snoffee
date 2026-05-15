@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DatePicker
@@ -65,7 +66,7 @@ fun SleepDialog(
 ) {
     val zoneId = ZoneId.systemDefault()
 
-    // 1. 상태 관리 (사용자 선택 값)
+    // 상태 관리 (사용자 선택 값)
     var selectedDate by remember { mutableStateOf(LocalDate.now()) }
     var bedTime by remember { mutableStateOf(LocalTime.of(23, 0)) }
     var wakeUpTime by remember { mutableStateOf(LocalTime.of(7, 0)) }
@@ -78,6 +79,10 @@ fun SleepDialog(
 
     val dateFormatter = DateTimeFormatter.ofPattern("yyyy년 MM월 dd일 E요일")
     val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+
+    // 최종 확인창 노출 여부, 데이터 임시 저장 상태
+    var showConfirmDialog by remember { mutableStateOf(false) }
+    var tempRecord by remember { mutableStateOf<SleepRecord?>(null) }
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
@@ -130,11 +135,23 @@ fun SleepDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
+                // 취침 시간 > 기상시간인지 체크
+                val isOvernight = bedTime.isAfter(wakeUpTime)
+                val bedDateFormatter = DateTimeFormatter.ofPattern("M/d")
+
                 // 시간 선택 필드 (취침 / 기상)
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     SleepInputField(
                         label = "취침 시간",
-                        value = bedTime.format(timeFormatter),
+                        value = if (isOvernight) {
+                            "${selectedDate.minusDays(1).format(bedDateFormatter)} ${
+                                bedTime.format(
+                                    timeFormatter
+                                )
+                            }"
+                        } else {
+                            bedTime.format(timeFormatter)
+                        },
                         modifier = Modifier
                             .weight(1f)
                             .clickable { showBedTimePicker = true }
@@ -181,14 +198,13 @@ fun SleepDialog(
                         val dateTimestamp =
                             selectedDate.atStartOfDay(zoneId).toInstant().toEpochMilli()
 
-                        onSave(
-                            SleepRecord(
-                                date = dateTimestamp,
-                                startTime = startTimestamp,
-                                endTime = endTimestamp,
-                                satisfaction = satisfactionIdx + 1 // 1~5점
-                            )
+                        tempRecord = SleepRecord(
+                            date = dateTimestamp,
+                            startTime = startTimestamp,
+                            endTime = endTimestamp,
+                            satisfaction = satisfactionIdx + 1
                         )
+                        showConfirmDialog = true
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -200,6 +216,49 @@ fun SleepDialog(
                     shape = RoundedCornerShape(16.dp)
                 ) {
                     Text("저장하기", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                }
+
+                //최종 확인 다이얼로그
+                if (showConfirmDialog && tempRecord != null) {
+                    AlertDialog(
+                        onDismissRequest = { showConfirmDialog = false },
+                        title = { Text(text = "입력 내용 확인") },
+                        text = {
+                            Column {
+                                Text("날짜: ${selectedDate.format(dateFormatter)}")
+                                Text(
+                                    "시간: ${bedTime.format(timeFormatter)} ~ ${
+                                        wakeUpTime.format(
+                                            timeFormatter
+                                        )
+                                    }"
+                                )
+                                Text("만족도: ${tempRecord!!.satisfaction}점")
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    "위 내용으로 저장하시겠습니까?",
+                                    fontWeight = FontWeight.Bold,
+                                    color = SnoffeeTextMain
+                                )
+                            }
+                        },
+                        confirmButton = {
+                            TextButton(
+                                onClick = {
+                                    onSave(tempRecord!!)
+                                    showConfirmDialog = false
+                                    onDismiss()
+                                }
+                            ) { Text("확인", color = SnoffeeTextMain) }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { showConfirmDialog = false }) {
+                                Text("취소", color = SnoffeeTextHint)
+                            }
+                        },
+                        shape = RoundedCornerShape(16.dp),
+                        containerColor = SnoffeePrimaryLight
+                    )
                 }
             }
         }
