@@ -22,4 +22,11 @@ class SleepRepositoryImpl @Inject constructor(
         // TODO: 삼성헬스에서 최근 수면 데이터 조회 후 Domain Model로 변환해서 반환
         return null
     }
+
+    override suspend fun getSleepDataByDateRange(
+        startTimeMillis: Long,
+        endTimeMillis: Long
+    ): List<SleepData> {
+        TODO("Not yet implemented")
+    }
 }
