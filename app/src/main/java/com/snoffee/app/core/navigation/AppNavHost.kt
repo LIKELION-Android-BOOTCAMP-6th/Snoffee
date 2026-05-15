@@ -9,7 +9,8 @@ import com.snoffee.app.presentation.caffeine.CaffeineMainScreen
 
 // 각 스크린
 import com.snoffee.app.presentation.home.HomeScreen
-//import com.snoffee.app.presentation.caffeine.CaffeineMainScreen
+import com.snoffee.app.presentation.caffeine.CaffeineMainScreen
+import com.snoffee.app.presentation.sleep.SleepScreen
 //import com.snoffee.app.presentation.report.ReportScreen
 //import com.snoffee.app.presentation.mySetting.MySettingScreen
 //import com.snoffee.app.presentation.onboarding.OnboardingScreen
@@ -35,8 +36,8 @@ fun AppNavHost(
             CaffeineMainScreen() // presentation.caffeine.CaffeineMainScreen
         }
         //수면 화면
-        composable(Screen.Report.route) {
-//            SleepScreen() // presentation.report.ReportScreen
+        composable(Screen.Sleep.route) {
+            SleepScreen() // presentation.sleep.SleepScreen
         }
 
         //리포트 화면
