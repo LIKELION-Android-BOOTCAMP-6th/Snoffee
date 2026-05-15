@@ -1,4 +1,4 @@
-package com.snoffee.app.presentation.caffeine
+package com.snoffee.app.presentation.caffeine.main
 
 import com.snoffee.app.domain.model.CaffeineRecord
 import java.time.LocalDate

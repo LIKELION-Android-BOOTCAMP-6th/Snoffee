@@ -38,11 +38,17 @@ class MainActivity : ComponentActivity() {
                     else -> "Snoffee"
                 }
 
+                // 앱바·탭바를 숨길 화면 목록
+                val fullScreenRoutes = setOf(
+                    Screen.Onboarding.route,
+                    Screen.CaffeineInput.route,
+                )
+
                 //앱 전체 레이아웃
                 Scaffold(
                     topBar = {
                         // 온보딩 화면이 아닐 때만 상단 앱바 표시
-                        if (currentRoute != Screen.Onboarding.route) {
+                        if (currentRoute !in fullScreenRoutes) {
                             SnoffeeAppBar(
                                 //탭바에 따른 제목 변경
                                 title = topBarTitle,
@@ -54,7 +60,7 @@ class MainActivity : ComponentActivity() {
                     },
                     bottomBar = {
                         // 온보딩 화면이 아닐 때만 하단 탭바 표시
-                        if (currentRoute != Screen.Onboarding.route) {
+                        if (currentRoute !in fullScreenRoutes) {
                             SnoffeeBottomBar(navController = navController)
                         }
                     },
@@ -64,8 +70,11 @@ class MainActivity : ComponentActivity() {
                     // innerPadding을 통해 콘텐츠가 앱바나 탭바에 가려지지 않도록 설정
                     AppNavHost(
                         navController = navController,
-                        modifier = Modifier.padding(innerPadding),
-                        // 초기 화면 설정 (실제 프로젝트에서는 데이터스토어 등을 통해 온보딩 완료 여부 확인 후 결정)
+                        modifier = if (currentRoute in fullScreenRoutes) {
+                            Modifier  // fullScreen 화면은 패딩 없음
+                        } else {
+                            Modifier.padding(innerPadding)
+                        },
                         startDestination = Screen.Home.route
                     )
                 }
