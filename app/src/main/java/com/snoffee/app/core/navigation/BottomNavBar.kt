@@ -1,17 +1,25 @@
 package com.snoffee.app.core.navigation
 
-import androidx.compose.material3.*
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.compose.ui.unit.dp
-import com.snoffee.app.core.ui.theme.*
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import com.snoffee.app.R
+import com.snoffee.app.core.ui.theme.SnoffeeNavBar
+import com.snoffee.app.core.ui.theme.SnoffeePrimaryDark
+import com.snoffee.app.core.ui.theme.SnoffeePrimarySubtle
+import com.snoffee.app.core.ui.theme.SnoffeeTextDisabled
 
 @Composable
 fun SnoffeeBottomBar(navController: NavController) {
@@ -19,11 +27,31 @@ fun SnoffeeBottomBar(navController: NavController) {
     val currentDestination = navBackStackEntry?.destination
 
     val items = listOf(
-        Triple(Screen.Home.route, stringResource(R.string.main_tabBar_homeTitle), R.drawable.main_bottombar_home),
-        Triple(Screen.Caffeine.route, stringResource(R.string.main_tabBar_caffeineTitle), R.drawable.main_bottombar_cafe),
-        Triple(Screen.Sleep.route, stringResource(R.string.main_tabBar_sleepTitle), R.drawable.main_bottombar_sleep),
-        Triple(Screen.Report.route, stringResource(R.string.main_tabBar_reportTitle), R.drawable.main_bottombar_report),
-        Triple(Screen.MySetting.route, stringResource(R.string.main_tabBar_settingTitle), R.drawable.main_bottombar_setting)
+        Triple(
+            Screen.Home.route,
+            stringResource(R.string.main_tabBar_homeTitle),
+            R.drawable.ic_main_bottombar_home
+        ),
+        Triple(
+            Screen.Caffeine.route,
+            stringResource(R.string.main_tabBar_caffeineTitle),
+            R.drawable.ic_outline_coffee
+        ),
+        Triple(
+            Screen.Sleep.route,
+            stringResource(R.string.main_tabBar_sleepTitle),
+            R.drawable.ic_main_bottombar_sleep
+        ),
+        Triple(
+            Screen.Report.route,
+            stringResource(R.string.main_tabBar_reportTitle),
+            R.drawable.ic_main_bottombar_report
+        ),
+        Triple(
+            Screen.MySetting.route,
+            stringResource(R.string.main_tabBar_settingTitle),
+            R.drawable.ic_main_bottombar_setting
+        )
     )
 
     NavigationBar(

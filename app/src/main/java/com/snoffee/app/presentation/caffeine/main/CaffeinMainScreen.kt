@@ -1,4 +1,4 @@
-package com.snoffee.app.presentation.caffeine
+package com.snoffee.app.presentation.caffeine.main
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -51,8 +51,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.snoffee.app.R
 import com.snoffee.app.core.ui.theme.SnoffeeTheme
 import com.snoffee.app.domain.model.CaffeineRecord
+import java.time.Instant
 import java.time.LocalDate
 import java.time.YearMonth
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 // todo :: 모든 디자인은 공통 부분이 추가되면 해당 공통 컴포넌트 사용하기
@@ -614,8 +616,8 @@ private fun CaffeineLogItemCard(
 
     // consumedAt(ms) → 시간 문자열 변환
     val timeLabel = remember(record.consumedAt) {
-        val ldt = java.time.Instant.ofEpochMilli(record.consumedAt)
-            .atZone(java.time.ZoneId.systemDefault())
+        val ldt = Instant.ofEpochMilli(record.consumedAt)
+            .atZone(ZoneId.systemDefault())
             .toLocalTime()
         val hour = ldt.hour
         val minute = ldt.minute

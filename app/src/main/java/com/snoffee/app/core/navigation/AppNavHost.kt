@@ -5,15 +5,9 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.snoffee.app.presentation.caffeine.CaffeineMainScreen
-
-// 각 스크린
+import com.snoffee.app.presentation.caffeine.input.CaffeineInputScreen
+import com.snoffee.app.presentation.caffeine.main.CaffeineMainScreen
 import com.snoffee.app.presentation.home.HomeScreen
-import com.snoffee.app.presentation.caffeine.CaffeineMainScreen
-import com.snoffee.app.presentation.sleep.SleepScreen
-//import com.snoffee.app.presentation.report.ReportScreen
-//import com.snoffee.app.presentation.mySetting.MySettingScreen
-//import com.snoffee.app.presentation.onboarding.OnboardingScreen
 
 @Composable
 fun AppNavHost(
@@ -26,18 +20,26 @@ fun AppNavHost(
         startDestination = startDestination,
         modifier = modifier
     ) {
-        //홈 화면
+        // 홈 화면
         composable(Screen.Home.route) {
             HomeScreen() // presentation.home.HomeScreen
         }
 
         //카페인 입력/목록 화면
         composable(Screen.Caffeine.route) {
-            CaffeineMainScreen() // presentation.caffeine.CaffeineMainScreen
+            CaffeineMainScreen {
+                navController.navigate(Screen.CaffeineInput.route)
+            }
         }
-        //수면 화면
-        composable(Screen.Sleep.route) {
-            SleepScreen() // presentation.sleep.SleepScreen
+
+        // 카페인 검색/추가 화면 [A-4-4]
+        composable(Screen.CaffeineInput.route) {
+            CaffeineInputScreen(
+                onBack = { navController.popBackStack() },
+                onNavigateToDirectInput = {
+                    // TODO: 직접 등록 화면 추가 시 연결
+                }
+            )
         }
 
         //리포트 화면
