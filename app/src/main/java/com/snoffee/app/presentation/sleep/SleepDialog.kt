@@ -285,7 +285,7 @@ fun SleepDialog(
                                     Text("만족도: ${tempRecord!!.deepSleepRatio}점")
                                     Spacer(modifier = Modifier.height(8.dp))
                                     Text(
-                                        "위 내용으로 저장하시겠습니까?",
+                                        text = if (initialData != null) "위 내용으로 수정하시겠습니까?" else "위 내용으로 저장하시겠습니까?",
                                         fontWeight = FontWeight.Bold,
                                         color = SnoffeeTextMain
                                     )

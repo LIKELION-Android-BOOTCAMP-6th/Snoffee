@@ -182,6 +182,8 @@ class SleepViewModel @Inject constructor(
 
                 if (result.isSuccess) {
                     refreshSleepData()
+                } else {
+                    _uiState.update { it.copy(isSavingError = true) }
                 }
             }
         }

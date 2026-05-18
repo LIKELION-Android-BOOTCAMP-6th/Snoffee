@@ -208,7 +208,7 @@ fun SleepScreen(viewModel: SleepViewModel = hiltViewModel()) {
             }
         }
     }
-    if (showSleepDialog) {
+    if (showSleepDialog || uiState.isSavingError) {
         SleepDialog(
             onDismiss = {
                 showSleepDialog = false
