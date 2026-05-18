@@ -10,6 +10,7 @@ data class CaffeineSearchUiState(
     val selectedTime: LocalTime = LocalTime.now(),
     val isLoading: Boolean = false,
     val error: String? = null,
+    val isSaved: Boolean = false,
 ) {
     val isRecordEnabled: Boolean
         get() = selectedDrink != null && !isLoading

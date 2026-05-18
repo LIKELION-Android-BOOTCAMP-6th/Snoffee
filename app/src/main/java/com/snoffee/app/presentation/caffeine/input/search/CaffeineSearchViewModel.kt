@@ -2,9 +2,9 @@ package com.snoffee.app.presentation.caffeine.input.search
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.snoffee.app.core.util.Utils.toTodayEpochMilli
-import com.snoffee.app.data.local.dao.CaffeineDao
-import com.snoffee.app.data.local.entity.CaffeineEntity
+import com.snoffee.app.domain.model.CaffeineRecord
+import com.snoffee.app.domain.model.DrinkItem
+import com.snoffee.app.domain.usecase.caffeine.SaveCaffeineUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -16,9 +16,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class CaffeineSearchViewModel @Inject constructor(
-    private val caffeineDao: CaffeineDao
     // private val searchDrinkUseCase: SearchDrinkUseCase,
-    // private val saveCaffeineUseCase: SaveCaffeineUseCase,
+    private val saveCaffeineUseCase: SaveCaffeineUseCase,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(CaffeineSearchUiState())
     val uiState: StateFlow<CaffeineSearchUiState> = _uiState.asStateFlow()
@@ -32,36 +31,23 @@ class CaffeineSearchViewModel @Inject constructor(
         _uiState.update { it.copy(selectedTime = time) }
     }
 
-    fun insertDirectCaffeine(drinkName: String, amount: Double, selectedTime: LocalTime) {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
-
-            try {
-                val consumedAtTimestamp = selectedTime.toTodayEpochMilli()
-
-                val newRecord = CaffeineEntity(
-                    drinkId = "DIRECT_${System.currentTimeMillis()}",
-                    drinkName = drinkName,
-                    brandName = "직접 입력",
-                    intakeSize = 0.0,
-                    intakeCaffeine = amount,
-                    consumedAt = consumedAtTimestamp
-                )
-
-                caffeineDao.insertCaffeineRecord(newRecord)
-            } catch (e: Exception) {
-                e.printStackTrace()
-            } finally {
-                _uiState.update { it.copy(isLoading = false) }
-            }
-        }
+    // 검색한 음료 선택
+    fun onDrinkSelected(drink: DrinkItem) {
+        _uiState.update { it.copy(selectedDrink = drink) }
     }
 
-    fun onRecord() {
+    // 사용자가 직접 입력한 음료 or Firestore 검색으로 선택한 음료 저장
+    fun saveCaffeineRecord(record: CaffeineRecord) {
+        if (_uiState.value.isLoading) return
+
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
-            // TODO: saveCaffeineUseCase() 연결
-            _uiState.update { it.copy(isLoading = false) }
+            _uiState.update { it.copy(isLoading = true, error = null) }
+            try {
+                saveCaffeineUseCase(record)
+                _uiState.update { it.copy(isLoading = false, isSaved = true) }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isLoading = false, error = e.message) }
+            }
         }
     }
 }
