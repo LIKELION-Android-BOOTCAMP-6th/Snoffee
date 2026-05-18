@@ -43,10 +43,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.snoffee.app.R
 import com.snoffee.app.core.ui.theme.SnoffeeTheme
+import com.snoffee.app.domain.model.CaffeineRecord
 import com.snoffee.app.presentation.caffeine.component.TimePickerBox
 import java.time.LocalTime
-
-data class CaffeineRecord(val amount: Float, val time: String)
 
 @Composable
 fun CaffeineInputDialog(
@@ -240,7 +239,16 @@ fun CaffeineInputDialog(
             // 기록하기 버튼
             Button(
                 onClick = {
-                    onConfirm(CaffeineRecord(caffeineAmount, selectedTime.toString()))
+                    onConfirm(
+                        CaffeineRecord(
+                            drinkId = "DIRECT_${System.currentTimeMillis()}",
+                            drinkName = drinkName,
+                            brandName = "직접 입력",
+                            intakeSize = 0.0,
+                            intakeCaffeine = caffeineAmount.toDouble(),
+                            consumedAt = System.currentTimeMillis()
+                        )
+                    )
                     onDismiss()
                 },
                 modifier = Modifier

@@ -36,9 +36,8 @@ fun AppNavHost(
         composable(Screen.CaffeineInput.route) {
             CaffeineInputScreen(
                 onBack = { navController.popBackStack() },
-                onNavigateToDirectInput = {
-                    // TODO: 직접 등록 화면 추가 시 연결
-                }
+                onConfirmSuccess = { navController.popBackStack() }, // 추가
+                onNavigateToDirectInput = {}
             )
         }
 

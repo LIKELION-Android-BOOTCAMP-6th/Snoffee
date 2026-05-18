@@ -51,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.snoffee.app.R
 import com.snoffee.app.core.ui.theme.SnoffeeTheme
 import com.snoffee.app.domain.model.DrinkItem
@@ -119,7 +120,9 @@ val previewDrinkList = listOf(
 @Composable
 fun CaffeineInputScreen(
     onBack: () -> Unit,
-    onNavigateToDirectInput: () -> Unit
+    onConfirmSuccess: () -> Unit,
+    onNavigateToDirectInput: () -> Unit,
+    viewModel: CaffeineInputViewModel = hiltViewModel()
 ) {
     var query by remember { mutableStateOf("") }
     val hasQuery = query.isNotBlank()
@@ -217,7 +220,7 @@ fun CaffeineInputScreen(
             Spacer(modifier = Modifier.height(12.dp))
 
             if (!hasQuery) {
-                EmptySearchState()
+                EmptySearchState(viewModel, selectedTime, onConfirmSuccess)
             } else {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -237,7 +240,12 @@ fun CaffeineInputScreen(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 // 직접 등록하기 배너
-                DirectRegisterBanner(onClick = onNavigateToDirectInput)
+                DirectRegisterBanner(
+                    viewModel = viewModel,
+                    selectedTime = selectedTime,
+                    onConfirmSuccess = onConfirmSuccess,
+                    onClick = onNavigateToDirectInput
+                )
 
                 Spacer(modifier = Modifier.height(12.dp))
 
@@ -262,7 +270,11 @@ fun CaffeineInputScreen(
 // Empty 상태 UI
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun EmptySearchState() {
+private fun EmptySearchState(
+    viewModel: CaffeineInputViewModel,
+    selectedTime: LocalTime,
+    onConfirmSuccess: () -> Unit,
+) {
     val colorScheme = MaterialTheme.colorScheme
     val extColors = SnoffeeTheme.colors
     var showDialog by remember { mutableStateOf(false) }                    // 다이얼로그 표시 여부
@@ -328,7 +340,14 @@ private fun EmptySearchState() {
                         CaffeineInputDialog(
                             onDismiss = { showDialog = false },
                             onConfirm = { record ->
+                                viewModel.insertDirectCaffeine(
+                                    drinkName = record.drinkName,
+                                    amount = record.intakeCaffeine,
+                                    selectedTime = selectedTime
+                                )
+
                                 showDialog = false
+                                onConfirmSuccess()
                             }
                         )
                     }
@@ -347,7 +366,12 @@ private fun EmptySearchState() {
 
 // 직접 등록하기 배너 (검색 결과 상단)
 @Composable
-private fun DirectRegisterBanner(onClick: () -> Unit) { // onClick은 기존 유지
+private fun DirectRegisterBanner(
+    viewModel: CaffeineInputViewModel,
+    selectedTime: LocalTime,
+    onConfirmSuccess: () -> Unit,
+    onClick: () -> Unit
+) { // onClick은 기존 유지
     val colorScheme = MaterialTheme.colorScheme
     val extColors = SnoffeeTheme.colors
 
@@ -403,7 +427,13 @@ private fun DirectRegisterBanner(onClick: () -> Unit) { // onClick은 기존 유
                 CaffeineInputDialog(
                     onDismiss = { showDialog = false },
                     onConfirm = { record ->
+                        viewModel.insertDirectCaffeine(
+                            drinkName = record.drinkName,
+                            amount = record.intakeCaffeine,
+                            selectedTime = selectedTime
+                        )
                         showDialog = false
+                        onConfirmSuccess()  // 추가
                     }
                 )
             }
