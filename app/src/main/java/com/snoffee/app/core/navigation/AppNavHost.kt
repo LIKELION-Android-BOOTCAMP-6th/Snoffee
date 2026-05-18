@@ -8,6 +8,7 @@ import androidx.navigation.compose.composable
 import com.snoffee.app.presentation.caffeine.input.CaffeineInputScreen
 import com.snoffee.app.presentation.caffeine.main.CaffeineMainScreen
 import com.snoffee.app.presentation.home.HomeScreen
+import com.snoffee.app.presentation.report.ReportScreen
 
 @Composable
 fun AppNavHost(
@@ -44,7 +45,7 @@ fun AppNavHost(
 
         //리포트 화면
         composable(Screen.Report.route) {
-//            ReportScreen() // presentation.report.ReportScreen
+            ReportScreen() // presentation.report.ReportScreen
         }
 
         //설정 화면
