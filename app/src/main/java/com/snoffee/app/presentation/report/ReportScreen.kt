@@ -13,6 +13,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -23,6 +24,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.snoffee.app.core.ui.component.SnoffeeAppBar
 import com.snoffee.app.core.ui.theme.SnoffeeBgBase
 import com.snoffee.app.core.ui.theme.SnoffeePrimary
@@ -30,14 +33,19 @@ import com.snoffee.app.core.ui.theme.SnoffeeSurface
 import com.snoffee.app.core.ui.theme.SnoffeeTextMuted
 
 @Composable
-fun ReportScreen() {
-    //기본 활성화 탭 = 기간
+fun ReportScreen(viewModel: ReportViewModel = hiltViewModel()) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    //기본 탭 = 기간
     var selectedTab by remember { mutableStateOf("기간") }
     val tabs = listOf("기간", "일간", "주간", "월간", "추이")
 
+    LaunchedEffect(Unit) {
+        viewModel.loadReportData()
+    }
+
     Scaffold(
         topBar = {
-            // 코어 공통 앱바 컴포넌트 활용
             SnoffeeAppBar(title = "리포트")
         }
     ) { innerPadding ->
@@ -47,7 +55,7 @@ fun ReportScreen() {
                 .background(SnoffeeBgBase)
                 .padding(innerPadding)
         ) {
-            // ── 상단 세그먼트 필터 (Filter Chip Row) ──
+            // ── 상단 필터 ──
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -75,18 +83,23 @@ fun ReportScreen() {
                 }
             }
 
-            // ── 분석 기간 단위별 서브 컨텐츠 렌더링 영역 ──
+            // UI State 바인딩 연동
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .weight(1f)
             ) {
-                when (selectedTab) {
-                    "기간" -> ReportEmptyView()  // 최초 진입 시 데이터가 없을 때의 Empty 상태 배치
-                    "일간" -> DailyReportView()   // 전 단계에서 만든 일간 기록 뷰
-                    "주간" -> WeeklyReportView()  // 다음 단계로 구현할 주간 분석 뷰
-                    "월간" -> MonthlyReportView()  // 월간 대조 분석 뷰
-                    "추이" -> TrendReportView()   // 장기 추이 분석 뷰
+                if (uiState.isDbEmpty) {
+                    ReportEmptyView()
+                } else {
+                    // 기록이 하나라도 존재할 때만 사용자가 선택한 탭별 분석 화면을 정상 노출합니다.
+                    when (selectedTab) {
+                        "기간" -> DailyReportView(uiState = uiState) // 기간 탭 기본 화면으로 오늘 요약 대용 매핑
+                        "일간" -> DailyReportView(uiState = uiState)
+                        "주간" -> WeeklyReportView(uiState = uiState)
+                        "월간" -> MonthlyReportView(uiState = uiState)
+                        "추이" -> TrendReportView(uiState = uiState)
+                    }
                 }
             }
         }

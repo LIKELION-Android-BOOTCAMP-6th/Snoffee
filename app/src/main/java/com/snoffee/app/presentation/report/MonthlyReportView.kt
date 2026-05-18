@@ -30,7 +30,11 @@ import com.snoffee.app.core.ui.theme.SnoffeeTextMuted
 import com.snoffee.app.core.ui.theme.SnoffeeWarning
 
 @Composable
-fun MonthlyReportView() {
+fun MonthlyReportView(uiState: ReportUiState) {
+    val timeParts = uiState.monthlyAvgSleepTime.split(" ")
+    val displayHours = timeParts.getOrNull(0)?.replace("h", "") ?: "0"
+    val displayMinutes = timeParts.getOrNull(1)?.replace("m", "") ?: "00"
+
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(
@@ -85,36 +89,23 @@ fun MonthlyReportView() {
                         .background(SnoffeeSurface)
                         .padding(16.dp)
                 ) {
-                    Text(
-                        text = "월간 수면 평균",
-                        color = SnoffeeTextMuted,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium
-                    )
+                    Text(text = "월간 수면 평균", color = SnoffeeTextMuted, fontSize = 12.sp)
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(verticalAlignment = Alignment.Bottom) {
                         Text(
-                            text = "7",
+                            text = displayHours,
                             color = SnoffeeTextMain,
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold
                         )
+                        Text(text = "h ", color = SnoffeeTextMuted, fontSize = 14.sp)
                         Text(
-                            text = "h ",
-                            color = SnoffeeTextMuted,
-                            fontSize = 14.sp
-                        )
-                        Text(
-                            text = "05",
+                            text = displayMinutes,
                             color = SnoffeeTextMain,
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold
                         )
-                        Text(
-                            text = "m",
-                            color = SnoffeeTextMuted,
-                            fontSize = 14.sp
-                        )
+                        Text(text = "m", color = SnoffeeTextMuted, fontSize = 14.sp)
                     }
                 }
             }

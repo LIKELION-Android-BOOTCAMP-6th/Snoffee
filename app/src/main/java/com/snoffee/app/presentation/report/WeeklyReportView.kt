@@ -32,7 +32,7 @@ import com.snoffee.app.core.ui.theme.SnoffeeTextMain
 import com.snoffee.app.core.ui.theme.SnoffeeTextMuted
 
 @Composable
-fun WeeklyReportView() {
+fun WeeklyReportView(uiState: ReportUiState) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(

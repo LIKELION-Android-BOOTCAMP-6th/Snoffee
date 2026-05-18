@@ -32,7 +32,7 @@ import com.snoffee.app.core.ui.theme.SnoffeeTextMain
 import com.snoffee.app.core.ui.theme.SnoffeeTextMuted
 
 @Composable
-fun TrendReportView() {
+fun TrendReportView(uiState: ReportUiState) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(
@@ -53,15 +53,10 @@ fun TrendReportView() {
                     .padding(vertical = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(
-                    text = "전체 기간 수면 평균",
-                    color = SnoffeeTextMuted,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Medium
-                )
+                Text(text = "전체 기간 수면 평균", color = SnoffeeTextMuted, fontSize = 13.sp)
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
-                    text = "7h 15m",
+                    text = uiState.totalAvgSleepTime,
                     color = SnoffeeTextMain,
                     fontSize = 30.sp,
                     fontWeight = FontWeight.Bold
@@ -131,14 +126,12 @@ fun TrendReportView() {
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold
                 )
-
                 Spacer(modifier = Modifier.height(16.dp))
-
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    // BEST
+                    // BEST 월 매핑
                     Row(
                         modifier = Modifier
                             .weight(1f)
@@ -156,14 +149,13 @@ fun TrendReportView() {
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = "1월 (88점)",
+                            text = "${uiState.bestMonthLabel} (${uiState.bestMonthScore}점)",
                             color = SnoffeeTextMain,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Medium
+                            fontSize = 13.sp
                         )
                     }
 
-                    // WORST
+                    // WORST 월 매핑
                     Row(
                         modifier = Modifier
                             .weight(1f)
@@ -181,10 +173,9 @@ fun TrendReportView() {
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = "12월 (61점)",
+                            text = "${uiState.worstMonthLabel} (${uiState.worstMonthScore}점)",
                             color = SnoffeeTextMain,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Medium
+                            fontSize = 13.sp
                         )
                     }
                 }

@@ -33,7 +33,10 @@ import com.snoffee.app.core.ui.theme.SnoffeeTextMuted
 import com.snoffee.app.core.ui.theme.SnoffeeWarning
 
 @Composable
-fun DailyReportView() {
+fun DailyReportView(uiState: ReportUiState) {
+    val displayHours = uiState.todaySleepHours.toString()
+    val displayMinutes = String.format(java.util.Locale.US, "%02d", uiState.todaySleepMinutes)
+
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(
@@ -88,36 +91,23 @@ fun DailyReportView() {
                         .background(SnoffeeSurface)
                         .padding(16.dp)
                 ) {
-                    Text(
-                        text = "총 수면 시간",
-                        color = SnoffeeTextMuted,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium
-                    )
+                    Text(text = "총 수면 시간", color = SnoffeeTextMuted, fontSize = 12.sp)
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(verticalAlignment = Alignment.Bottom) {
                         Text(
-                            text = "7",
+                            text = displayHours,
                             color = SnoffeeTextMain,
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold
                         )
+                        Text(text = "h ", color = SnoffeeTextMuted, fontSize = 14.sp)
                         Text(
-                            text = "h ",
-                            color = SnoffeeTextMuted,
-                            fontSize = 14.sp
-                        )
-                        Text(
-                            text = "10",
+                            text = displayMinutes,
                             color = SnoffeeTextMain,
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold
                         )
-                        Text(
-                            text = "m",
-                            color = SnoffeeTextMuted,
-                            fontSize = 14.sp
-                        )
+                        Text(text = "m", color = SnoffeeTextMuted, fontSize = 14.sp)
                     }
                 }
             }
@@ -158,6 +148,36 @@ fun DailyReportView() {
                     time = "오후 11:30",
                     title = "수면 기록 시작",
                     value = "수면 진입",
+                    typeColor = SnoffeeInfo
+                )
+            }
+        }
+        item {
+            Column( /* ... */) {
+                Text(
+                    text = "오늘의 기록",
+                    color = SnoffeeTextMain,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                DailyRecordItem(
+                    time = "오전 08:30",
+                    title = "아메리카노 1잔",
+                    value = "150 mg",
+                    typeColor = SnoffeePrimary
+                )
+                DailyRecordItem(
+                    time = "오후 01:45",
+                    title = "돌체 라떼 1잔",
+                    value = "200 mg",
+                    typeColor = SnoffeeWarning
+                )
+
+                DailyRecordItem(
+                    time = uiState.todaySleepStart,
+                    title = "수면 기록 시작",
+                    value = if (uiState.hasTodayRecord) "수면 진입" else "기록 없음",
                     typeColor = SnoffeeInfo
                 )
             }
