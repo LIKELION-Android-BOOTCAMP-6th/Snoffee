@@ -3,15 +3,34 @@ package com.snoffee.app.presentation.sleep
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -22,7 +41,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.snoffee.app.core.ui.theme.*
+import com.snoffee.app.core.ui.theme.BadSleep
+import com.snoffee.app.core.ui.theme.GoodSleep
+import com.snoffee.app.core.ui.theme.SnoffeeBgBase
+import com.snoffee.app.core.ui.theme.SnoffeeDivider
+import com.snoffee.app.core.ui.theme.SnoffeePrimary
+import com.snoffee.app.core.ui.theme.SnoffeeSurface
+import com.snoffee.app.core.ui.theme.SnoffeeTextMain
+import com.snoffee.app.core.ui.theme.SnoffeeTextMuted
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
@@ -41,6 +67,7 @@ data class SleepCalendarDay(
 fun SleepScreen(viewModel: SleepViewModel = hiltViewModel()) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
+    var showSleepDialog by remember { mutableStateOf(false) }
     val selectedScore = uiState.dailyScores[uiState.selectedDate] ?: 0
     val selectedTime = uiState.dailySleepTimes[uiState.selectedDate] ?: "--"
 
@@ -99,14 +126,25 @@ fun SleepScreen(viewModel: SleepViewModel = hiltViewModel()) {
             )
 
             Button(
-                onClick = { /* TODO */ },
-                modifier = Modifier.fillMaxWidth().height(54.dp),
+                onClick = { showSleepDialog = true },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(54.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(SnoffeePrimary)
             ) {
                 Text("수면 추가하기", fontSize = 20.sp, fontWeight = FontWeight.Bold)
             }
         }
+    }
+    if (showSleepDialog) {
+        SleepDialog(
+            onDismiss = { showSleepDialog = false },
+            onSave = { record ->
+                //viewModel.saveSleepRecord(record)
+                showSleepDialog = false
+            }
+        )
     }
 }
 
@@ -157,7 +195,9 @@ private fun SleepCalendarCard(
             }
 
             grid.chunked(7).forEach { week ->
-                Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+                Row(modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)) {
                     week.forEach { day ->
                         SleepDayCell(day, Modifier.weight(1f), onClick = { onDayClick(day) })
                     }
@@ -231,7 +271,9 @@ private fun SleepDayCell(
 @Composable
 private fun LegendItem(color: Color, text: String) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(modifier = Modifier.size(8.dp).background(color, CircleShape))
+        Box(modifier = Modifier
+            .size(8.dp)
+            .background(color, CircleShape))
         Spacer(modifier = Modifier.width(4.dp))
         Text(text, fontSize = 12.sp, color = Color.Gray)
     }
@@ -245,14 +287,19 @@ private fun SleepInfoCard(time: String, score: Int, labelPrefix: String) {
         tonalElevation = 2.dp
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(20.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(time, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = SnoffeeTextMain)
                 Text("$labelPrefix 시간", fontSize = 12.sp, color = SnoffeeTextMuted)
             }
-            Box(modifier = Modifier.width(1.dp).height(40.dp).background(SnoffeeDivider))
+            Box(modifier = Modifier
+                .width(1.dp)
+                .height(40.dp)
+                .background(SnoffeeDivider))
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text("${score}점", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = SnoffeeTextMain)
                 Text("$labelPrefix 점수", fontSize = 12.sp, color = SnoffeeTextMuted)

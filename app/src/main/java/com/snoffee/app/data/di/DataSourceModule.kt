@@ -1,13 +1,15 @@
 package com.snoffee.app.data.di
 
+import com.snoffee.app.data.datasource.health.SamsungHealthDataSource
+import com.snoffee.app.data.datasource.health.SamsungHealthDataSourceImpl
 import com.snoffee.app.data.datasource.local.CaffeineLocalDataSource
 import com.snoffee.app.data.datasource.local.CaffeineLocalDataSourceImpl
 import com.snoffee.app.data.datasource.local.DrinkLocalDataSource
 import com.snoffee.app.data.datasource.local.DrinkLocalDataSourceImpl
+import com.snoffee.app.data.datasource.local.SleepLocalDataSource
+import com.snoffee.app.data.datasource.local.SleepLocalDataSourceImpl
 import com.snoffee.app.data.datasource.local.UserProfileLocalDataSource
 import com.snoffee.app.data.datasource.local.UserProfileLocalDataSourceImpl
-import com.snoffee.app.data.datasource.health.SamsungHealthDataSource
-import com.snoffee.app.data.datasource.health.SamsungHealthDataSourceImpl
 import com.snoffee.app.data.datasource.remote.DrinkRemoteDataSource
 import com.snoffee.app.data.datasource.remote.DrinkRemoteDataSourceImpl
 import com.snoffee.app.data.datasource.remote.GeminiRemoteDataSource
@@ -63,4 +65,10 @@ abstract class DataSourceModule {
     abstract fun bindGeminiRemoteDataSource(
         impl: GeminiRemoteDataSourceImpl
     ): GeminiRemoteDataSource
+
+    @Binds
+    @Singleton
+    abstract fun bindSleepLocalDataSource(
+        impl: SleepLocalDataSourceImpl
+    ): SleepLocalDataSource
 }

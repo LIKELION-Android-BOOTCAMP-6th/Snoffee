@@ -3,7 +3,6 @@ package com.snoffee.app.data.datasource.local
 import com.snoffee.app.data.local.dao.CaffeineDao
 import com.snoffee.app.data.local.entity.CaffeineEntity
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.emptyFlow
 import javax.inject.Inject
 
 // CaffeineLocalDataSource 구현체
@@ -20,5 +19,14 @@ class CaffeineLocalDataSourceImpl @Inject constructor(
 
     override suspend fun deleteCaffeineRecord(id: Long) {
         dao.deleteCaffeineRecord(id)
+    }
+    override suspend fun getCaffeineRecordsByDateRange(
+        startTimeMillis: Long,
+        endTimeMillis: Long
+    ): List<CaffeineEntity> {
+        return dao.getCaffeineRecordsByDateRange(
+            startTimeMillis = startTimeMillis,
+            endTimeMillis = endTimeMillis
+        )
     }
 }

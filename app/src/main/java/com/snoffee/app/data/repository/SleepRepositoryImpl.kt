@@ -13,14 +13,30 @@ class SleepRepositoryImpl @Inject constructor(
     private val healthDataSource: SamsungHealthDataSource, // Hilt가 자동 주입
     private val mapper: SleepMapper                        // Hilt가 자동 주입
 ) : SleepRepository {
-
     override suspend fun saveSleepData(sleepData: SleepData) {
-        // TODO: Domain Model → DTO 변환 후 저장
+        val dto = mapper.toDto(sleepData)
+        healthDataSource.saveSleepData(dto)
+    }
+    override suspend fun getLatestSleepData(): SleepData? {
+        return healthDataSource
+            .getLatestSleepData()
+            ?.let { dto ->
+                mapper.toDomain(dto)
+            }
     }
 
-    override suspend fun getLatestSleepData(): SleepData? {
-        // TODO: 삼성헬스에서 최근 수면 데이터 조회 후 Domain Model로 변환해서 반환
-        return null
+    override suspend fun getSleepDataByDateRange(
+        startTimeMillis: Long,
+        endTimeMillis: Long
+    ): List<SleepData> {
+        return healthDataSource
+            .getSleepDataByDateRange(
+                startTimeMillis = startTimeMillis,
+                endTimeMillis = endTimeMillis
+            )
+            .map { dto ->
+                mapper.toDomain(dto)
+            }
     }
 
     override suspend fun getSleepDataByDateRange(
