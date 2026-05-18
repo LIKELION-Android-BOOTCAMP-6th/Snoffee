@@ -1,7 +1,6 @@
 package com.snoffee.app.data.local.dao
 
 import androidx.room.Dao
-import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -26,5 +25,16 @@ interface CaffeineDao {
                 "BETWEEN :startOfDay AND :endOfDay " +
                 "ORDER BY consumed_at DESC"
     )
+
     fun getTodayRecords(startOfDay: Long, endOfDay: Long): Flow<List<CaffeineEntity>>
+
+    @Query(
+        "SELECT * FROM caffeine_record " +
+                "WHERE consumed_at BETWEEN :startTimeMillis AND :endTimeMillis " +
+                "ORDER BY consumed_at DESC"
+    )
+    suspend fun getCaffeineRecordsByDateRange(
+        startTimeMillis: Long,
+        endTimeMillis: Long
+    ): List<CaffeineEntity>
 }
