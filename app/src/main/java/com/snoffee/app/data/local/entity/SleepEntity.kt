@@ -19,7 +19,7 @@ data class SleepEntity(
     val sleepEnd: Long,
 
     @ColumnInfo(name = "deep_sleep_ratio")
-    val deepSleepRatio: Double,
+    val deepSleepRatio: Int,
 
     @ColumnInfo(name = "source")
     val source: String = "manual"
