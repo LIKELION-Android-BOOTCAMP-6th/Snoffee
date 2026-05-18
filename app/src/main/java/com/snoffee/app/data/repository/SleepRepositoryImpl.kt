@@ -38,11 +38,4 @@ class SleepRepositoryImpl @Inject constructor(
                 mapper.toDomain(dto)
             }
     }
-
-    override suspend fun getSleepDataByDateRange(
-        startTimeMillis: Long,
-        endTimeMillis: Long
-    ): List<SleepData> {
-        TODO("Not yet implemented")
-    }
 }
