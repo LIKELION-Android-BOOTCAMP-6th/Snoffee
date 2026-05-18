@@ -87,12 +87,12 @@ private fun BoxVariant(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 4.dp, vertical = 4.dp) // 그림자가 그려질 최소 공간 확보
+                .padding(vertical = 4.dp) // 그림자가 그려질 최소 공간 확보
         ) {
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(65.dp)
+                    .height(56.dp)
                     .shadow(
                         elevation = 4.dp,
                         shape = RoundedCornerShape(16.dp),
@@ -113,7 +113,7 @@ private fun BoxVariant(
                         fontWeight = FontWeight.Medium,
                         color = colorScheme.onSurfaceVariant,
                         letterSpacing = 0.5.sp,
-                        modifier = Modifier.padding(start = 24.dp)
+                        modifier = Modifier.padding(horizontal = 16.dp)
                     )
                 }
             }
