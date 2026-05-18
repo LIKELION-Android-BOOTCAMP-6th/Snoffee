@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
@@ -25,6 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -53,10 +55,13 @@ fun CaffeineInputDialog(
     onConfirm: (CaffeineRecord) -> Unit = {},
 ) {
     var caffeineAmount by remember { mutableFloatStateOf(0f) }
-    var inputString by remember { mutableStateOf(caffeineAmount.toDouble().toString()) }
+    var caffeineInputString by remember { mutableStateOf("") }
+    var drinkVolume by remember { mutableIntStateOf(0) }
+    var volumeInputString by remember { mutableStateOf("") }
     var selectedTime by remember { mutableStateOf<LocalTime>(LocalTime.now()) }
     var drinkName by remember { mutableStateOf("") }
     val caffeineFocusRequester = remember { FocusRequester() }  // 포커스 제어
+    val volumeFocusRequester = remember { FocusRequester() }
 
     val colorScheme = SnoffeeTheme.colorScheme
     val extColors = SnoffeeTheme.colors
@@ -156,72 +161,138 @@ fun CaffeineInputDialog(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 카페인 함량 입력 영역
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    text = stringResource(R.string.caffeine_drink_input_dialog_drink_caffeine_amount_subtitle),
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = SnoffeeTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
-                )
+            // 카페인 함량 + 음료 용량 입력 영역
+            Row(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = stringResource(R.string.caffeine_drink_input_dialog_drink_caffeine_amount_subtitle),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = SnoffeeTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
+                    )
 
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    color = SnoffeeTheme.colorScheme.surfaceVariant.copy(alpha = 0.9f),
-                    border = BorderStroke(0.5.dp, SnoffeeTheme.colorScheme.outlineVariant),
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(horizontal = 16.dp)
+                    Surface(
+                        modifier = Modifier.height(56.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        color = SnoffeeTheme.colorScheme.surfaceVariant.copy(alpha = 0.9f),
+                        border = BorderStroke(0.5.dp, SnoffeeTheme.colorScheme.outlineVariant),
                     ) {
-                        Box(
-                            modifier = Modifier.weight(1f),
-                            contentAlignment = Alignment.CenterStart
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 16.dp)
                         ) {
-                            // 카페인 함량 힌트 표시 분기 처리
-                            if (inputString.isEmpty()) {
-                                Text(
-                                    text = "0.0",
-                                    color = SnoffeeTheme.colors.textHint,
-                                    fontSize = 24.sp,
-                                    fontWeight = FontWeight.Medium
+                            Box(
+                                modifier = Modifier.weight(1f),
+                                contentAlignment = Alignment.CenterStart
+                            ) {
+                                if (caffeineInputString.isEmpty()) {
+                                    Text(
+                                        text = "0.0",
+                                        color = SnoffeeTheme.colors.textHint,
+                                        fontSize = 24.sp,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                }
+
+                                BasicTextField(
+                                    value = caffeineInputString,
+                                    onValueChange = { newValue ->
+                                        if (newValue.all { it.isDigit() || it == '.' } && newValue.length <= 5) {
+                                            caffeineInputString = newValue
+                                            newValue.toFloatOrNull()?.let { caffeineAmount = it }
+                                        }
+                                    },
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                    textStyle = TextStyle(
+                                        fontSize = 24.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = SnoffeeTheme.colorScheme.primary,
+                                        letterSpacing = 0.5.sp
+                                    ),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .focusRequester(caffeineFocusRequester),
+                                    singleLine = true
                                 )
                             }
 
-                            // 카페인 함량 숫자 입력 필드
-                            BasicTextField(
-                                value = inputString,
-                                onValueChange = { newValue ->
-                                    // 숫자만 입력 가능하도록 필터링
-                                    if (newValue.all { it.isDigit() || it == '.' } && newValue.length <= 5) {
-                                        inputString = newValue
-                                        newValue.toFloatOrNull()?.let { caffeineAmount = it }
-                                    }
-                                },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                textStyle = TextStyle(
-                                    fontSize = 24.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    color = SnoffeeTheme.colorScheme.primary,
-                                    letterSpacing = 0.5.sp
-                                ),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .focusRequester(caffeineFocusRequester),
-                                singleLine = true
+                            Text(
+                                text = "mg",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = SnoffeeTheme.colors.textHint,
+                                modifier = Modifier.padding(start = 8.dp)
                             )
                         }
-                        Text(
-                            text = "mg",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = SnoffeeTheme.colors.textHint,
-                            modifier = Modifier.padding(start = 8.dp)
-                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                // 음료 용량 입력
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = stringResource(R.string.caffeine_drink_input_dialog_drink_amount_subtitle),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = SnoffeeTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
+                    )
+
+                    Surface(
+                        modifier = Modifier.height(56.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        color = SnoffeeTheme.colorScheme.surfaceVariant.copy(alpha = 0.9f),
+                        border = BorderStroke(0.5.dp, SnoffeeTheme.colorScheme.outlineVariant),
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 16.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier.weight(1f),
+                                contentAlignment = Alignment.CenterStart
+                            ) {
+                                if (volumeInputString.isEmpty()) {
+                                    Text(
+                                        text = "0",
+                                        color = SnoffeeTheme.colors.textHint,
+                                        fontSize = 24.sp,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                }
+
+                                BasicTextField(
+                                    value = volumeInputString,
+                                    onValueChange = { newValue ->
+                                        if (newValue.all { it.isDigit() } && newValue.length <= 5) {
+                                            volumeInputString = newValue
+                                            newValue.toIntOrNull()?.let { drinkVolume = it }
+                                        }
+                                    },
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                    textStyle = TextStyle(
+                                        fontSize = 24.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = SnoffeeTheme.colorScheme.primary,
+                                        letterSpacing = 0.5.sp
+                                    ),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .focusRequester(volumeFocusRequester),
+                                    singleLine = true
+                                )
+                            }
+
+                            Text(
+                                text = "ml",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = SnoffeeTheme.colors.textHint,
+                                modifier = Modifier.padding(start = 8.dp)
+                            )
+                        }
                     }
                 }
             }
