@@ -25,7 +25,8 @@ object DatabaseModule {
             context,
             SnoffeeDatabase::class.java,
             "snoffee_db"
-        ).build()
+        ).fallbackToDestructiveMigration()
+            .build()
     }
 
     @Provides
