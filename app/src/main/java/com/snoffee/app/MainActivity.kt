@@ -41,7 +41,7 @@ class MainActivity : ComponentActivity() {
                 // 앱바·탭바를 숨길 화면 목록
                 val fullScreenRoutes = setOf(
                     Screen.Onboarding.route,
-                    Screen.CaffeineInput.route,
+                    Screen.CaffeineSearch.route,
                 )
 
                 //앱 전체 레이아웃

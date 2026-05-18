@@ -5,7 +5,7 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.snoffee.app.presentation.caffeine.input.search.CaffeineInputScreen
+import com.snoffee.app.presentation.caffeine.input.search.CaffeineSearchScreen
 import com.snoffee.app.presentation.caffeine.main.CaffeineMainScreen
 import com.snoffee.app.presentation.home.HomeScreen
 
@@ -28,13 +28,13 @@ fun AppNavHost(
         //카페인 입력/목록 화면
         composable(Screen.Caffeine.route) {
             CaffeineMainScreen {
-                navController.navigate(Screen.CaffeineInput.route)
+                navController.navigate(Screen.CaffeineSearch.route)
             }
         }
 
         // 카페인 검색/추가 화면 [A-4-4]
-        composable(Screen.CaffeineInput.route) {
-            CaffeineInputScreen(
+        composable(Screen.CaffeineSearch.route) {
+            CaffeineSearchScreen(
                 onBack = { navController.popBackStack() },
                 onConfirmSuccess = { navController.popBackStack() }, // 추가
                 onNavigateToDirectInput = {}

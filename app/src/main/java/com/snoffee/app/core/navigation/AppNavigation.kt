@@ -8,7 +8,7 @@ sealed class Screen(val route: String) {
 
     // 카페인
     object Caffeine : Screen("caffeine")
-    object CaffeineInput : Screen("caffeine_input")
+    object CaffeineSearch : Screen("caffeine_search")
 
     // 수면
     object Sleep : Screen("sleep")
