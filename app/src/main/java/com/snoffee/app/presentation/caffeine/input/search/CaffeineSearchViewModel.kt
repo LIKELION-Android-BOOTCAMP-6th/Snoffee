@@ -1,4 +1,4 @@
-package com.snoffee.app.presentation.caffeine.input
+package com.snoffee.app.presentation.caffeine.input.search
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -15,13 +15,13 @@ import java.time.LocalTime
 import javax.inject.Inject
 
 @HiltViewModel
-class CaffeineInputViewModel @Inject constructor(
+class CaffeineSearchViewModel @Inject constructor(
     private val caffeineDao: CaffeineDao
     // private val searchDrinkUseCase: SearchDrinkUseCase,
     // private val saveCaffeineUseCase: SaveCaffeineUseCase,
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(CaffeineInputUiState())
-    val uiState: StateFlow<CaffeineInputUiState> = _uiState.asStateFlow()
+    private val _uiState = MutableStateFlow(CaffeineSearchUiState())
+    val uiState: StateFlow<CaffeineSearchUiState> = _uiState.asStateFlow()
 
     fun onSearchQueryChange(query: String) {
         _uiState.update { it.copy(searchQuery = query) }

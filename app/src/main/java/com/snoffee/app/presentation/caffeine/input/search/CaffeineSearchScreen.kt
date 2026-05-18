@@ -1,4 +1,4 @@
-package com.snoffee.app.presentation.caffeine.input
+package com.snoffee.app.presentation.caffeine.input.search
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
@@ -122,7 +122,7 @@ fun CaffeineInputScreen(
     onBack: () -> Unit,
     onConfirmSuccess: () -> Unit,
     onNavigateToDirectInput: () -> Unit,
-    viewModel: CaffeineInputViewModel = hiltViewModel()
+    viewModel: CaffeineSearchViewModel = hiltViewModel()
 ) {
     var query by remember { mutableStateOf("") }
     val hasQuery = query.isNotBlank()
@@ -271,7 +271,7 @@ fun CaffeineInputScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun EmptySearchState(
-    viewModel: CaffeineInputViewModel,
+    viewModel: CaffeineSearchViewModel,
     selectedTime: LocalTime,
     onConfirmSuccess: () -> Unit,
 ) {
@@ -367,7 +367,7 @@ private fun EmptySearchState(
 // 직접 등록하기 배너 (검색 결과 상단)
 @Composable
 private fun DirectRegisterBanner(
-    viewModel: CaffeineInputViewModel,
+    viewModel: CaffeineSearchViewModel,
     selectedTime: LocalTime,
     onConfirmSuccess: () -> Unit,
     onClick: () -> Unit

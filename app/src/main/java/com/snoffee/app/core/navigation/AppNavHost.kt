@@ -5,7 +5,7 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.snoffee.app.presentation.caffeine.input.CaffeineInputScreen
+import com.snoffee.app.presentation.caffeine.input.search.CaffeineInputScreen
 import com.snoffee.app.presentation.caffeine.main.CaffeineMainScreen
 import com.snoffee.app.presentation.home.HomeScreen
 
