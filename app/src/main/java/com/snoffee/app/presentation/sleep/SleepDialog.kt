@@ -390,7 +390,6 @@ fun SleepInputField(
 
 @Composable
 fun SatisfactionRow(selectedIdx: Int, onSelected: (Int) -> Unit) {
-    //후에 이모지 아이콘 추가
     val emojis = listOf("😫", "🙁", "😐", "🙂", "😄")
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
         emojis.forEachIndexed { index, emoji ->
