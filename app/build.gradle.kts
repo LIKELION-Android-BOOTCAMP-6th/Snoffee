@@ -12,7 +12,7 @@ android {
 
     defaultConfig {
         applicationId = "com.snoffee.app"
-        minSdk = 24
+        minSdk = 26
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
@@ -57,7 +57,8 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
-
+    // health connect
+    implementation("androidx.health.connect:connect-client:1.1.0")
     implementation(libs.androidx.compose.material.icons.extended)
     // hilt
     implementation(libs.hilt.android)
