@@ -68,7 +68,7 @@ fun MonthlyReportView(uiState: ReportUiState) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(verticalAlignment = Alignment.Bottom) {
                         Text(
-                            text = "185",
+                            text = uiState.monthlyAvgCaffeine.toString(),
                             color = SnoffeeTextMain,
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold
@@ -144,7 +144,7 @@ fun MonthlyReportView(uiState: ReportUiState) {
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "평균 수면 5h 20m",
+                        text = "평균 수면 ${uiState.highCaffeineDaySleepTime}",
                         color = SnoffeeTextMain,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium
@@ -166,7 +166,7 @@ fun MonthlyReportView(uiState: ReportUiState) {
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "평균 수면 7h 45m",
+                        text = "평균 수면 ${uiState.lowCaffeineDaySleepTime}",
                         color = SnoffeeTextMain,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium
