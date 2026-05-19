@@ -16,7 +16,8 @@ class SleepMapper @Inject constructor() {
             date = domain.date,
             sleepStart = domain.sleepStart,
             sleepEnd = domain.sleepEnd,
-            deepSleepRatio = domain.deepSleepRatio
+            deepSleepRatio = domain.deepSleepRatio,
+            source = domain.source
         )
     }
 
@@ -26,7 +27,8 @@ class SleepMapper @Inject constructor() {
             date = entity.date,
             sleepStart = entity.sleepStart,
             sleepEnd = entity.sleepEnd,
-            deepSleepRatio = entity.deepSleepRatio
+            deepSleepRatio = entity.deepSleepRatio,
+            source = entity.source
         )
     }
 
@@ -44,7 +46,8 @@ class SleepMapper @Inject constructor() {
             date = convertLocalDateTimeToMillis(dto.date),
             sleepStart = dto.sleepStart,
             sleepEnd = dto.sleepEnd,
-            deepSleepRatio = dto.deepSleepRatio
+            deepSleepRatio = dto.deepSleepRatio,
+            source = "health"
         )
     }
 

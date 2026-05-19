@@ -8,6 +8,9 @@ import androidx.navigation.compose.composable
 import com.snoffee.app.presentation.caffeine.input.CaffeineInputScreen
 import com.snoffee.app.presentation.caffeine.main.CaffeineMainScreen
 import com.snoffee.app.presentation.home.HomeScreen
+import com.snoffee.app.presentation.report.ReportScreen
+import com.snoffee.app.presentation.setting.SettingScreen
+import com.snoffee.app.presentation.sleep.SleepScreen
 
 @Composable
 fun AppNavHost(
@@ -41,15 +44,19 @@ fun AppNavHost(
                 }
             )
         }
+        //수면 화면
+        composable(Screen.Sleep.route) {
+            SleepScreen() // presentation.sleep.SleepScreen
+        }
 
         //리포트 화면
         composable(Screen.Report.route) {
-//            ReportScreen() // presentation.report.ReportScreen
+            ReportScreen() // presentation.report.ReportScreen
         }
 
         //설정 화면
-        composable(Screen.MySetting.route) {
-//            MySettingScreen() // presentation.mySetting.MySettingScreen
+        composable(Screen.Setting.route) {
+            SettingScreen() // presentation.mySetting.SettingScreen
         }
 
         //온보딩

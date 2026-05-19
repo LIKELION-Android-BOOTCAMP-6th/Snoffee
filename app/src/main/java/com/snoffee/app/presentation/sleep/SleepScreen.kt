@@ -19,6 +19,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -27,6 +28,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,9 +48,12 @@ import com.snoffee.app.core.ui.theme.GoodSleep
 import com.snoffee.app.core.ui.theme.SnoffeeBgBase
 import com.snoffee.app.core.ui.theme.SnoffeeDivider
 import com.snoffee.app.core.ui.theme.SnoffeePrimary
+import com.snoffee.app.core.ui.theme.SnoffeePrimaryLight
 import com.snoffee.app.core.ui.theme.SnoffeeSurface
+import com.snoffee.app.core.ui.theme.SnoffeeTextHint
 import com.snoffee.app.core.ui.theme.SnoffeeTextMain
 import com.snoffee.app.core.ui.theme.SnoffeeTextMuted
+import com.snoffee.app.domain.model.SleepData
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
@@ -67,7 +72,11 @@ data class SleepCalendarDay(
 fun SleepScreen(viewModel: SleepViewModel = hiltViewModel()) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
+
+    var editTargetData by remember { mutableStateOf<SleepData?>(null) }
+
     var showSleepDialog by remember { mutableStateOf(false) }
+    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     val selectedScore = uiState.dailyScores[uiState.selectedDate] ?: 0
     val selectedTime = uiState.dailySleepTimes[uiState.selectedDate] ?: "--"
 
@@ -77,6 +86,14 @@ fun SleepScreen(viewModel: SleepViewModel = hiltViewModel()) {
             uiState.selectedDate,
             uiState.dailyScores
         )
+    }
+
+    LaunchedEffect(uiState.isSaveSuccess) {
+        if (uiState.isSaveSuccess) {
+            showSleepDialog = false
+            editTargetData = null
+            viewModel.resetState()
+        }
     }
 
     Scaffold(containerColor = SnoffeeBgBase) { padding ->
@@ -104,13 +121,64 @@ fun SleepScreen(viewModel: SleepViewModel = hiltViewModel()) {
                 fontWeight = FontWeight.Bold,
                 color = SnoffeeTextMain
             )
+
+            // 순수 수면 정보 카드
             SleepInfoCard(
                 time = selectedTime,
                 score = selectedScore,
                 labelPrefix = "기록된"
             )
 
-            // Warning 해결: HorizontalDivider 사용
+            // 날짜에 기록이 있을 때만 하단에 수정 / 삭제 버튼 배치
+            val hasRecord = selectedTime != "--" && selectedScore != 0
+            if (hasRecord) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // [기록 수정] 버튼
+                    TextButton(
+                        onClick = {
+                            val originalData = viewModel.getOriginalSleepData(uiState.selectedDate)
+
+                            if (originalData != null) {
+                                editTargetData = originalData
+                                showSleepDialog = true
+                            }
+                        },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(46.dp)
+                            .border(1.dp, SnoffeePrimary, RoundedCornerShape(12.dp)),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(
+                            "기록 수정",
+                            color = SnoffeePrimary,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 14.sp
+                        )
+                    }
+
+                    // [기록 삭제] 버튼 (경고 의미로 소프트 레드 스타일 부여)
+                    Button(
+                        onClick = { showDeleteConfirmDialog = true },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(46.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFFFFEBEE), // 소프트 핑크/레드
+                            contentColor = Color(0xFFC62828)     // 짙은 레드 텍스트
+                        )
+                    ) {
+                        Text("기록 삭제", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                    }
+                }
+            }
+
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = SnoffeeDivider)
 
             Text(
@@ -126,7 +194,10 @@ fun SleepScreen(viewModel: SleepViewModel = hiltViewModel()) {
             )
 
             Button(
-                onClick = { showSleepDialog = true },
+                onClick = {
+                    editTargetData = null
+                    showSleepDialog = true
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(54.dp),
@@ -137,13 +208,59 @@ fun SleepScreen(viewModel: SleepViewModel = hiltViewModel()) {
             }
         }
     }
-    if (showSleepDialog) {
+    if (showSleepDialog || uiState.isSavingError) {
         SleepDialog(
-            onDismiss = { showSleepDialog = false },
-            onSave = { record ->
-                //viewModel.saveSleepRecord(record)
+            onDismiss = {
                 showSleepDialog = false
-            }
+                editTargetData = null
+                viewModel.resetErrorState()
+            },
+            onSave = { record ->
+                viewModel.saveSleepRecord(record)
+            },
+            isSavingError = uiState.isSavingError,
+            onRetry = {
+                viewModel.retrySave()
+            },
+            initialData = editTargetData
+        )
+    }
+
+    if (showDeleteConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmDialog = false },
+            title = {
+                Text(
+                    text = "수면 기록 삭제",
+                    fontWeight = FontWeight.Bold,
+                    color = SnoffeeTextMain
+                )
+            },
+            text = {
+                Text(
+                    text = "${uiState.selectedDate.format(DateTimeFormatter.ofPattern("M월 d일"))}의 수면 기록을 삭제하시겠습니까?\n삭제된 데이터는 복구할 수 없습니다.",
+                    color = SnoffeeTextMain
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.deleteSleepRecord(uiState.selectedDate)
+                        showDeleteConfirmDialog = false
+                    }
+                ) {
+                    Text("삭제", color = Color.Red, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showDeleteConfirmDialog = false }
+                ) {
+                    Text("취소", color = SnoffeeTextHint)
+                }
+            },
+            shape = RoundedCornerShape(16.dp),
+            containerColor = SnoffeePrimaryLight
         )
     }
 }
@@ -225,7 +342,6 @@ private fun SleepDayCell(
         else -> Color.Transparent
     }
 
-    // Warning 해결: contentColor를 Text의 color에 적용
     val contentColor = when {
         statusColor != Color.Transparent -> Color.White
         day.isSelected -> SnoffeePrimary
@@ -249,15 +365,16 @@ private fun SleepDayCell(
             Text(
                 text = day.date?.dayOfMonth?.toString() ?: "",
                 fontSize = 14.sp,
-                color = contentColor // contentColor 사용
+                color = contentColor
             )
 
             if (day.score != null) {
+                Spacer(modifier = Modifier.height(4.dp))
                 Box(
                     modifier = Modifier
-                        .size(4.dp)
+                        .size(5.dp)
                         .background(
-                            if (day.isSelected) Color.White else statusColor,
+                            if (day.isSelected) Color.White else SnoffeePrimary,
                             CircleShape
                         )
                 )
@@ -265,8 +382,6 @@ private fun SleepDayCell(
         }
     }
 }
-
-// Warning 해결: 사용되지 않는 SleepSummarySection 함수 삭제
 
 @Composable
 private fun LegendItem(color: Color, text: String) {
@@ -279,8 +394,13 @@ private fun LegendItem(color: Color, text: String) {
     }
 }
 
+// ✅ 경고(Warning)의 원인이었던 미사용 변수들을 싹 정리한 순수 카드 컴포넌트
 @Composable
-private fun SleepInfoCard(time: String, score: Int, labelPrefix: String) {
+private fun SleepInfoCard(
+    time: String,
+    score: Int,
+    labelPrefix: String
+) {
     Surface(
         shape = RoundedCornerShape(20.dp),
         color = SnoffeeSurface,
@@ -301,7 +421,12 @@ private fun SleepInfoCard(time: String, score: Int, labelPrefix: String) {
                 .height(40.dp)
                 .background(SnoffeeDivider))
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("${score}점", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = SnoffeeTextMain)
+                Text(
+                    if (score > 0) "${score}점" else "--",
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = SnoffeeTextMain
+                )
                 Text("$labelPrefix 점수", fontSize = 12.sp, color = SnoffeeTextMuted)
             }
         }

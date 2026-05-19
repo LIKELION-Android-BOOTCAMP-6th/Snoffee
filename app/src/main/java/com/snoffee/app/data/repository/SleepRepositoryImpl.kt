@@ -11,6 +11,7 @@ import javax.inject.Inject
 // SamsungHealthDataSource를 통해 삼성헬스 SDK에 접근
 // SleepMapper를 통해 DTO ↔ Domain Model 변환
 class SleepRepositoryImpl @Inject constructor(
+    private val sleepDao: SleepDao,
     private val healthDataSource: SamsungHealthDataSource, // Hilt가 자동 주입
     private val mapper: SleepMapper,                        // Hilt가 자동 주입
     private val localDataSource: SleepLocalDataSource,

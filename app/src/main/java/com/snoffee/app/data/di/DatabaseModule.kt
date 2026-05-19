@@ -5,6 +5,7 @@ import androidx.room.Room
 import com.snoffee.app.data.local.SnoffeeDatabase
 import com.snoffee.app.data.local.dao.CaffeineDao
 import com.snoffee.app.data.local.dao.DrinkDao
+import com.snoffee.app.data.local.dao.SleepDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -25,7 +26,7 @@ object DatabaseModule {
             context,
             SnoffeeDatabase::class.java,
             "snoffee_db"
-        ).fallbackToDestructiveMigration()
+        ).fallbackToDestructiveMigration(dropAllTables = true)
             .build()
     }
 
@@ -39,5 +40,11 @@ object DatabaseModule {
     @Singleton
     fun provideDrinkDao(db: SnoffeeDatabase): DrinkDao {
         return db.drinkDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideSleepDao(database: SnoffeeDatabase): SleepDao {
+        return database.sleepDao() // ⚠️ SnoffeeDatabase 클래스 안에 sleepDao()가 정의되어 있어야 합니다!
     }
 }
