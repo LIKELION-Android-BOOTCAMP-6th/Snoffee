@@ -39,7 +39,7 @@ import java.util.Locale
 @Composable
 fun DailyReportView(uiState: ReportUiState) {
     val displayHours = uiState.todaySleepHours.toString()
-    val displayMinutes = String.format(Locale.US, "%02d", uiState.todaySleepMinutes)
+    val displayMinutes = String.format(Locale.KOREAN, "%02d", uiState.todaySleepMinutes)
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),

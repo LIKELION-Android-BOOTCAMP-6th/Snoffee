@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -27,9 +28,9 @@ import com.snoffee.app.core.ui.theme.SnoffeeError
 import com.snoffee.app.core.ui.theme.SnoffeePrimaryDark
 import com.snoffee.app.core.ui.theme.SnoffeePrimarySubtle
 import com.snoffee.app.core.ui.theme.SnoffeeSurface
-import com.snoffee.app.core.ui.theme.SnoffeeTextHint
 import com.snoffee.app.core.ui.theme.SnoffeeTextMain
 import com.snoffee.app.core.ui.theme.SnoffeeTextMuted
+import com.snoffee.app.core.ui.theme.SnoffeeWarning
 
 @Composable
 fun TrendReportView(uiState: ReportUiState) {
@@ -43,7 +44,7 @@ fun TrendReportView(uiState: ReportUiState) {
         ),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        //전체 기간 통합 수면 평균 카드
+        // 전체 기간 통합 수면 평균 카드
         item {
             Column(
                 modifier = Modifier
@@ -64,7 +65,7 @@ fun TrendReportView(uiState: ReportUiState) {
             }
         }
 
-        //월별 카페인 섭취 추이
+        // 월별 카페인 섭취 추이
         item {
             Column(
                 modifier = Modifier
@@ -73,6 +74,9 @@ fun TrendReportView(uiState: ReportUiState) {
                     .background(SnoffeeSurface)
                     .padding(16.dp)
             ) {
+                // 🛠️ 변수명을 uiState.monthlyCaffeineTrend 로 정확하게 매핑했습니다.
+                val chartDataMap: Map<String, Double> = uiState.monthlyCaffeineTrend
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -84,9 +88,14 @@ fun TrendReportView(uiState: ReportUiState) {
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold
                     )
-                    //최대 섭취량 별도 표시
+
+                    // 최고 실측치 동적 파싱 연동 (람다 식 매개변수 명시로 타입 추론 보장)
+                    val maxEntry = chartDataMap.maxByOrNull { entry -> entry.value }
+                    val peakMonth = maxEntry?.key ?: "-"
+                    val peakAmount = maxEntry?.value?.toInt() ?: 0
+
                     Text(
-                        text = "최고치: 580mg (11월)",
+                        text = "최고치: ${peakAmount}mg ($peakMonth)",
                         color = SnoffeeError,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold
@@ -95,23 +104,60 @@ fun TrendReportView(uiState: ReportUiState) {
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                //과거에서 현재 바 차트 공간
-                Box(
+                // X축 달 순서 정렬 및 최대 한도 구하기 (명확한 타입 제공으로 연산자 에러 방지)
+                val orderedMonths: List<String> = chartDataMap.keys.sortedBy { monthName ->
+                    monthName.replace("월", "").toIntOrNull() ?: 0
+                }
+                val highestCaffeineLimit: Double =
+                    (chartDataMap.values.maxOrNull() ?: 1.0).coerceAtLeast(1.0)
+
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(140.dp),
-                    contentAlignment = Alignment.Center
+                        .height(140.dp)
+                        .padding(horizontal = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.Bottom
                 ) {
-                    Text(
-                        text = "[9월 ~ 2월] 점진적 컬러 빌드업 바 차트 영역",
-                        color = SnoffeeTextHint,
-                        fontSize = 12.sp
-                    )
+                    orderedMonths.forEach { month ->
+                        val caffeineValue: Double = chartDataMap[month] ?: 0.0
+                        val barRatio: Float =
+                            (caffeineValue / highestCaffeineLimit).toFloat().coerceIn(0.05f, 1f)
+
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.width(54.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxWidth(),
+                                contentAlignment = Alignment.BottomCenter
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .width(22.dp)
+                                        .fillMaxHeight(barRatio)
+                                        .background(
+                                            SnoffeeWarning,
+                                            RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp)
+                                        )
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = month,
+                                color = SnoffeeTextMuted,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
                 }
             }
         }
 
-        //수면 점수 변화 및 Best & Worst
+        // 수면 점수 변화 및 Best & Worst 월 매핑 결과
         item {
             Column(
                 modifier = Modifier

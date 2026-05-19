@@ -7,10 +7,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -24,7 +26,6 @@ import androidx.compose.ui.unit.sp
 import com.snoffee.app.core.ui.theme.SnoffeeBgBase
 import com.snoffee.app.core.ui.theme.SnoffeeSuccess
 import com.snoffee.app.core.ui.theme.SnoffeeSurface
-import com.snoffee.app.core.ui.theme.SnoffeeTextHint
 import com.snoffee.app.core.ui.theme.SnoffeeTextMain
 import com.snoffee.app.core.ui.theme.SnoffeeTextMuted
 import com.snoffee.app.core.ui.theme.SnoffeeWarning
@@ -133,7 +134,7 @@ fun MonthlyReportView(uiState: ReportUiState) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 8.dp),
+                        .padding(vertical = 4.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -151,11 +152,11 @@ fun MonthlyReportView(uiState: ReportUiState) {
                     )
                 }
 
-                // 대조 행 — 적게 먹은 날 (테마의 SnoffeeSuccess 컬러 사용)
+                // 대조 행 — 적게 먹은 날
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 8.dp),
+                        .padding(vertical = 4.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -173,21 +174,80 @@ fun MonthlyReportView(uiState: ReportUiState) {
                     )
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(20.dp))
 
-                // 대조 차트
-                Box(
+                // TODO
+                // 대조 수면 데이터 시각화 바 컴포넌트
+                val highSleepValue =
+                    uiState.highCaffeineDaySleepTime.replace("h", "").trim().toDoubleOrNull() ?: 0.0
+                val lowSleepValue =
+                    uiState.lowCaffeineDaySleepTime.replace("h", "").trim().toDoubleOrNull() ?: 0.0
+                val maxSleepCompare = maxOf(highSleepValue, lowSleepValue, 1.0)
+
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(120.dp)
-                        .background(SnoffeeBgBase, RoundedCornerShape(8.dp)),
-                    contentAlignment = Alignment.Center
+                        .height(130.dp)
+                        .background(SnoffeeBgBase, RoundedCornerShape(12.dp))
+                        .padding(horizontal = 24.dp, vertical = 16.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.Bottom
                 ) {
-                    Text(
-                        text = "수면 패턴 변화 대조 그래프 영역",
-                        color = SnoffeeTextHint,
-                        fontSize = 11.sp
-                    )
+                    // 많이 먹은 날 수면 컬럼
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxWidth(),
+                            contentAlignment = Alignment.BottomCenter
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .width(36.dp)
+                                    .fillMaxHeight(
+                                        (highSleepValue / maxSleepCompare).toFloat()
+                                            .coerceIn(0.08f, 1f)
+                                    )
+                                    .background(
+                                        SnoffeeWarning,
+                                        RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp)
+                                    )
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(text = "섭취량 많은 날", color = SnoffeeTextMuted, fontSize = 11.sp)
+                    }
+
+                    // 적게 먹은 날 수면 컬럼
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxWidth(),
+                            contentAlignment = Alignment.BottomCenter
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .width(36.dp)
+                                    .fillMaxHeight(
+                                        (lowSleepValue / maxSleepCompare).toFloat()
+                                            .coerceIn(0.08f, 1f)
+                                    )
+                                    .background(
+                                        SnoffeeSuccess,
+                                        RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp)
+                                    )
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(text = "섭취량 적은 날", color = SnoffeeTextMuted, fontSize = 11.sp)
+                    }
                 }
             }
         }
