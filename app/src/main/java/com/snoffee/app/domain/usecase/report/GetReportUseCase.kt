@@ -7,7 +7,7 @@ import com.snoffee.app.domain.repository.SleepRepository
 import java.util.Calendar
 import javax.inject.Inject
 
-// 주간 카페인-수면 상관관계 리포트 조회 UseCase
+// 카페인-수면 상관관계 리포트 조회 UseCase
 // ReportViewModel에서 호출
 // CaffeineRepository, SleepRepository를 통해 주간 데이터 조회
 class GetReportUseCase @Inject constructor(
@@ -32,44 +32,69 @@ class GetReportUseCase @Inject constructor(
                 startTimeMillis = range.startTimeMillis,
                 endTimeMillis = range.endTimeMillis
             )
-        val caffeineGroupedByDay =
-            caffeineRecords.groupBy { record ->
-                getDayOfWeek(record.consumedAt)
-            }
         val caffeineChartData =
-            caffeineGroupedByDay.mapValues { entry ->
-                entry.value.sumOf {
-                    it.intakeCaffeine
+            caffeineRecords
+                .groupBy { record ->
+                    getDayOfWeek(record.consumedAt)
                 }
-            }
+                .mapValues { entry ->
+                    entry.value.sumOf { record ->
+                        record.intakeCaffeine
+                    }
+                }
         val sleepChartData =
-            sleepData.groupBy { sleep ->
-                getDayOfWeek(sleep.sleepEnd)
-            }.mapValues { entry ->
-                entry.value.sumOf { sleep ->
-                    (sleep.sleepEnd - sleep.sleepStart
-                            ) / HOUR_MILLIS.toDouble()
+            sleepData
+                .groupBy { sleep ->
+                    getDayOfWeek(sleep.sleepEnd)
                 }
-            }
+                .mapValues { entry ->
+                    entry.value.sumOf { sleep ->
+                        (sleep.sleepEnd - sleep.sleepStart) /
+                                HOUR_MILLIS.toDouble()
+                    }
+                }
+        val monthlyCaffeineChartData =
+            caffeineRecords
+                .groupBy { record ->
+                    getMonthLabel(record.consumedAt)
+                }
+                .mapValues { entry ->
+                    entry.value.sumOf { record ->
+                        record.intakeCaffeine
+                    }
+                }
+        val monthlySleepChartData =
+            sleepData
+                .groupBy { sleep ->
+                    getMonthLabel(sleep.sleepEnd)
+                }
+                .mapValues { entry ->
+                    entry.value
+                        .map { sleep ->
+                            (sleep.sleepEnd - sleep.sleepStart) /
+                                    HOUR_MILLIS.toDouble()
+                        }
+                        .average()
+                        .takeIf { !it.isNaN() }
+                        ?: 0.0
+                }
         return ReportResult(
             caffeineRecords = caffeineRecords,
             sleepData = sleepData,
             caffeineChartData = caffeineChartData,
             sleepChartData = sleepChartData,
-            isEmpty = caffeineRecords.isEmpty() &&
-                    sleepData.isEmpty()
+            monthlyCaffeineChartData = monthlyCaffeineChartData,
+            monthlySleepChartData = monthlySleepChartData,
+            isEmpty = caffeineRecords.isEmpty() && sleepData.isEmpty()
         )
     }
-
     private fun getDayOfWeek(
         timeMillis: Long
     ): String {
         val calendar = Calendar.getInstance().apply {
-            timeInMillis = timeMillis
+            this.timeInMillis = timeMillis
         }
-        return when (
-            calendar.get(Calendar.DAY_OF_WEEK)
-        ) {
+        return when (calendar.get(Calendar.DAY_OF_WEEK)) {
             Calendar.MONDAY -> "월"
             Calendar.TUESDAY -> "화"
             Calendar.WEDNESDAY -> "수"
@@ -79,6 +104,15 @@ class GetReportUseCase @Inject constructor(
             Calendar.SUNDAY -> "일"
             else -> ""
         }
+    }
+
+    private fun getMonthLabel(
+        timeMillis: Long
+    ): String {
+        val calendar = Calendar.getInstance().apply {
+            this.timeInMillis = timeMillis
+        }
+        return "${calendar.get(Calendar.MONTH) + 1}월"
     }
     private fun getDateRange(
         period: ReportPeriod,
@@ -154,13 +188,18 @@ class GetReportUseCase @Inject constructor(
             set(Calendar.MINUTE, 0)
             set(Calendar.SECOND, 0)
             set(Calendar.MILLISECOND, 0)
-
+            // 현재 달 포함 최근 3개월
             add(Calendar.MONTH, -2)
         }
         val start = calendar.timeInMillis
         val endCalendar = Calendar.getInstance().apply {
             timeInMillis = baseTimeMillis
             set(Calendar.DAY_OF_MONTH, 1)
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+            // 다음 달 1일
             add(Calendar.MONTH, 1)
         }
         val end = endCalendar.timeInMillis
@@ -177,6 +216,8 @@ class GetReportUseCase @Inject constructor(
         val sleepData: List<SleepData>,
         val caffeineChartData: Map<String, Double>,
         val sleepChartData: Map<String, Double>,
+        val monthlyCaffeineChartData: Map<String, Double>,
+        val monthlySleepChartData: Map<String, Double>,
         val isEmpty: Boolean
     )
     private data class ReportDateRange(
