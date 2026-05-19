@@ -1,17 +1,18 @@
 package com.snoffee.app.presentation.report
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -22,10 +23,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.snoffee.app.core.ui.theme.SnoffeePrimaryDark
 import com.snoffee.app.core.ui.theme.SnoffeeSurface
-import com.snoffee.app.core.ui.theme.SnoffeeTextHint
 import com.snoffee.app.core.ui.theme.SnoffeeTextMain
 import com.snoffee.app.core.ui.theme.SnoffeeTextMuted
+import com.snoffee.app.core.ui.theme.SnoffeeWarning
 
 @Composable
 fun WeeklyReportView(uiState: ReportUiState) {
@@ -121,37 +123,87 @@ fun WeeklyReportView(uiState: ReportUiState) {
                     .background(SnoffeeSurface)
                     .padding(16.dp)
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "수면 및 카페인 분석",
-                        color = SnoffeeTextMain,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(text = "•••", color = SnoffeeTextHint, modifier = Modifier.clickable { })
-                }
+                Text(
+                    text = "수면 및 카페인 분석",
+                    color = SnoffeeTextMain,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold
+                )
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                Box(
+                val days = listOf("월", "화", "수", "목", "금", "토", "일")
+                val maxCaffeine =
+                    (uiState.weeklyCaffeineChartData.values.maxOrNull() ?: 1.0).coerceAtLeast(1.0)
+                val maxSleep =
+                    (uiState.weeklySleepChartData.values.maxOrNull() ?: 1.0).coerceAtLeast(1.0)
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(180.dp),
-                    contentAlignment = Alignment.Center
+                        .height(200.dp)
+                        .padding(horizontal = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Bottom
                 ) {
-                    Text(
-                        text = "요일별 데이터 매핑 완료 (카페인 ${uiState.weeklyCaffeineChartData.size}건 / 수면 ${uiState.weeklySleepChartData.size}건)",
-                        color = SnoffeeTextHint,
-                        fontSize = 12.sp
-                    )
+                    days.forEach { day ->
+                        val caffeineAmount = uiState.weeklyCaffeineChartData[day] ?: 0.0
+                        val sleepAmount = uiState.weeklySleepChartData[day] ?: 0.0
+
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxWidth(),
+                                contentAlignment = Alignment.BottomCenter
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.Bottom,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    // 카페인 막대
+                                    Box(
+                                        modifier = Modifier
+                                            .width(8.dp)
+                                            .fillMaxHeight(
+                                                (caffeineAmount / maxCaffeine).toFloat()
+                                                    .coerceIn(0f, 1f)
+                                            )
+                                            .background(
+                                                SnoffeeWarning,
+                                                RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp)
+                                            )
+                                    )
+                                    // 수면 시간 막대
+                                    Box(
+                                        modifier = Modifier
+                                            .width(8.dp)
+                                            .fillMaxHeight(
+                                                (sleepAmount / maxSleep).toFloat().coerceIn(0f, 1f)
+                                            )
+                                            .background(
+                                                SnoffeePrimaryDark,
+                                                RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp)
+                                            )
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            // X축 요일 표시
+                            Text(
+                                text = day,
+                                color = SnoffeeTextMuted,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
                 }
-
                 Spacer(modifier = Modifier.height(16.dp))
-
             }
         }
     }

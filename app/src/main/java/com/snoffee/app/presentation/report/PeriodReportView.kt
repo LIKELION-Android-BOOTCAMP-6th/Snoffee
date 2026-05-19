@@ -29,6 +29,7 @@ import com.snoffee.app.core.ui.theme.SnoffeeTextMuted
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @Composable
 fun PeriodReportView(
@@ -44,6 +45,7 @@ fun PeriodReportView(
         maxDate: LocalDate? = null,
         onDateSelected: (LocalDate) -> Unit
     ) {
+        Locale.setDefault(Locale.KOREAN)
         val dialog = DatePickerDialog(
             context,
             { _, year, month, dayOfMonth ->
