@@ -4,10 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.snoffee.app.domain.model.SleepData
 import com.snoffee.app.domain.usecase.report.GetReportUseCase
-import com.snoffee.app.domain.usecase.report.GetReportUseCase.ReportPeriod
 import com.snoffee.app.domain.usecase.sleep.SaveSleepDataUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -83,15 +81,134 @@ class ReportViewModel @Inject constructor(
             val zoneId = ZoneId.systemDefault()
             val nowMillis = System.currentTimeMillis()
 
-            val dailyDeferred = async { getReportUseCase(ReportPeriod.DAILY, nowMillis) }
-            val weeklyDeferred = async { getReportUseCase(ReportPeriod.WEEKLY, nowMillis) }
-            val monthlyDeferred = async { getReportUseCase(ReportPeriod.MONTHLY, nowMillis) }
-            val trendDeferred = async { getReportUseCase(ReportPeriod.TREND, nowMillis) }
+            // ─── [테스트용 임시 더미 데이터 세팅 시작] ───
+            // 1. 카페인 및 수면 테스트용 가짜 데이터 리스트 생성 (최근 일주일치 범위 내로 스탬프 역산)
+            val dummyCaffeineRecords = listOf(
+                com.snoffee.app.domain.model.CaffeineRecord(
+                    id = 1,
+                    drinkId = "1",
+                    drinkName = "아메리카노",
+                    brandName = "스타벅스",
+                    intakeSize = 355.0,
+                    intakeCaffeine = 150.0,
+                    consumedAt = nowMillis - (1000L * 60 * 60 * 4)
+                ), // 오늘 4시간 전
+                com.snoffee.app.domain.model.CaffeineRecord(
+                    id = 2,
+                    drinkId = "2",
+                    drinkName = "돌체라떼",
+                    brandName = "스타벅스",
+                    intakeSize = 475.0,
+                    intakeCaffeine = 230.0,
+                    consumedAt = nowMillis - (1000L * 60 * 60 * 2)
+                ),   // 오늘 2시간 전
+                com.snoffee.app.domain.model.CaffeineRecord(
+                    id = 3,
+                    drinkId = "1",
+                    drinkName = "콜드브루",
+                    brandName = "빽다방",
+                    intakeSize = 500.0,
+                    intakeCaffeine = 200.0,
+                    consumedAt = nowMillis - (1000L * 60 * 60 * 24)
+                ),   // 어제
+                com.snoffee.app.domain.model.CaffeineRecord(
+                    id = 4,
+                    drinkId = "1",
+                    drinkName = "에너지드링크",
+                    brandName = "핫식스",
+                    intakeSize = 250.0,
+                    intakeCaffeine = 100.0,
+                    consumedAt = nowMillis - (1000L * 60 * 60 * 24 * 3)
+                ) // 3일 전
+            )
 
-            val dailyResult = dailyDeferred.await()
-            val weeklyResult = weeklyDeferred.await()
-            val monthlyResult = monthlyDeferred.await()
-            val trendResult = trendDeferred.await()
+            val dummySleepData = listOf(
+                SleepData(
+                    id = 1,
+                    date = nowMillis,
+                    sleepStart = nowMillis - (1000L * 60 * 60 * 7),
+                    sleepEnd = nowMillis,
+                    deepSleepRatio = 85,
+                    source = "manual"
+                ), // 오늘 (7시간 수면)
+                SleepData(
+                    id = 2,
+                    date = nowMillis - (1000L * 60 * 60 * 24),
+                    sleepStart = nowMillis - (1000L * 60 * 60 * 32),
+                    sleepEnd = nowMillis - (1000L * 60 * 60 * 24),
+                    deepSleepRatio = 55,
+                    source = "manual"
+                ), // 어제 (8시간 수면)
+                SleepData(
+                    id = 3,
+                    date = nowMillis - (1000L * 60 * 60 * 48),
+                    sleepStart = nowMillis - (1000L * 60 * 60 * 53),
+                    sleepEnd = nowMillis - (1000L * 60 * 60 * 48),
+                    deepSleepRatio = 70,
+                    source = "manual"
+                )  // 2일 전 (5시간 수면)
+            )
+
+            // 차트 렌더링용 가짜 데이터 구조 맵핑 (월~일)
+            val dummyCaffeineChart = mapOf(
+                "월" to 150.0,
+                "화" to 380.0,
+                "수" to 200.0,
+                "목" to 0.0,
+                "금" to 450.0,
+                "토" to 100.0,
+                "일" to 0.0
+            )
+            val dummySleepChart = mapOf(
+                "월" to 7.5,
+                "화" to 5.0,
+                "수" to 8.0,
+                "목" to 6.5,
+                "금" to 4.5,
+                "토" to 9.0,
+                "일" to 7.0
+            )
+
+            // 실제 UseCase 호출 및 비동기 await() 흐름을 차단하고 덤프 리스트 객체로 조립
+            val dailyResult = GetReportUseCase.ReportResult(
+                dummyCaffeineRecords,
+                dummySleepData,
+                dummyCaffeineChart,
+                dummySleepChart,
+                false
+            )
+            val weeklyResult = GetReportUseCase.ReportResult(
+                dummyCaffeineRecords,
+                dummySleepData,
+                dummyCaffeineChart,
+                dummySleepChart,
+                false
+            )
+            val monthlyResult = GetReportUseCase.ReportResult(
+                dummyCaffeineRecords,
+                dummySleepData,
+                dummyCaffeineChart,
+                dummySleepChart,
+                false
+            )
+            val trendResult = GetReportUseCase.ReportResult(
+                dummyCaffeineRecords,
+                dummySleepData,
+                dummyCaffeineChart,
+                dummySleepChart,
+                false
+            )
+            // ─── [테스트용 임시 더미 데이터 세팅 끝] ───
+
+//            val dailyDeferred = async { getReportUseCase(ReportPeriod.DAILY, nowMillis) }
+//            val weeklyDeferred = async { getReportUseCase(ReportPeriod.WEEKLY, nowMillis) }
+//            val monthlyDeferred = async { getReportUseCase(ReportPeriod.MONTHLY, nowMillis) }
+//            val trendDeferred = async { getReportUseCase(ReportPeriod.TREND, nowMillis) }
+
+//            val dailyResult = dailyDeferred.await()
+//            val weeklyResult = weeklyDeferred.await()
+//            val monthlyResult = monthlyDeferred.await()
+//            val trendResult = trendDeferred.await()
 
             if (dailyResult.isEmpty && weeklyResult.isEmpty && monthlyResult.isEmpty && trendResult.isEmpty) {
                 _uiState.update { it.copy(isDbEmpty = true, isLoading = false) }
@@ -240,13 +357,13 @@ class ReportViewModel @Inject constructor(
                     monthlyAvgSleepTime = monthlyAvgSleepStr,
                     totalAvgSleepTime = totalAvgSleepStr,
                     bestMonthLabel = bestMonth?.format(
-                        java.time.format.DateTimeFormatter.ofPattern(
+                        DateTimeFormatter.ofPattern(
                             "M월"
                         )
                     ) ?: "데이터 없음",
                     bestMonthScore = if (maxScore != -1) maxScore else 0,
                     worstMonthLabel = worstMonth?.format(
-                        java.time.format.DateTimeFormatter.ofPattern(
+                        DateTimeFormatter.ofPattern(
                             "M월"
                         )
                     ) ?: "데이터 없음",
