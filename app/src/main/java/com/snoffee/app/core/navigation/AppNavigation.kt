@@ -17,5 +17,5 @@ sealed class Screen(val route: String) {
     object Report : Screen("report")
 
     // 마이 설정
-    object MySetting : Screen("mySetting")
+    object Setting : Screen("setting")
 }
