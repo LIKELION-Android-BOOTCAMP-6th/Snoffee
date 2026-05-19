@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Assessment
+import androidx.compose.material3.Icon // ◀ 중복 한정자 제거를 위해 단독 임포트 추가
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -30,7 +31,9 @@ import com.snoffee.app.core.ui.theme.SnoffeeTextHint
 import com.snoffee.app.core.ui.theme.SnoffeeTextMain
 
 @Composable
-fun ReportEmptyView() {
+fun ReportEmptyView(
+    onRecordClick: () -> Unit
+) {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -41,14 +44,13 @@ fun ReportEmptyView() {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // 중앙 원형 차트 플레이스홀더 그래픽 영역
             Box(
                 modifier = Modifier
                     .size(180.dp)
                     .background(SnoffeeSurfaceOverlay, shape = RoundedCornerShape(90.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                androidx.compose.material3.Icon(
+                Icon(
                     imageVector = Icons.Outlined.Assessment,
                     contentDescription = "리포트 플레이스홀더",
                     modifier = Modifier.size(48.dp),
@@ -85,7 +87,7 @@ fun ReportEmptyView() {
                     .clip(RoundedCornerShape(12.dp))
                     .background(SnoffeePrimaryDark)
                     .clickable {
-                        /* TODO: 수면 기록 다이얼로그(SleepDialog) 혹은 입력 화면 뷰 트리거 */
+                        onRecordClick()
                     },
                 contentAlignment = Alignment.Center
             ) {

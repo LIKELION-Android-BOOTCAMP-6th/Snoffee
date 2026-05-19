@@ -26,36 +26,41 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.snoffee.app.core.ui.component.SnoffeeAppBar
 import com.snoffee.app.core.ui.theme.SnoffeeBgBase
 import com.snoffee.app.core.ui.theme.SnoffeePrimary
 import com.snoffee.app.core.ui.theme.SnoffeeSurface
 import com.snoffee.app.core.ui.theme.SnoffeeTextMuted
+import com.snoffee.app.presentation.sleep.SleepDialog
 
 @Composable
 fun ReportScreen(viewModel: ReportViewModel = hiltViewModel()) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    //기본 탭 = 기간
+    val isSavingError by viewModel.isSavingError.collectAsStateWithLifecycle()
+    val isSaveSuccess by viewModel.isSaveSuccess.collectAsStateWithLifecycle()
+
     var selectedTab by remember { mutableStateOf("기간") }
     val tabs = listOf("기간", "일간", "주간", "월간", "추이")
+
+    var showSleepDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.loadReportData()
     }
-
-    Scaffold(
-        topBar = {
-            SnoffeeAppBar(title = "리포트")
+    LaunchedEffect(isSaveSuccess) {
+        if (isSaveSuccess) {
+            showSleepDialog = false
+            viewModel.resetState()
         }
-    ) { innerPadding ->
+    }
+
+    Scaffold { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .background(SnoffeeBgBase)
                 .padding(innerPadding)
         ) {
-            // ── 상단 필터 ──
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -82,19 +87,23 @@ fun ReportScreen(viewModel: ReportViewModel = hiltViewModel()) {
                     }
                 }
             }
-
-            // UI State 바인딩 연동
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .weight(1f)
             ) {
                 if (uiState.isDbEmpty) {
-                    ReportEmptyView()
+                    ReportEmptyView(
+                        onRecordClick = { showSleepDialog = true }
+                    )
                 } else {
-                    // 기록이 하나라도 존재할 때만 사용자가 선택한 탭별 분석 화면을 정상 노출합니다.
                     when (selectedTab) {
-                        "기간" -> DailyReportView(uiState = uiState) // 기간 탭 기본 화면으로 오늘 요약 대용 매핑
+                        "기간" -> PeriodReportView(
+                            uiState = uiState,
+                            onDateRangeChanged = { start, end ->
+                                viewModel.updatePeriodRange(start, end)
+                            }
+                        )
                         "일간" -> DailyReportView(uiState = uiState)
                         "주간" -> WeeklyReportView(uiState = uiState)
                         "월간" -> MonthlyReportView(uiState = uiState)
@@ -103,5 +112,22 @@ fun ReportScreen(viewModel: ReportViewModel = hiltViewModel()) {
                 }
             }
         }
+    }
+
+    if (showSleepDialog || isSavingError) {
+        SleepDialog(
+            onDismiss = {
+                showSleepDialog = false
+                viewModel.resetErrorState()
+            },
+            onSave = { record ->
+                viewModel.saveSleepRecord(record)
+            },
+            isSavingError = isSavingError,
+            onRetry = {
+                viewModel.retrySave()
+            },
+            initialData = null
+        )
     }
 }

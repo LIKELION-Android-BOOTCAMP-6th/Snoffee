@@ -31,11 +31,15 @@ import com.snoffee.app.core.ui.theme.SnoffeeTextHint
 import com.snoffee.app.core.ui.theme.SnoffeeTextMain
 import com.snoffee.app.core.ui.theme.SnoffeeTextMuted
 import com.snoffee.app.core.ui.theme.SnoffeeWarning
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @Composable
 fun DailyReportView(uiState: ReportUiState) {
     val displayHours = uiState.todaySleepHours.toString()
-    val displayMinutes = String.format(java.util.Locale.US, "%02d", uiState.todaySleepMinutes)
+    val displayMinutes = String.format(Locale.US, "%02d", uiState.todaySleepMinutes)
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -47,7 +51,7 @@ fun DailyReportView(uiState: ReportUiState) {
         ),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        //오늘 요약 대시보드 카드 (2열 가로 배치)
+        // 오늘 요약 대시보드 카드 (2열 가로 배치)
         item {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -70,7 +74,7 @@ fun DailyReportView(uiState: ReportUiState) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(verticalAlignment = Alignment.Bottom) {
                         Text(
-                            text = "350",
+                            text = uiState.todayTotalCaffeine.toString(),
                             color = SnoffeeTextMain,
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold
@@ -113,7 +117,7 @@ fun DailyReportView(uiState: ReportUiState) {
             }
         }
 
-        //카페인 기록 타임라인 리스트 카드
+        // 카페인 기록 타임라인 리스트 카드
         item {
             Column(
                 modifier = Modifier
@@ -131,55 +135,43 @@ fun DailyReportView(uiState: ReportUiState) {
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // 오늘 자 기록 더미 리스트
-                DailyRecordItem(
-                    time = "오전 08:30",
-                    title = "아메리카노 1잔",
-                    value = "150 mg",
-                    typeColor = SnoffeePrimary
-                )
-                DailyRecordItem(
-                    time = "오후 01:45",
-                    title = "돌체 라떼 1잔",
-                    value = "200 mg",
-                    typeColor = SnoffeeWarning // 카페인 주의 컬러
-                )
-                DailyRecordItem(
-                    time = "오후 11:30",
-                    title = "수면 기록 시작",
-                    value = "수면 진입",
-                    typeColor = SnoffeeInfo
-                )
-            }
-        }
-        item {
-            Column( /* ... */) {
-                Text(
-                    text = "오늘의 기록",
-                    color = SnoffeeTextMain,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-                DailyRecordItem(
-                    time = "오전 08:30",
-                    title = "아메리카노 1잔",
-                    value = "150 mg",
-                    typeColor = SnoffeePrimary
-                )
-                DailyRecordItem(
-                    time = "오후 01:45",
-                    title = "돌체 라떼 1잔",
-                    value = "200 mg",
-                    typeColor = SnoffeeWarning
-                )
+                // 카페인 및 수면 기록 타임라인 분기
+                if (uiState.todayCaffeineRecords.isEmpty() && !uiState.hasTodayRecord) {
+                    Text(
+                        text = "오늘 등록된 기록이 없습니다.",
+                        color = SnoffeeTextHint,
+                        fontSize = 13.sp,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                } else {
+                    //카페인 기록 리스트
+                    uiState.todayCaffeineRecords.forEach { record ->
+                        val formattedTime = runCatching {
+                            Instant.ofEpochMilli(record.consumedAt)
+                                .atZone(ZoneId.systemDefault())
+                                .toLocalTime()
+                                .format(DateTimeFormatter.ofPattern("a hh:mm", Locale.KOREAN))
+                        }.getOrDefault("시간 정보 없음")
 
-                DailyRecordItem(
-                    time = uiState.todaySleepStart,
-                    title = "수면 기록 시작",
-                    value = if (uiState.hasTodayRecord) "수면 진입" else "기록 없음",
-                    typeColor = SnoffeeInfo
-                )
+                        // 고카페인(150mg 이상)일 경우 경고 컬러 트리거
+                        val isHighCaffeine = record.intakeCaffeine >= 150.0
+
+                        DailyRecordItem(
+                            time = formattedTime,
+                            title = if (record.brandName.isNotEmpty()) "[${record.brandName}] ${record.drinkName}" else record.drinkName, // ◀ [수정] record.drinkName 반영 및 브랜드명 결합
+                            value = "${record.intakeCaffeine.toInt()} mg",
+                            typeColor = if (isHighCaffeine) SnoffeeWarning else SnoffeePrimary
+                        )
+                    }
+
+                    //수면
+                    DailyRecordItem(
+                        time = uiState.todaySleepStart,
+                        title = "수면 기록 시작",
+                        value = if (uiState.hasTodayRecord) "수면 진입" else "기록 없음",
+                        typeColor = SnoffeeInfo
+                    )
+                }
             }
         }
     }
@@ -224,7 +216,7 @@ private fun DailyRecordItem(
             }
         }
 
-        //수치 데이터 영역
+        // 수치 데이터 영역
         Text(
             text = value,
             color = SnoffeeTextMuted,
