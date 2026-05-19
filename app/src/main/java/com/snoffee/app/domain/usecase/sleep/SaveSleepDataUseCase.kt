@@ -10,8 +10,8 @@ import javax.inject.Inject
 class SaveSleepDataUseCase @Inject constructor(
     private val repository: SleepRepository  // Hilt가 자동 주입
 ) {
-    suspend operator fun invoke(sleepData: SleepData) {
+    suspend operator fun invoke(sleepData: SleepData): Result<Unit> {
         // TODO: 유효성 검사 후 저장
-        repository.saveSleepData(sleepData)
+        return repository.saveSleepData(sleepData)
     }
 }
