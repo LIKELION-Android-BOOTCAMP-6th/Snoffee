@@ -9,6 +9,7 @@ import com.snoffee.app.presentation.caffeine.input.CaffeineInputScreen
 import com.snoffee.app.presentation.caffeine.main.CaffeineMainScreen
 import com.snoffee.app.presentation.home.HomeScreen
 import com.snoffee.app.presentation.report.ReportScreen
+import com.snoffee.app.presentation.sleep.SleepScreen
 
 @Composable
 fun AppNavHost(
@@ -41,6 +42,10 @@ fun AppNavHost(
                     // TODO: 직접 등록 화면 추가 시 연결
                 }
             )
+        }
+        //수면 화면
+        composable(Screen.Sleep.route) {
+            SleepScreen() // presentation.sleep.SleepScreen
         }
 
         //리포트 화면
