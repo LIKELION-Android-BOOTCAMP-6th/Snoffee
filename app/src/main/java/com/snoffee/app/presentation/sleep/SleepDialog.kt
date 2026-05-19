@@ -113,6 +113,8 @@ fun SleepDialog(
     var showConfirmDialog by remember { mutableStateOf(false) }
     var tempRecord by remember { mutableStateOf<SleepData?>(null) }
 
+    var showTimeValidationError by remember { mutableStateOf(false) }
+
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             shape = RoundedCornerShape(28.dp),
@@ -233,6 +235,13 @@ fun SleepDialog(
                             val dateTimestamp =
                                 selectedDate.atStartOfDay(zoneId).toInstant().toEpochMilli()
 
+                            val totalSleepMillis = endTimestamp - startTimestamp
+                            val totalHours = totalSleepMillis / (1000L * 60 * 60)
+                            if (totalHours >= 16) {
+                                showTimeValidationError = true
+                                return@Button
+                            }
+
                             val convertedScore = when (satisfactionIdx) {
                                 4 -> 95  // 😄
                                 3 -> 80  // 🙂
@@ -264,6 +273,22 @@ fun SleepDialog(
                             if (initialData != null) "수정 완료" else "저장하기",
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp
+                        )
+                    }
+
+                    //수면 입력 시간 예외 팝업
+                    if (showTimeValidationError) {
+                        AlertDialog(
+                            onDismissRequest = { showTimeValidationError = false },
+                            title = { Text("시간 설정 확인", fontWeight = FontWeight.Bold) },
+                            text = { Text("입력된 총 수면 시간이 16시간 이상입니다.\n오전/오후(AM/PM) 설정을 다시 확인해 주세요.") },
+                            confirmButton = {
+                                TextButton(onClick = { showTimeValidationError = false }) {
+                                    Text("확인", color = SnoffeePrimary)
+                                }
+                            },
+                            shape = RoundedCornerShape(16.dp),
+                            containerColor = SnoffeePrimaryLight
                         )
                     }
 
