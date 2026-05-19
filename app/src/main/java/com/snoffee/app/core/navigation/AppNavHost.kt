@@ -9,6 +9,7 @@ import com.snoffee.app.presentation.caffeine.input.CaffeineInputScreen
 import com.snoffee.app.presentation.caffeine.main.CaffeineMainScreen
 import com.snoffee.app.presentation.home.HomeScreen
 import com.snoffee.app.presentation.report.ReportScreen
+import com.snoffee.app.presentation.setting.SettingScreen
 import com.snoffee.app.presentation.sleep.SleepScreen
 
 @Composable
@@ -54,8 +55,8 @@ fun AppNavHost(
         }
 
         //설정 화면
-        composable(Screen.MySetting.route) {
-//            MySettingScreen() // presentation.mySetting.MySettingScreen
+        composable(Screen.Setting.route) {
+            SettingScreen() // presentation.mySetting.SettingScreen
         }
 
         //온보딩

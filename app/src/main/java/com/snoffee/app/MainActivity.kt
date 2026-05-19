@@ -34,7 +34,7 @@ class MainActivity : ComponentActivity() {
                     Screen.Caffeine.route -> "카페인 리포트"
                     Screen.Sleep.route -> "수면 리포트"
                     Screen.Report.route -> "리포트"
-                    Screen.MySetting.route -> "설정"
+                    Screen.Setting.route -> "설정"
                     else -> "Snoffee"
                 }
 

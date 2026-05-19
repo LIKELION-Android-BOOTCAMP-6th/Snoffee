@@ -48,7 +48,7 @@ fun SnoffeeBottomBar(navController: NavController) {
             R.drawable.ic_main_bottombar_report
         ),
         Triple(
-            Screen.MySetting.route,
+            Screen.Setting.route,
             stringResource(R.string.main_tabBar_settingTitle),
             R.drawable.ic_main_bottombar_setting
         )
