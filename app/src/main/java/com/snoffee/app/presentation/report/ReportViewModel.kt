@@ -168,35 +168,48 @@ class ReportViewModel @Inject constructor(
                 "토" to 9.0,
                 "일" to 7.0
             )
+            val dummyMonthlyCaffeineChart = dummyCaffeineChart
+            val dummyMonthlySleepChart = dummySleepChart
 
             // 실제 UseCase 호출 및 비동기 await() 흐름을 차단하고 덤프 리스트 객체로 조립
             val dailyResult = GetReportUseCase.ReportResult(
-                dummyCaffeineRecords,
-                dummySleepData,
-                dummyCaffeineChart,
-                dummySleepChart,
-                false
+                caffeineRecords = dummyCaffeineRecords,
+                sleepData = dummySleepData,
+                caffeineChartData = dummyCaffeineChart,
+                sleepChartData = dummySleepChart,
+                monthlyCaffeineChartData = dummyMonthlyCaffeineChart,
+                monthlySleepChartData = dummyMonthlySleepChart,
+                isEmpty = false
             )
+
             val weeklyResult = GetReportUseCase.ReportResult(
-                dummyCaffeineRecords,
-                dummySleepData,
-                dummyCaffeineChart,
-                dummySleepChart,
-                false
+                caffeineRecords = dummyCaffeineRecords,
+                sleepData = dummySleepData,
+                caffeineChartData = dummyCaffeineChart,
+                sleepChartData = dummySleepChart,
+                monthlyCaffeineChartData = dummyMonthlyCaffeineChart,
+                monthlySleepChartData = dummyMonthlySleepChart,
+                isEmpty = false
             )
+
             val monthlyResult = GetReportUseCase.ReportResult(
-                dummyCaffeineRecords,
-                dummySleepData,
-                dummyCaffeineChart,
-                dummySleepChart,
-                false
+                caffeineRecords = dummyCaffeineRecords,
+                sleepData = dummySleepData,
+                caffeineChartData = dummyCaffeineChart,
+                sleepChartData = dummySleepChart,
+                monthlyCaffeineChartData = dummyMonthlyCaffeineChart,
+                monthlySleepChartData = dummyMonthlySleepChart,
+                isEmpty = false
             )
+
             val trendResult = GetReportUseCase.ReportResult(
-                dummyCaffeineRecords,
-                dummySleepData,
-                dummyCaffeineChart,
-                dummySleepChart,
-                false
+                caffeineRecords = dummyCaffeineRecords,
+                sleepData = dummySleepData,
+                caffeineChartData = dummyCaffeineChart,
+                sleepChartData = dummySleepChart,
+                monthlyCaffeineChartData = dummyMonthlyCaffeineChart,
+                monthlySleepChartData = dummyMonthlySleepChart,
+                isEmpty = false
             )
             // ─── [테스트용 임시 더미 데이터 세팅 끝] ───
 
