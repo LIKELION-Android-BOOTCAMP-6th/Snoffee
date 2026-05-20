@@ -1,6 +1,7 @@
 package com.snoffee.app.data.datasource.remote
 
 import android.util.Log
+import com.google.firebase.FirebaseApp
 import com.google.firebase.firestore.FirebaseFirestore
 import com.snoffee.app.data.model.DrinkDto
 import kotlinx.coroutines.tasks.await
@@ -16,26 +17,26 @@ class DrinkRemoteDataSourceImpl @Inject constructor(
 
     companion object {
         private const val TAG = "DrinkRemoteDataSource"
+        private const val DATABASE = "drink"            //database 이름
         private const val COLLECTION = "drinks"         // Firestore 컬렉션 이름
     }
 
     override suspend fun fetchDrinkList(): List<DrinkDto> {
         return try {
-            // Firestore drinks 컬렉션 전체 문서 가져오기
-            val snapshot = firestore.collection(COLLECTION).get().await()
+            // "drink" 데이터베이스 연결
+            val db = FirebaseFirestore.getInstance(FirebaseApp.getInstance(), DATABASE)
 
-            // 각 문서를 DrinkDto로 변환
-            val resultList: List<DrinkDto> = snapshot.documents.mapNotNull { doc ->
-                val dtoWithoutId = doc.toObject(DrinkDto::class.java)
-                dtoWithoutId?.also { it.foodId = doc.id }
+            // 발견된 경로 'drinks' 사용
+            val snapshot = db.collection(COLLECTION).get().await()
+
+            if (snapshot.isEmpty) return emptyList()
+
+            return snapshot.documents.map { doc ->
+                doc.toObject(DrinkDto::class.java)
+                    ?.apply { foodId = doc.id } ?: DrinkDto()
             }
-
-            Log.d(TAG, "Firestore 데이터 개수: ${resultList.size}")
-            resultList
-
         } catch (e: Exception) {
-            // 에러 발생 시 빈 리스트 반환
-            Log.e(TAG, "Firestore Fetch Error: ${e.message}", e)
+            Log.e("DEBUG", "에러: ${e.message}")
             emptyList()
         }
     }

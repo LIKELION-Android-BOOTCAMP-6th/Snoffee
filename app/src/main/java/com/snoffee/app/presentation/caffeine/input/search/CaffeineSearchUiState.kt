@@ -8,9 +8,12 @@ data class CaffeineSearchUiState(
     val searchResults: List<DrinkItem> = emptyList(),
     val selectedDrink: DrinkItem? = null,
     val selectedTime: LocalTime = LocalTime.now(),
+    val isLastPage: Boolean = false,
     val isLoading: Boolean = false,
     val error: String? = null,
     val isSaved: Boolean = false,
+    val isPagingLoading: Boolean = false,
+    val showErrorToast: Boolean = false
 ) {
     val isRecordEnabled: Boolean
         get() = selectedDrink != null && !isLoading
