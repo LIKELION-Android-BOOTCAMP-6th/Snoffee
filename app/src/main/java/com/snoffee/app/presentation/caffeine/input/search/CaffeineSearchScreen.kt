@@ -1,4 +1,4 @@
-package com.snoffee.app.presentation.caffeine.input
+package com.snoffee.app.presentation.caffeine.input.search
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
@@ -35,6 +35,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -51,8 +52,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.snoffee.app.R
 import com.snoffee.app.core.ui.theme.SnoffeeTheme
+import com.snoffee.app.core.util.Utils.toTodayEpochMilli
+import com.snoffee.app.domain.model.CaffeineRecord
 import com.snoffee.app.domain.model.DrinkItem
 import com.snoffee.app.presentation.caffeine.component.DrinkListItem
 import com.snoffee.app.presentation.caffeine.component.SearchBar
@@ -117,13 +122,20 @@ val previewDrinkList = listOf(
 // 카페인 추가 검색 화면
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CaffeineInputScreen(
+fun CaffeineSearchScreen(
     onBack: () -> Unit,
-    onNavigateToDirectInput: () -> Unit
+    onConfirmSuccess: () -> Unit,
+    onNavigateToDirectInput: () -> Unit,
+    viewModel: CaffeineSearchViewModel = hiltViewModel()
 ) {
     var query by remember { mutableStateOf("") }
     val hasQuery = query.isNotBlank()
     var selectedTime by remember { mutableStateOf(LocalTime.now()) }
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    LaunchedEffect(uiState.isSaved) {
+        if (uiState.isSaved) onConfirmSuccess()
+    }
 
     val colorScheme = MaterialTheme.colorScheme
     val extColors = SnoffeeTheme.colors
@@ -168,10 +180,23 @@ fun CaffeineInputScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // 기록하기 버튼 (로직 미연결 — 항상 비활성)
                     Button(
-                        onClick = { /* TODO: A-4-x 기록 로직 연결 예정 */ },
-                        enabled = false,    // 쿼리가 있을 때만 활성화 등 조건 추가
+                        onClick = {
+                            uiState.selectedDrink?.let { drink ->
+                                viewModel.saveCaffeineRecord(
+                                    CaffeineRecord(
+                                        id = 0,
+                                        drinkId = drink.foodId,
+                                        drinkName = drink.name,
+                                        brandName = drink.brand,
+                                        intakeSize = drink.totalSize,
+                                        intakeCaffeine = drink.totalCaffeine,
+                                        consumedAt = selectedTime.toTodayEpochMilli()
+                                    )
+                                )
+                            }
+                        },
+                        enabled = uiState.isRecordEnabled,    // 쿼리가 있을 때만 활성화 등 조건 추가
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(bottom = 12.dp)
@@ -217,7 +242,7 @@ fun CaffeineInputScreen(
             Spacer(modifier = Modifier.height(12.dp))
 
             if (!hasQuery) {
-                EmptySearchState()
+                EmptySearchState(viewModel, selectedTime, onConfirmSuccess)
             } else {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -237,20 +262,26 @@ fun CaffeineInputScreen(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 // 직접 등록하기 배너
-                DirectRegisterBanner(onClick = onNavigateToDirectInput)
+                DirectRegisterBanner(
+                    viewModel = viewModel,
+                    selectedTime = selectedTime,
+                    onConfirmSuccess = onConfirmSuccess,
+                    onClick = onNavigateToDirectInput
+                )
 
                 Spacer(modifier = Modifier.height(12.dp))
 
                 // 음료 리스트 영역
                 LazyColumn(
-                    modifier = Modifier.weight(1f), // 남은 공간을 차지하게 하여 스크롤 가능하게 함
+                    modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
-                    contentPadding = PaddingValues(bottom = 16.dp) // 리스트 끝 패딩
+                    contentPadding = PaddingValues(bottom = 16.dp)
                 ) {
                     items(previewDrinkList) { drink ->
                         DrinkListItem(
                             drink = drink,
-                            onClick = { /* 음료 선택 로직 */ }
+                            isSelected = uiState.selectedDrink?.foodId == drink.foodId,
+                            onClick = { viewModel.onDrinkSelected(drink) }
                         )
                     }
                 }
@@ -262,7 +293,11 @@ fun CaffeineInputScreen(
 // Empty 상태 UI
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun EmptySearchState() {
+private fun EmptySearchState(
+    viewModel: CaffeineSearchViewModel,
+    selectedTime: LocalTime,
+    onConfirmSuccess: () -> Unit,
+) {
     val colorScheme = MaterialTheme.colorScheme
     val extColors = SnoffeeTheme.colors
     var showDialog by remember { mutableStateOf(false) }                    // 다이얼로그 표시 여부
@@ -328,7 +363,20 @@ private fun EmptySearchState() {
                         CaffeineInputDialog(
                             onDismiss = { showDialog = false },
                             onConfirm = { record ->
+                                // 다이얼로그 직접 입력
+                                viewModel.saveCaffeineRecord(
+                                    CaffeineRecord(
+                                        id = 0,
+                                        drinkId = "DIRECT_${System.currentTimeMillis()}",
+                                        drinkName = record.drinkName,
+                                        brandName = "직접 입력",
+                                        intakeSize = 0.0,
+                                        intakeCaffeine = record.intakeSize,
+                                        consumedAt = selectedTime.toTodayEpochMilli()
+                                    )
+                                )
                                 showDialog = false
+                                onConfirmSuccess()
                             }
                         )
                     }
@@ -347,7 +395,12 @@ private fun EmptySearchState() {
 
 // 직접 등록하기 배너 (검색 결과 상단)
 @Composable
-private fun DirectRegisterBanner(onClick: () -> Unit) { // onClick은 기존 유지
+private fun DirectRegisterBanner(
+    viewModel: CaffeineSearchViewModel,
+    selectedTime: LocalTime,
+    onConfirmSuccess: () -> Unit,
+    onClick: () -> Unit
+) { // onClick은 기존 유지
     val colorScheme = MaterialTheme.colorScheme
     val extColors = SnoffeeTheme.colors
 
@@ -403,7 +456,19 @@ private fun DirectRegisterBanner(onClick: () -> Unit) { // onClick은 기존 유
                 CaffeineInputDialog(
                     onDismiss = { showDialog = false },
                     onConfirm = { record ->
+                        viewModel.saveCaffeineRecord(
+                            CaffeineRecord(
+                                id = 0,
+                                drinkId = "DIRECT_${System.currentTimeMillis()}",
+                                drinkName = record.drinkName,
+                                brandName = "직접 입력",
+                                intakeSize = 0.0,
+                                intakeCaffeine = record.intakeSize,
+                                consumedAt = selectedTime.toTodayEpochMilli()
+                            )
+                        )
                         showDialog = false
+                        onConfirmSuccess()  // 추가
                     }
                 )
             }

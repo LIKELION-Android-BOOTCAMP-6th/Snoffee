@@ -41,4 +41,5 @@
     <string name="caffeine_drink_input_dialog_drink_name_hint">음료 이름을 입력하세요.</string>
     <string name="caffeine_drink_input_dialog_drink_caffeine_amount_subtitle">카페인 함량</string>
     <string name="caffeine_drink_input_dialog_drink_save">기록하기</string>
+    <string name="caffeine_drink_input_dialog_drink_amount_subtitle">음료 용량</string>
 </resources>
