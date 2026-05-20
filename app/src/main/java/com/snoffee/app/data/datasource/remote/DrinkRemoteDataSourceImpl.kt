@@ -1,40 +1,42 @@
 package com.snoffee.app.data.datasource.remote
 
-import com.google.firebase.database.FirebaseDatabase
+import android.util.Log
+import com.google.firebase.firestore.FirebaseFirestore
 import com.snoffee.app.data.model.DrinkDto
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
 // DrinkRemoteDataSource 구현체
-// Firebase에서 음료 목록 GET 구현
+// Firestore drinks 컬렉션 전체 다운로드 구현
+// 앱 첫 실행 시 1회만 호출 → Room 캐싱 후 이후 검색은 Room에서 처리
+// FirebaseDatabase 사용하던거를 Firestore로 변경
 class DrinkRemoteDataSourceImpl @Inject constructor(
-    private val database: FirebaseDatabase
-) : DrinkRemoteDataSource{
+    private val firestore: FirebaseFirestore
+) : DrinkRemoteDataSource {
+
+    companion object {
+        private const val TAG = "DrinkRemoteDataSource"
+        private const val COLLECTION = "drinks"         // Firestore 컬렉션 이름
+    }
+
     override suspend fun fetchDrinkList(): List<DrinkDto> {
         return try {
-            // Firebase의 "Drink" 노드 참조
-            val snapshot = database.getReference("Drink").get().await()
+            // Firestore drinks 컬렉션 전체 문서 가져오기
+            val snapshot = firestore.collection(COLLECTION).get().await()
 
-            // 데이터 스냅샷을 DrinkDto 리스트로 변환
-            val resultList: List<DrinkDto> = snapshot.children.mapNotNull { child ->
-                val dtoWithoutId = child.getValue(DrinkDto::class.java)
-
-                // 블록의 마지막은 반드시 '반환할 객체'여야 합니다.
-                dtoWithoutId?.copy(foodId = child.key ?: "")
+            // 각 문서를 DrinkDto로 변환
+            val resultList: List<DrinkDto> = snapshot.documents.mapNotNull { doc ->
+                val dtoWithoutId = doc.toObject(DrinkDto::class.java)
+                dtoWithoutId?.also { it.foodId = doc.id }
             }
-            android.util.Log.d("Snoffee_Debug", "Firebase 데이터 개수: ${resultList.size}")
 
-            // 3. 최종적으로 리스트를 반환합니다.
+            Log.d(TAG, "Firestore 데이터 개수: ${resultList.size}")
             resultList
 
         } catch (e: Exception) {
-            // 에러 발생 시 빈 리스트 반환 (로그를 찍어두면 디버깅에 좋습니다)
-            emptyLog("Firebase Fetch Error: ${e.message}")
+            // 에러 발생 시 빈 리스트 반환
+            Log.e(TAG, "Firestore Fetch Error: ${e.message}", e)
             emptyList()
         }
-    }
-
-    private fun emptyLog(message: String) {
-        android.util.Log.e("DrinkRemoteDataSource", message)
     }
 }
