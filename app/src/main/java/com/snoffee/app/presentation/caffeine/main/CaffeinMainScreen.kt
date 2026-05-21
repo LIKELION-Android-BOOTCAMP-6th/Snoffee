@@ -20,9 +20,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -32,10 +35,13 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -123,6 +129,7 @@ fun CaffeineMainScreen(
     onRecordClick: () -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    var pendingDeleteRecordId by remember { mutableStateOf<Long?>(null) }
 
     val calendarGrid = remember(uiState.currentYearMonth, uiState.selectedDate) {
         buildCalendarGrid(
@@ -143,7 +150,45 @@ fun CaffeineMainScreen(
             viewModel.onErrorDismiss()
         }
     }
-
+    pendingDeleteRecordId?.let { recordId ->
+        AlertDialog(
+            onDismissRequest = { pendingDeleteRecordId = null },
+            title = {
+                Text(
+                    text = "기록 삭제",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp
+                )
+            },
+            text = {
+                Text(
+                    text = "해당 카페인 섭취 기록을 정말 삭제하시겠습니까?",
+                    fontSize = 15.sp
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.deleteRecord(recordId)
+                        pendingDeleteRecordId = null
+                    }
+                ) {
+                    Text(
+                        text = "삭제",
+                        color = MaterialTheme.colorScheme.error,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingDeleteRecordId = null }) {
+                    Text(text = "취소", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            },
+            shape = RoundedCornerShape(16.dp),
+            containerColor = MaterialTheme.colorScheme.surface
+        )
+    }
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         snackbarHost = { SnackbarHost(hostState = snackBarHostState) },
@@ -194,7 +239,8 @@ fun CaffeineMainScreen(
 
                     ActivityLogSection(
                         records = uiState.todayRecords,
-                        isLoading = false,
+                        onEditClick = { record -> /* TODO: 수정 화면 이동 등 구현 */ },
+                        onDeleteClick = { recordId -> pendingDeleteRecordId = recordId }
                     )
 
                     Button(
@@ -546,7 +592,8 @@ private fun TodaySummarySection(
 @Composable
 private fun ActivityLogSection(
     records: List<CaffeineRecord>,
-    isLoading: Boolean,
+    onEditClick: (CaffeineRecord) -> Unit,
+    onDeleteClick: (Long) -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text(
@@ -597,6 +644,8 @@ private fun ActivityLogSection(
                     CaffeineLogItemCard(
                         record = record,
                         isPrimary = index % 2 == 0,  // 홀짝으로 색상 구분
+                        onEditClick = onEditClick,
+                        onDeleteClick = onDeleteClick
                     )
                 }
             }
@@ -608,11 +657,16 @@ private fun ActivityLogSection(
 private fun CaffeineLogItemCard(
     record: CaffeineRecord,
     isPrimary: Boolean = true,
+    onEditClick: (CaffeineRecord) -> Unit,
+    onDeleteClick: (Long) -> Unit,
 ) {
     val iconBgColor = if (isPrimary) MaterialTheme.colorScheme.secondaryContainer
     else MaterialTheme.colorScheme.surfaceVariant
     val iconTintColor = if (isPrimary) MaterialTheme.colorScheme.primary
     else MaterialTheme.colorScheme.onSurfaceVariant
+
+    // 메뉴 열림 상태
+    var menuExpanded by remember { mutableStateOf(false) }
 
     // consumedAt(ms) → 시간 문자열 변환
     val timeLabel = remember(record.consumedAt) {
@@ -672,14 +726,37 @@ private fun CaffeineLogItemCard(
                     )
                 }
             }
-            IconButton(onClick = {
-                /* TODO: 삭제 옵션 메뉴 */
-            }) {
-                Icon(
-                    imageVector = Icons.Default.MoreVert,
-                    contentDescription = stringResource(R.string.caffeine_more_options_desc),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+
+            // 섭취 기록 수정 & 삭제
+            Box {
+                IconButton(onClick = { menuExpanded = true }) {
+                    Icon(
+                        imageVector = Icons.Default.MoreVert,
+                        contentDescription = stringResource(R.string.caffeine_more_options_desc),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+
+                // 아이콘을 눌렀을 때만 뜨는 팝업 메뉴
+                DropdownMenu(
+                    expanded = menuExpanded,
+                    onDismissRequest = { menuExpanded = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("수정") },
+                        onClick = {
+                            menuExpanded = false
+                            onEditClick(record)
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("삭제", color = MaterialTheme.colorScheme.error) },
+                        onClick = {
+                            menuExpanded = false
+                            onDeleteClick(record.id)
+                        }
+                    )
+                }
             }
         }
     }

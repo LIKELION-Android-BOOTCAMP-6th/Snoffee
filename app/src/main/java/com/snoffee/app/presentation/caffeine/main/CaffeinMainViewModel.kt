@@ -2,6 +2,7 @@ package com.snoffee.app.presentation.caffeine.main
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.snoffee.app.domain.usecase.caffeine.DeleteCaffeineUseCase
 import com.snoffee.app.domain.usecase.caffeine.GetTodayCaffeineUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,6 +17,7 @@ import javax.inject.Inject
 @HiltViewModel
 class CaffeineMainViewModel @Inject constructor(
     private val getTodayCaffeineUseCase: GetTodayCaffeineUseCase,
+    private val deleteCaffeineUseCase: DeleteCaffeineUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CaffeineMainUiState())
@@ -84,5 +86,21 @@ class CaffeineMainViewModel @Inject constructor(
     // 에러 초기화
     fun onErrorDismiss() {
         _uiState.update { it.copy(error = null) }
+    }
+
+    // 카페인 섭취 기록 삭제
+    fun deleteRecord(id: Long) {
+        viewModelScope.launch {
+            runCatching {
+                deleteCaffeineUseCase(id)
+            }.onSuccess {
+                // 삭제 성공 후 UI 리스트 갱신
+                loadTodayRecords()
+            }.onFailure { throwable ->
+                _uiState.update {
+                    it.copy(error = throwable.message ?: "삭제 중 오류가 발생했습니다.")
+                }
+            }
+        }
     }
 }
