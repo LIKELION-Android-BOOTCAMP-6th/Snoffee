@@ -1,5 +1,6 @@
 package com.snoffee.app.presentation.caffeine.input.search
 
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -26,6 +28,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -40,9 +43,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -58,66 +63,11 @@ import com.snoffee.app.R
 import com.snoffee.app.core.ui.theme.SnoffeeTheme
 import com.snoffee.app.core.util.Utils.toTodayEpochMilli
 import com.snoffee.app.domain.model.CaffeineRecord
-import com.snoffee.app.domain.model.DrinkItem
 import com.snoffee.app.presentation.caffeine.component.DrinkListItem
 import com.snoffee.app.presentation.caffeine.component.SearchBar
 import com.snoffee.app.presentation.caffeine.component.TimePickerBox
 import com.snoffee.app.presentation.caffeine.input.dialog.CaffeineInputDialog
 import java.time.LocalTime
-
-// Preview용 더미 데이터 (로직 미연결)
-val previewDrinkList = listOf(
-    DrinkItem(
-        foodId = "starbucks_001",
-        name = "아이스 카페 아메리카노",
-        category = "커피",
-        brand = "스타벅스",
-        caffeineMg = 150.0,
-        servingSize = 355.0,
-        totalCaffeine = 150.0,
-        totalSize = 355.0
-    ),
-    DrinkItem(
-        foodId = "twosome_002",
-        name = "아이스 로얄 밀크티",
-        category = "티 라떼",
-        brand = "투썸플레이스",
-        caffeineMg = 95.0,
-        servingSize = 414.0,
-        totalCaffeine = 95.0,
-        totalSize = 414.0
-    ),
-    DrinkItem(
-        foodId = "mega_003",
-        name = "메가리카노",
-        category = "커피",
-        brand = "메가커피",
-        caffeineMg = 290.0,
-        servingSize = 500.0,
-        totalCaffeine = 580.0,
-        totalSize = 1000.0
-    ),
-    DrinkItem(
-        foodId = "gongcha_004",
-        name = "블랙 밀크티 + 펄",
-        category = "밀크티",
-        brand = "공차",
-        caffeineMg = 80.0,
-        servingSize = 473.0,
-        totalCaffeine = 80.0,
-        totalSize = 473.0
-    ),
-    DrinkItem(
-        foodId = "paulbassett_005",
-        name = "콜드브루",
-        category = "커피",
-        brand = "폴 바셋",
-        caffeineMg = 160.0,
-        servingSize = 360.0,
-        totalCaffeine = 160.0,
-        totalSize = 360.0
-    )
-)
 
 // 카페인 추가 검색 화면
 @OptIn(ExperimentalMaterial3Api::class)
@@ -128,13 +78,23 @@ fun CaffeineSearchScreen(
     onNavigateToDirectInput: () -> Unit,
     viewModel: CaffeineSearchViewModel = hiltViewModel()
 ) {
-    var query by remember { mutableStateOf("") }
-    val hasQuery = query.isNotBlank()
     var selectedTime by remember { mutableStateOf(LocalTime.now()) }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val hasQuery = uiState.searchQuery.isNotBlank()
+    val listState = rememberLazyListState()
+    val context = LocalContext.current
 
     LaunchedEffect(uiState.isSaved) {
         if (uiState.isSaved) onConfirmSuccess()
+    }
+
+    LaunchedEffect(listState) {
+        snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
+            .collect { index ->
+                if (index != null && index >= uiState.searchResults.lastIndex - 1 && !uiState.isPagingLoading) {
+                    viewModel.loadNextPage()
+                }
+            }
     }
 
     val colorScheme = MaterialTheme.colorScheme
@@ -232,10 +192,16 @@ fun CaffeineSearchScreen(
                     .padding(vertical = 8.dp)
             ) {
                 SearchBar(
-                    query = query,
-                    onQueryChange = { query = it },
-                    onSearch = { /* 검색 */ },
-                    onClear = { query = "" }
+                    query = uiState.searchQuery,
+                    onQueryChange = { viewModel.onSearchQueryChange(it) },
+                    onSearch = {
+                        if (uiState.searchQuery.isBlank()) {
+                            Toast.makeText(context, "검색어를 입력해주세요", Toast.LENGTH_SHORT).show()
+                        } else {
+                            viewModel.onSearchClick(uiState.searchQuery)
+                        }
+                    },
+                    onClear = { viewModel.clearSearch() }
                 )
             }
 
@@ -252,7 +218,7 @@ fun CaffeineSearchScreen(
                     Text(
                         text = stringResource(
                             R.string.caffeine_drink_search_result_count,
-                            previewDrinkList.size
+                            uiState.searchResults.size
                         ),
                         fontSize = 12.sp,
                         color = colorScheme.onSurfaceVariant
@@ -273,16 +239,46 @@ fun CaffeineSearchScreen(
 
                 // 음료 리스트 영역
                 LazyColumn(
+                    state = listState, // 상태 연결
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                     contentPadding = PaddingValues(bottom = 16.dp)
                 ) {
-                    items(previewDrinkList) { drink ->
+                    items(uiState.searchResults) { drink ->
                         DrinkListItem(
                             drink = drink,
                             isSelected = uiState.selectedDrink?.foodId == drink.foodId,
                             onClick = { viewModel.onDrinkSelected(drink) }
                         )
+                    }
+
+                    // 하단 로딩 아이템 (isPagingLoading일 때만 표시)
+                    if (uiState.isPagingLoading) {
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                // 여기에 원하는 로딩 위젯을 넣으세요 (예: CircularProgressIndicator)
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(32.dp),
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                    }
+
+                    // 결과 없음 처리 (로딩 중이 아니고 결과가 0개일 때)
+                    if (!uiState.isLoading && !uiState.isPagingLoading && uiState.searchResults.isEmpty()) {
+                        item {
+                            Text(
+                                text = "검색 결과가 없습니다.",
+                                modifier = Modifier.padding(16.dp),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
             }

@@ -1,5 +1,6 @@
 package com.snoffee.app.presentation.caffeine.component
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -57,7 +58,9 @@ fun SearchBar(
                 painter = painterResource(id = R.drawable.ic_search),
                 contentDescription = null,
                 tint = extColors.textHint,
-                modifier = Modifier.size(25.dp)
+                modifier = Modifier
+                    .size(25.dp)
+                    .clickable { onSearch() }
             )
 
             Spacer(modifier = Modifier.width(8.dp))
