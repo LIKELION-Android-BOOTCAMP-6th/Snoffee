@@ -10,7 +10,6 @@ class SaveCaffeineUseCase @Inject constructor(
     private val repository: CaffeineRepository  // Hilt가 자동 주입
 ) {
     suspend operator fun invoke(record: CaffeineRecord) {
-        // TODO: 유효성 검사 후 저장
         repository.saveCaffeineRecord(record)
     }
 }
