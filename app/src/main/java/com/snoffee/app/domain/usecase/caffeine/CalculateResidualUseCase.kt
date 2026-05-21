@@ -24,13 +24,16 @@ class CalculateResidualUseCase @Inject constructor(
             3 -> 4.0 // 낮음
             else -> 5.0
         }
-        val currentTimeMillis = System.currentTimeMillis()
-        //현재 체내 모든 카페인 잔류량 합산
+        val now = System.currentTimeMillis()
+
         val totalResidual = records.sumOf { record ->
+            val safeConsumedAt = if (record.consumedAt > now) now else record.consumedAt
+
+
             calculator.calculateResidualCaffeine(
                 intakeCaffeine = record.intakeCaffeine,
-                consumedAt = record.consumedAt,
-                currentTimeMillis = currentTimeMillis,
+                consumedAt = safeConsumedAt,
+                currentTimeMillis = now,
                 halfLifeHours = halfLifeHours
             )
         }
@@ -38,13 +41,13 @@ class CalculateResidualUseCase @Inject constructor(
         //모든 음료 중 가장 늦게 대사가 끝나는 0mg 시각 찾기
         val targetMinCaffeine = 0.1
         val finalZeroTime = if (totalResidual <= targetMinCaffeine) {
-            currentTimeMillis
+            now
         } else {
             // 현재 총 잔류량 다 사라지는 데 걸리는 시간 역산
             val requiredHours = halfLifeHours * log2(totalResidual / targetMinCaffeine)
             val requiredMillis = (requiredHours * 60 * 60 * 1000).toLong()
 
-            currentTimeMillis + requiredMillis
+            now + requiredMillis
         }
         //분석 결과 모델로 리턴
         return CaffeineAnalysis(
