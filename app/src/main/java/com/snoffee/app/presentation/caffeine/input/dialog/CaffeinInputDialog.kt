@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.snoffee.app.R
 import com.snoffee.app.core.ui.theme.SnoffeeTheme
+import com.snoffee.app.core.util.Utils.toTodayEpochMilli
 import com.snoffee.app.domain.model.CaffeineRecord
 import com.snoffee.app.presentation.caffeine.component.TimePickerBox
 import java.time.LocalTime
@@ -315,9 +316,9 @@ fun CaffeineInputDialog(
                             drinkId = "DIRECT_${System.currentTimeMillis()}",
                             drinkName = drinkName,
                             brandName = "직접 입력",
-                            intakeSize = 0.0,
+                            intakeSize = drinkVolume.toDouble(),
                             intakeCaffeine = caffeineAmount.toDouble(),
-                            consumedAt = System.currentTimeMillis()
+                            consumedAt = selectedTime.toTodayEpochMilli()
                         )
                     )
                     onDismiss()
