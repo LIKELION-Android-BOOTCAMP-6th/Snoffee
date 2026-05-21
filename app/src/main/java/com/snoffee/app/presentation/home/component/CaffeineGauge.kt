@@ -15,17 +15,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.snoffee.app.presentation.home.CaffeineRiskLevel
+import kotlin.math.roundToInt
 
 @Composable
 fun CaffeineGauge(
-    residualCaffeineMg: Int,
+    residualCaffeineMg: Double,
     riskLevel: CaffeineRiskLevel,
     modifier: Modifier = Modifier
 ) {
     val maxCaffeineMg = 300f
 
     val progress by animateFloatAsState(
-        targetValue = (residualCaffeineMg / maxCaffeineMg).coerceIn(0f, 1f),
+        targetValue = (residualCaffeineMg.toFloat() / maxCaffeineMg).coerceIn(0f, 1f),
         label = "caffeineGaugeProgress"
     )
 
@@ -58,7 +59,7 @@ fun CaffeineGauge(
             verticalArrangement = Arrangement.Center
         ) {
             Text(
-                text = "${residualCaffeineMg}mg",
+                text = "${residualCaffeineMg.roundToInt()}mg",
                 style = MaterialTheme.typography.headlineMedium,
                 color = Color(0xFF2E2A2A)
             )
