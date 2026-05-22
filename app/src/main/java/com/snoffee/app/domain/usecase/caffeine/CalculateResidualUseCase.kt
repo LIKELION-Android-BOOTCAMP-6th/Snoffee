@@ -12,8 +12,12 @@ class CalculateResidualUseCase @Inject constructor(
     private val calculator: CaffeineCalculator
 ) {
     suspend operator fun invoke(): CaffeineAnalysis {
+        val now = System.currentTimeMillis()
+
+        val fiveDaysAgo = now - (5L * 24 * 60 * 60 * 1000)
+
         val records =
-            caffeineRepository.getTodayCaffeineRecords()
+            caffeineRepository.getCaffeineRecordsSince(fiveDaysAgo)
         val userProfile =
             userProfileRepository.getUserProfile()
         val halfLifeHours = when (
@@ -24,22 +28,22 @@ class CalculateResidualUseCase @Inject constructor(
             3 -> 4.0 // 낮음
             else -> 5.0
         }
-        val now = System.currentTimeMillis()
+        val targetMinCaffeine = 10.0
 
         val totalResidual = records.sumOf { record ->
             val safeConsumedAt = if (record.consumedAt > now) now else record.consumedAt
 
-
-            calculator.calculateResidualCaffeine(
+            val residual = calculator.calculateResidualCaffeine(
                 intakeCaffeine = record.intakeCaffeine,
                 consumedAt = safeConsumedAt,
                 currentTimeMillis = now,
                 halfLifeHours = halfLifeHours
             )
+
+            if (residual < targetMinCaffeine) 0.0 else residual
         }
 
-        //모든 음료 중 가장 늦게 대사가 끝나는 0mg 시각 찾기
-        val targetMinCaffeine = 0.1
+        //모든 음료 중 가장 늦게 대사가 끝나는 10mg 시각 찾기
         val finalZeroTime = if (totalResidual <= targetMinCaffeine) {
             now
         } else {
