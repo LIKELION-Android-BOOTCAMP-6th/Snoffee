@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -15,15 +16,34 @@ import com.snoffee.app.core.navigation.SnoffeeBottomBar
 import com.snoffee.app.core.ui.component.SnoffeeAppBar
 import com.snoffee.app.core.ui.theme.SnoffeeBgBase
 import com.snoffee.app.core.ui.theme.SnoffeeTheme
+import com.snoffee.app.data.datasource.preference.OnboardingPreferenceDataSource
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    @Inject
+    lateinit var onboardingPreferenceDataSource: OnboardingPreferenceDataSource
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             SnoffeeTheme {
                 val navController = rememberNavController()
+
+                val isOnboardingCompleted by onboardingPreferenceDataSource
+                    .isOnboardingCompleted
+                    .collectAsState(initial = null)
+
+                if (isOnboardingCompleted == null) {
+                    return@SnoffeeTheme
+                }
+
+                val startDestination =
+                    if (isOnboardingCompleted == true) {
+                        Screen.Home.route
+                    } else {
+                        Screen.Onboarding.route
+                    }
 
                 //현재 경로 확인 (온보딩 등 특정 화면에서 앱바/탭바를 숨기기 위함)
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -75,7 +95,7 @@ class MainActivity : ComponentActivity() {
                         } else {
                             Modifier.padding(innerPadding)
                         },
-                        startDestination = Screen.Home.route
+                        startDestination = startDestination
                     )
                 }
             }
