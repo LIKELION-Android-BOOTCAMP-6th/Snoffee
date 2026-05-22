@@ -10,6 +10,8 @@ import com.snoffee.app.data.datasource.local.SleepLocalDataSource
 import com.snoffee.app.data.datasource.local.SleepLocalDataSourceImpl
 import com.snoffee.app.data.datasource.local.UserProfileLocalDataSource
 import com.snoffee.app.data.datasource.local.UserProfileLocalDataSourceImpl
+import com.snoffee.app.data.datasource.preference.OnboardingPreferenceDataSource
+import com.snoffee.app.data.datasource.preference.OnboardingPreferenceDataSourceImpl
 import com.snoffee.app.data.datasource.remote.DrinkRemoteDataSource
 import com.snoffee.app.data.datasource.remote.DrinkRemoteDataSourceImpl
 import com.snoffee.app.data.datasource.remote.GeminiRemoteDataSource
@@ -71,4 +73,10 @@ abstract class DataSourceModule {
     abstract fun bindSleepLocalDataSource(
         impl: SleepLocalDataSourceImpl
     ): SleepLocalDataSource
+
+    @Binds
+    @Singleton
+    abstract fun bindOnboardingPreferenceDataSource(
+        impl: OnboardingPreferenceDataSourceImpl
+    ): OnboardingPreferenceDataSource
 }
