@@ -25,8 +25,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -45,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.snoffee.app.R
 import com.snoffee.app.core.ui.theme.SnoffeeTheme
+import com.snoffee.app.core.util.Utils.toLocalTime
 import com.snoffee.app.core.util.Utils.toTodayEpochMilli
 import com.snoffee.app.domain.model.CaffeineRecord
 import com.snoffee.app.presentation.caffeine.component.TimePickerBox
@@ -54,14 +53,46 @@ import java.time.LocalTime
 fun CaffeineInputDialog(
     onDismiss: () -> Unit = {},
     onConfirm: (CaffeineRecord) -> Unit = {},
+    editingRecord: CaffeineRecord? = null
 ) {
-    var caffeineAmount by remember { mutableFloatStateOf(0f) }
-    var caffeineInputString by remember { mutableStateOf("") }
-    var drinkVolume by remember { mutableIntStateOf(0) }
-    var volumeInputString by remember { mutableStateOf("") }
-    var selectedTime by remember { mutableStateOf<LocalTime>(LocalTime.now()) }
-    var drinkName by remember { mutableStateOf("") }
-    val caffeineFocusRequester = remember { FocusRequester() }  // 포커스 제어
+    val isEditMode = editingRecord != null
+
+    // ID
+    val stableDrinkId = remember(editingRecord) {
+        editingRecord?.drinkId ?: "DIRECT_${System.currentTimeMillis()}"
+    }
+
+    // 음료 이름
+    var drinkName by remember(editingRecord) {
+        mutableStateOf(editingRecord?.drinkName ?: "")
+    }
+
+    // 카페인 입력
+    var caffeineInputString by remember(editingRecord) {
+        mutableStateOf(
+            editingRecord?.intakeCaffeine?.let {
+                if (it % 1.0 == 0.0) it.toInt().toString() else it.toString()
+            } ?: ""
+        )
+    }
+
+    // 음료 용량 입력
+    var volumeInputString by remember(editingRecord) {
+        mutableStateOf(
+            editingRecord?.intakeSize?.let {
+                if (it % 1.0 == 0.0) it.toInt().toString() else it.toString()
+            } ?: ""
+        )
+    }
+
+    // 섭취 시간 상태
+    var consumedAtMilli by remember(editingRecord) {
+        mutableStateOf(
+            editingRecord?.consumedAt ?: LocalTime.now().toTodayEpochMilli()
+        )
+    }
+
+    val caffeineFocusRequester = remember { FocusRequester() }
     val volumeFocusRequester = remember { FocusRequester() }
 
     val colorScheme = SnoffeeTheme.colorScheme
@@ -201,7 +232,6 @@ fun CaffeineInputDialog(
                                     onValueChange = { newValue ->
                                         if (newValue.all { it.isDigit() || it == '.' } && newValue.length <= 5) {
                                             caffeineInputString = newValue
-                                            newValue.toFloatOrNull()?.let { caffeineAmount = it }
                                         }
                                     },
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -269,7 +299,6 @@ fun CaffeineInputDialog(
                                     onValueChange = { newValue ->
                                         if (newValue.all { it.isDigit() } && newValue.length <= 5) {
                                             volumeInputString = newValue
-                                            newValue.toIntOrNull()?.let { drinkVolume = it }
                                         }
                                     },
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -300,10 +329,10 @@ fun CaffeineInputDialog(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 섭취 시간 영역 (기존 위젯 사용)
+            // 섭취 시간 영역
             TimePickerBox(
-                selectedTime = selectedTime,
-                onTimeChange = { selectedTime = it }
+                selectedTime = consumedAtMilli.toLocalTime(),
+                onTimeChange = { consumedAtMilli = it.toTodayEpochMilli() }
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -311,16 +340,15 @@ fun CaffeineInputDialog(
             // 기록하기 버튼
             Button(
                 onClick = {
-                    onConfirm(
-                        CaffeineRecord(
-                            drinkId = "DIRECT_${System.currentTimeMillis()}",
-                            drinkName = drinkName,
-                            brandName = "직접 입력",
-                            intakeSize = drinkVolume.toDouble(),
-                            intakeCaffeine = caffeineAmount.toDouble(),
-                            consumedAt = selectedTime.toTodayEpochMilli()
-                        )
+                    val finalRecord = CaffeineRecord(
+                        drinkId = stableDrinkId,
+                        drinkName = drinkName,
+                        brandName = editingRecord?.brandName ?: "직접 입력",
+                        intakeSize = volumeInputString.toDoubleOrNull() ?: 0.0,
+                        intakeCaffeine = caffeineInputString.toDoubleOrNull() ?: 0.0,
+                        consumedAt = consumedAtMilli
                     )
+                    onConfirm(finalRecord)
                     onDismiss()
                 },
                 modifier = Modifier
@@ -334,7 +362,9 @@ fun CaffeineInputDialog(
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
             ) {
                 Text(
-                    text = stringResource(R.string.caffeine_drink_input_dialog_drink_save),
+                    text = if (isEditMode) stringResource(R.string.caffeine_drink_input_dialog_drink_edit) else stringResource(
+                        R.string.caffeine_drink_input_dialog_drink_save
+                    ),
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold
                 )

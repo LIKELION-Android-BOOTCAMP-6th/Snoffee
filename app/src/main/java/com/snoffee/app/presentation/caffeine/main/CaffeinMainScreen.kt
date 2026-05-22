@@ -13,7 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -23,6 +23,8 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -52,20 +54,22 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.snoffee.app.R
 import com.snoffee.app.core.ui.theme.SnoffeeTheme
 import com.snoffee.app.domain.model.CaffeineRecord
+import com.snoffee.app.presentation.caffeine.input.dialog.CaffeineInputDialog
 import java.time.Instant
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
-// todo :: 모든 디자인은 공통 부분이 추가되면 해당 공통 컴포넌트 사용하기
+private val DAY_LABELS = listOf("일", "월", "화", "수", "목", "금", "토")
 
-// Data
 data class CalendarDay(
     val date: LocalDate?,
     val isCurrentMonth: Boolean = true,
@@ -130,17 +134,25 @@ fun CaffeineMainScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var pendingDeleteRecordId by remember { mutableStateOf<Long?>(null) }
+    var showEditDialog by remember { mutableStateOf(false) }
+    var editingRecord by remember { mutableStateOf<CaffeineRecord?>(null) }
 
-    val calendarGrid = remember(uiState.currentYearMonth, uiState.selectedDate) {
-        buildCalendarGrid(
-            yearMonth = uiState.currentYearMonth,
-            selectedDate = uiState.selectedDate,
-            recordedDates = uiState.recordedDates,
-        )
+    val calendarGrid =
+        remember(uiState.currentYearMonth, uiState.selectedDate, uiState.recordedDates) {
+            buildCalendarGrid(
+                yearMonth = uiState.currentYearMonth,
+                selectedDate = uiState.selectedDate,
+                recordedDates = uiState.recordedDates,
+            )
+        }
+
+    // 포맷터 생성 비용 최적화
+    val monthLabel = remember(uiState.currentYearMonth) {
+        uiState.currentYearMonth.format(DateTimeFormatter.ofPattern("yyyy년 M월"))
     }
-
-    val monthLabel = uiState.currentYearMonth.format(DateTimeFormatter.ofPattern("yyyy년 M월"))
-    val selectedLabel = uiState.selectedDate.format(DateTimeFormatter.ofPattern("M월 d일"))
+    val selectedLabel = remember(uiState.selectedDate) {
+        uiState.selectedDate.format(DateTimeFormatter.ofPattern("M월 d일"))
+    }
 
     // 에러 스낵바
     val snackBarHostState = remember { SnackbarHostState() }
@@ -150,6 +162,8 @@ fun CaffeineMainScreen(
             viewModel.onErrorDismiss()
         }
     }
+
+    // 삭제 확인 다이얼로그
     pendingDeleteRecordId?.let { recordId ->
         AlertDialog(
             onDismissRequest = { pendingDeleteRecordId = null },
@@ -186,9 +200,10 @@ fun CaffeineMainScreen(
                 }
             },
             shape = RoundedCornerShape(16.dp),
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = SnoffeeTheme.colors.surfaceElevated
         )
     }
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         snackbarHost = { SnackbarHost(hostState = snackBarHostState) },
@@ -211,6 +226,7 @@ fun CaffeineMainScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
+                        .padding(innerPadding)
                         .padding(top = 4.dp)
                         .verticalScroll(rememberScrollState())
                         .padding(horizontal = 24.dp)
@@ -239,7 +255,10 @@ fun CaffeineMainScreen(
 
                     ActivityLogSection(
                         records = uiState.todayRecords,
-                        onEditClick = { record -> /* TODO: 수정 화면 이동 등 구현 */ },
+                        onEditClick = { record ->
+                            editingRecord = record
+                            showEditDialog = true
+                        },
                         onDeleteClick = { recordId -> pendingDeleteRecordId = recordId }
                     )
 
@@ -254,71 +273,53 @@ fun CaffeineMainScreen(
                             contentColor = MaterialTheme.colorScheme.onPrimary,
                         ),
                     ) {
-                        Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = stringResource(R.string.caffeine_record_button),
                             fontWeight = FontWeight.Medium,
                             fontSize = 20.sp
                         )
                     }
+                }
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                // 수정 다이얼로그 노출부 구조 단순화
+                if (showEditDialog) {
+                    Dialog(
+                        onDismissRequest = { showEditDialog = false },
+                        properties = DialogProperties(usePlatformDefaultWidth = false)
+                    ) {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth(0.9f)
+                                .wrapContentHeight(),
+                            shape = RoundedCornerShape(24.dp),
+                            colors = CardDefaults.cardColors(containerColor = SnoffeeTheme.colors.surfaceElevated)
+                        ) {
+                            CaffeineInputDialog(
+                                onDismiss = { showEditDialog = false },
+                                onConfirm = { record ->
+                                    // 고유 ID 및 기존 도메인 속성 완전 보존 하에 전달
+                                    viewModel.editCaffeineRecord(
+                                        CaffeineRecord(
+                                            id = editingRecord?.id ?: record.id,
+                                            drinkId = editingRecord?.drinkId ?: record.drinkId,
+                                            drinkName = record.drinkName,
+                                            brandName = record.brandName,
+                                            intakeSize = record.intakeSize,
+                                            intakeCaffeine = record.intakeCaffeine,
+                                            consumedAt = record.consumedAt
+                                        )
+                                    )
+                                    showEditDialog = false
+                                },
+                                editingRecord = editingRecord
+                            )
+                        }
+                    }
                 }
             }
         }
     }
 }
-
-// 월 선택 헤더
-@Composable
-private fun MonthSelectorHeader(
-    monthLabel: String,
-    onPrevMonth: () -> Unit,
-    onNextMonth: () -> Unit,
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Surface(
-            shape = RoundedCornerShape(50),
-            color = MaterialTheme.colorScheme.surface,
-            shadowElevation = 2.dp,
-        ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_arrow_left),
-                    contentDescription = "이전 달",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier
-                        .size(20.dp)
-                        .clickable { onPrevMonth() },
-                )
-                Text(
-                    text = monthLabel,
-                    fontSize = 17.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onBackground,
-                )
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_arrow_right),
-                    contentDescription = "다음 달",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier
-                        .size(20.dp)
-                        .clickable { onNextMonth() },
-                )
-            }
-        }
-    }
-}
-
-// 월별 캘린더 카드
-private val DAY_LABELS = listOf("일", "월", "화", "수", "목", "금", "토")
 
 @Composable
 private fun MonthlyCalendarCard(
@@ -540,14 +541,14 @@ private fun TodaySummarySection(
                 ) {
                     Box(
                         modifier = Modifier
-                            .fillMaxWidth(progress)
+                            .fillMaxWidth(progress.coerceIn(0f, 1f))
                             .fillMaxHeight()
                             .clip(RoundedCornerShape(50))
                             .background(
                                 Brush.horizontalGradient(
                                     colors = listOf(
-                                        extColors.barChartSecondary,        // 연한 갈색 시작
-                                        MaterialTheme.colorScheme.primary,  // 진한 갈색 끝
+                                        extColors.barChartSecondary,
+                                        MaterialTheme.colorScheme.primary,
                                     )
                                 )
                             ),
@@ -603,51 +604,45 @@ private fun ActivityLogSection(
             color = MaterialTheme.colorScheme.onBackground,
         )
 
-        when {
-            // Empty 상태
-            records.isEmpty() -> {
-                Surface(
-                    shape = RoundedCornerShape(20.dp),
-                    color = MaterialTheme.colorScheme.surface,
-                    shadowElevation = 2.dp,
+        if (records.isEmpty()) {
+            Surface(
+                shape = RoundedCornerShape(20.dp),
+                color = MaterialTheme.colorScheme.surface,
+                shadowElevation = 2.dp,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 32.dp),
+                    contentAlignment = Alignment.Center,
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 32.dp),
-                        contentAlignment = Alignment.Center,
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_outline_coffee),
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f),
-                                modifier = Modifier.size(36.dp),
-                            )
-                            Text(
-                                text = stringResource(R.string.caffeine_empty_log),
-                                fontSize = 16.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                                fontWeight = FontWeight.Medium,
-                            )
-                        }
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_outline_coffee),
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f),
+                            modifier = Modifier.size(36.dp),
+                        )
+                        Text(
+                            text = stringResource(R.string.caffeine_empty_log),
+                            fontSize = 16.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                            fontWeight = FontWeight.Medium,
+                        )
                     }
                 }
             }
-
-            // 리스트
-            else -> {
-                records.forEachIndexed { index, record ->
-                    CaffeineLogItemCard(
-                        record = record,
-                        isPrimary = index % 2 == 0,  // 홀짝으로 색상 구분
-                        onEditClick = onEditClick,
-                        onDeleteClick = onDeleteClick
-                    )
-                }
+        } else {
+            records.forEachIndexed { index, record ->
+                CaffeineLogItemCard(
+                    record = record,
+                    isPrimary = index % 2 == 0,
+                    onEditClick = onEditClick,
+                    onDeleteClick = onDeleteClick
+                )
             }
         }
     }
@@ -696,7 +691,6 @@ private fun CaffeineLogItemCard(
                 horizontalArrangement = Arrangement.spacedBy(14.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                // 아이콘 영역
                 Box(
                     modifier = Modifier
                         .size(48.dp)
