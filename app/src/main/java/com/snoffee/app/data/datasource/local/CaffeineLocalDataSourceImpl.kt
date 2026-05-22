@@ -20,6 +20,11 @@ class CaffeineLocalDataSourceImpl @Inject constructor(
     override suspend fun deleteCaffeineRecord(id: Long) {
         dao.deleteCaffeineRecord(id)
     }
+
+    override suspend fun editCaffeineRecord(record: CaffeineEntity) {
+        dao.editCaffeineRecord(record)
+    }
+
     override suspend fun getCaffeineRecordsByDateRange(
         startTimeMillis: Long,
         endTimeMillis: Long
