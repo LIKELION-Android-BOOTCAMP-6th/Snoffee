@@ -10,6 +10,8 @@ interface SamsungHealthDataSource {
 
     suspend fun getLatestSleepData(): SleepDataDto?
 
+    suspend fun hasPermissions(): Boolean
+
     suspend fun getSleepDataByDateRange(
         startTimeMillis: Long,
         endTimeMillis: Long

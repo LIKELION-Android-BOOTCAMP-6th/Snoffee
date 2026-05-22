@@ -49,22 +49,23 @@ class SamsungHealthDataSourceImpl @Inject constructor(
         startTimeMillis: Long,
         endTimeMillis: Long
     ): List<SleepDataDto> {
-        val response =
-            healthConnectClient.readRecords(
-                ReadRecordsRequest(
-                    recordType = SleepSessionRecord::class,
-                    timeRangeFilter = TimeRangeFilter.between(
-                        Instant.ofEpochMilli(startTimeMillis),
-                        Instant.ofEpochMilli(endTimeMillis)
-                    )
+        if (!hasPermissions()) {
+            return emptyList()
+        }
+
+        val response = healthConnectClient.readRecords(
+            ReadRecordsRequest(
+                recordType = SleepSessionRecord::class,
+                timeRangeFilter = TimeRangeFilter.between(
+                    Instant.ofEpochMilli(startTimeMillis),
+                    Instant.ofEpochMilli(endTimeMillis)
                 )
             )
+        )
+
         return response.records.map { record ->
             SleepDataDto(
-                date = LocalDateTime.ofInstant(
-                    record.startTime,
-                    ZoneId.systemDefault()
-                ),
+                date = LocalDateTime.ofInstant(record.startTime, ZoneId.systemDefault()),
                 sleepStart = record.startTime.toEpochMilli(),
                 sleepEnd = record.endTime.toEpochMilli(),
                 deepSleepRatio = 0
@@ -72,10 +73,18 @@ class SamsungHealthDataSourceImpl @Inject constructor(
         }
     }
 
-    suspend fun hasPermissions(): Boolean {
-        return healthConnectClient
-            .permissionController
-            .getGrantedPermissions()
-            .containsAll(permissions)
+    override suspend fun hasPermissions(): Boolean {
+
+        val permissions = setOf(
+            HealthPermission.getReadPermission(
+                SleepSessionRecord::class
+            )
+        )
+
+        val granted =
+            healthConnectClient.permissionController
+                .getGrantedPermissions()
+
+        return granted.containsAll(permissions)
     }
 }
