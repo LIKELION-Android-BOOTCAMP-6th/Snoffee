@@ -17,7 +17,6 @@ class CaffeineRepositoryImpl @Inject constructor(
 ) : CaffeineRepository {
 
     override suspend fun saveCaffeineRecord(record: CaffeineRecord) {
-        // TODO: Domain Model → DTO 변환 후 저장
         val entity = mapper.toEntity(record)
         localDataSource.insertCaffeineRecord(entity)
     }
@@ -50,6 +49,11 @@ class CaffeineRepositoryImpl @Inject constructor(
             .map { entity ->
                 mapper.toDomain(entity)
             }
+    }
+
+    override suspend fun editCaffeineRecord(record: CaffeineRecord) {
+        val entity = mapper.toEntity(record)
+        localDataSource.editCaffeineRecord(entity)
     }
 
     private fun getStartOfDay(): Long {
