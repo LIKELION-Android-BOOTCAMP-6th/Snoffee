@@ -8,6 +8,7 @@ import androidx.navigation.compose.composable
 import com.snoffee.app.presentation.caffeine.input.search.CaffeineSearchScreen
 import com.snoffee.app.presentation.caffeine.main.CaffeineMainScreen
 import com.snoffee.app.presentation.home.HomeScreen
+import com.snoffee.app.presentation.onboarding.OnboardingScreen
 import com.snoffee.app.presentation.report.ReportScreen
 import com.snoffee.app.presentation.setting.SettingScreen
 import com.snoffee.app.presentation.sleep.SleepScreen
@@ -16,13 +17,25 @@ import com.snoffee.app.presentation.sleep.SleepScreen
 fun AppNavHost(
     navController: NavHostController,
     modifier: Modifier = Modifier,
-    startDestination: String = Screen.Home.route // 실제로는 온보딩 여부에 따라 결정
+    startDestination: String = Screen.Onboarding.route // 실제로는 온보딩 여부에 따라 결정
 ) {
     NavHost(
         navController = navController,
         startDestination = startDestination,
         modifier = modifier
     ) {
+        // 온보딩 화면
+        composable(Screen.Onboarding.route) {
+            OnboardingScreen(
+                onFinishOnboarding = {
+                    navController.navigate(Screen.Home.route) {
+                        popUpTo(Screen.Onboarding.route) {
+                            inclusive = true
+                        }
+                    }
+                }
+            )
+        }
         // 홈 화면
         composable(Screen.Home.route) {
             HomeScreen( // presentation.home.HomeScreen
@@ -78,11 +91,6 @@ fun AppNavHost(
         //설정 화면
         composable(Screen.Setting.route) {
             SettingScreen() // presentation.mySetting.SettingScreen
-        }
-
-        //온보딩
-        composable(Screen.Onboarding.route) {
-//            OnboardingScreen()
         }
     }
 }
