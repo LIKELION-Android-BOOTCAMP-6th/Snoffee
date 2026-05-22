@@ -2,7 +2,9 @@ package com.snoffee.app.presentation.caffeine.main
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.snoffee.app.domain.model.CaffeineRecord
 import com.snoffee.app.domain.usecase.caffeine.DeleteCaffeineUseCase
+import com.snoffee.app.domain.usecase.caffeine.EditCaffeineUseCase
 import com.snoffee.app.domain.usecase.caffeine.GetTodayCaffeineUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,7 +19,8 @@ import javax.inject.Inject
 @HiltViewModel
 class CaffeineMainViewModel @Inject constructor(
     private val getTodayCaffeineUseCase: GetTodayCaffeineUseCase,
-    private val deleteCaffeineUseCase: DeleteCaffeineUseCase
+    private val deleteCaffeineUseCase: DeleteCaffeineUseCase,
+    private val editCaffeineUseCase: EditCaffeineUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CaffeineMainUiState())
@@ -99,6 +102,22 @@ class CaffeineMainViewModel @Inject constructor(
             }.onFailure { throwable ->
                 _uiState.update {
                     it.copy(error = throwable.message ?: "삭제 중 오류가 발생했습니다.")
+                }
+            }
+        }
+    }
+
+    // 기록된 음료 수정
+    fun editCaffeineRecord(record: CaffeineRecord) {
+        viewModelScope.launch {
+            runCatching {
+                editCaffeineUseCase(record)
+            }.onSuccess {
+                // 수정 성공 후 UI 리스트 갱신
+                loadTodayRecords()
+            }.onFailure { throwable ->
+                _uiState.update {
+                    it.copy(error = throwable.message ?: "수정 중 오류가 발생했습니다.")
                 }
             }
         }

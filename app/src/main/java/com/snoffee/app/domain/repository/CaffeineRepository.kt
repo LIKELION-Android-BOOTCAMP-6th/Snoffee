@@ -15,4 +15,6 @@ interface CaffeineRepository {
         startTimeMillis: Long,
         endTimeMillis: Long
     ): List<CaffeineRecord>
+
+    suspend fun editCaffeineRecord(record: CaffeineRecord)  // 카페인 섭취 기록 수정
 }

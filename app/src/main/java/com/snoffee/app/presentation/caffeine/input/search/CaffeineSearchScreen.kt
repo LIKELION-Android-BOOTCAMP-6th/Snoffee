@@ -366,8 +366,8 @@ private fun EmptySearchState(
                                         drinkId = "DIRECT_${System.currentTimeMillis()}",
                                         drinkName = record.drinkName,
                                         brandName = "직접 입력",
-                                        intakeSize = 0.0,
-                                        intakeCaffeine = record.intakeSize,
+                                        intakeSize = record.intakeSize,
+                                        intakeCaffeine = record.intakeCaffeine,
                                         consumedAt = selectedTime.toTodayEpochMilli()
                                     )
                                 )
@@ -458,8 +458,8 @@ private fun DirectRegisterBanner(
                                 drinkId = "DIRECT_${System.currentTimeMillis()}",
                                 drinkName = record.drinkName,
                                 brandName = "직접 입력",
-                                intakeSize = 0.0,
-                                intakeCaffeine = record.intakeSize,
+                                intakeSize = record.intakeSize,
+                                intakeCaffeine = record.intakeCaffeine,
                                 consumedAt = selectedTime.toTodayEpochMilli()
                             )
                         )

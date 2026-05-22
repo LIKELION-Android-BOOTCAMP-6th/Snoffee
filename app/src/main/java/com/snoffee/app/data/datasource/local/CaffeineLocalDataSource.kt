@@ -10,6 +10,8 @@ interface CaffeineLocalDataSource {
     fun getTodayRecords(startOfDay: Long, endOfDay: Long): Flow<List<CaffeineEntity>>  // 오늘 기록 조회
     suspend fun deleteCaffeineRecord(id: Long)                      // 카페인 기록 삭제
 
+    suspend fun editCaffeineRecord(record: CaffeineEntity)          // 카페인 기록 수정
+
     suspend fun getCaffeineRecordsByDateRange(
         startTimeMillis: Long,
         endTimeMillis: Long
