@@ -47,4 +47,5 @@
     <!-- 카페인 오류 문구 -->
     <string name="caffeine_error_delete">삭제 중 오류가 발생했습니다.</string>
     <string name="caffeine_error_edit">수정 중 오류가 발생했습니다.</string>
+    <string name="caffeine_error_recode_future_time">미래 시간은 선택할 수 없어요</string>
 </resources>
