@@ -42,7 +42,7 @@ class CaffeineMainViewModel @Inject constructor(
                         isLoading = false,
                         todayRecords = records,
                         // 기록이 있는 날짜 추출 (캘린더 점 표시)
-                        recordedDates = state.recordedDates + records
+                        recordedDates = records
                             .map { record ->
                                 LocalDate.ofEpochDay(record.consumedAt / 86400000)
                             }
