@@ -39,17 +39,17 @@ class CaffeineRepositoryImpl @Inject constructor(
         localDataSource.deleteCaffeineRecord(id)
     }
 
-    override suspend fun getCaffeineRecordsByDateRange(
+    override fun getCaffeineRecordsByDateRange(
         startTimeMillis: Long,
         endTimeMillis: Long
-    ): List<CaffeineRecord> {
+    ): Flow<List<CaffeineRecord>> {
         return localDataSource
             .getCaffeineRecordsByDateRange(
                 startTimeMillis = startTimeMillis,
                 endTimeMillis = endTimeMillis
             )
-            .map { entity ->
-                mapper.toDomain(entity)
+            .map { entities ->
+                entities.map { mapper.toDomain(it) }
             }
     }
 

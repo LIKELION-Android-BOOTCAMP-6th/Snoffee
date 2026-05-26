@@ -7,16 +7,15 @@ import com.snoffee.app.domain.util.CaffeineCalculator
 import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 import kotlin.math.log2
+
 class CalculateResidualUseCase @Inject constructor(
     private val caffeineRepository: CaffeineRepository,
     private val userProfileRepository: UserProfileRepository,
     private val calculator: CaffeineCalculator
 ) {
     suspend operator fun invoke(): CaffeineAnalysis {
-        val records =
-            caffeineRepository.getTodayCaffeineRecords().first()
-        val userProfile =
-            userProfileRepository.getUserProfile()
+        val todayRecords = caffeineRepository.getTodayCaffeineRecords().first()
+        val userProfile = userProfileRepository.getUserProfile()
         val halfLifeHours = when (
             userProfile?.sensitivity
         ) {
@@ -27,10 +26,8 @@ class CalculateResidualUseCase @Inject constructor(
         }
         val now = System.currentTimeMillis()
 
-        val totalResidual = records.sumOf { record ->
+        val totalResidual = todayRecords.sumOf { record ->
             val safeConsumedAt = if (record.consumedAt > now) now else record.consumedAt
-
-
             calculator.calculateResidualCaffeine(
                 intakeCaffeine = record.intakeCaffeine,
                 consumedAt = safeConsumedAt,

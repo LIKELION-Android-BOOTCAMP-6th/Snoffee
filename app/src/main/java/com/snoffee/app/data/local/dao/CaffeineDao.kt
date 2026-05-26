@@ -38,8 +38,8 @@ interface CaffeineDao {
                 "WHERE consumed_at BETWEEN :startTimeMillis AND :endTimeMillis " +
                 "ORDER BY consumed_at DESC"
     )
-    suspend fun getCaffeineRecordsByDateRange(
+    fun getCaffeineRecordsByDateRange(
         startTimeMillis: Long,
         endTimeMillis: Long
-    ): List<CaffeineEntity>
+    ): Flow<List<CaffeineEntity>>
 }
