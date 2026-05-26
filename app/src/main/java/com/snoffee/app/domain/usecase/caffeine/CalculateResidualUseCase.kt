@@ -4,6 +4,7 @@ import com.snoffee.app.domain.model.CaffeineAnalysis
 import com.snoffee.app.domain.repository.CaffeineRepository
 import com.snoffee.app.domain.repository.UserProfileRepository
 import com.snoffee.app.domain.util.CaffeineCalculator
+import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 import kotlin.math.log2
 class CalculateResidualUseCase @Inject constructor(
@@ -13,7 +14,7 @@ class CalculateResidualUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(): CaffeineAnalysis {
         val records =
-            caffeineRepository.getTodayCaffeineRecords()
+            caffeineRepository.getTodayCaffeineRecords().first()
         val userProfile =
             userProfileRepository.getUserProfile()
         val halfLifeHours = when (

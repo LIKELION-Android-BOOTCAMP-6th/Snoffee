@@ -10,6 +10,9 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -27,37 +30,35 @@ class CaffeineMainViewModel @Inject constructor(
     val uiState: StateFlow<CaffeineMainUiState> = _uiState.asStateFlow()
 
     init {
-        loadTodayRecords()
+        observeTodayRecords()
     }
 
-    // 오늘 기록 로드
-    fun loadTodayRecords() {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
-            runCatching { getTodayCaffeineUseCase() }
-                .onSuccess { records ->
-                    _uiState.update { state ->
-                        state.copy(
-                            isLoading = false,
-                            todayRecords = records,
-                            // 기록이 있는 날짜 추출 (캘린더 점 표시)
-                            recordedDates = state.recordedDates + records
-                                .map { record ->
-                                    LocalDate.ofEpochDay(record.consumedAt / 86400000)
-                                }
-                                .toSet(),
-                        )
-                    }
+    // Flow 구독. DB 변경 시 자동으로 UI 갱신
+    fun observeTodayRecords() {
+        getTodayCaffeineUseCase()
+            .onEach { records ->
+                _uiState.update { state ->
+                    state.copy(
+                        isLoading = false,
+                        todayRecords = records,
+                        // 기록이 있는 날짜 추출 (캘린더 점 표시)
+                        recordedDates = state.recordedDates + records
+                            .map { record ->
+                                LocalDate.ofEpochDay(record.consumedAt / 86400000)
+                            }
+                            .toSet(),
+                    )
                 }
-                .onFailure { throwable ->
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            error = throwable.message ?: "알 수 없는 오류가 발생했어요",
-                        )
-                    }
+            }
+            .catch { throwable ->
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        error = throwable.message ?: "알 수 없는 오류가 발생했어요"
+                    )
                 }
-        }
+            }
+            .launchIn(viewModelScope)
     }
 
     // 캘린더 날짜 선택
@@ -68,8 +69,6 @@ class CaffeineMainViewModel @Inject constructor(
                 currentYearMonth = YearMonth.from(date),
             )
         }
-        // TODO: 선택한 날짜 기준으로 기록 조회 (날짜별 조회 UseCase 추가 시 연결)
-        loadTodayRecords()
     }
 
     // 이전 달 이동
@@ -79,7 +78,7 @@ class CaffeineMainViewModel @Inject constructor(
         }
     }
 
-    //  달 이동
+    //  다음 달 이동
     fun onNextMonth() {
         _uiState.update {
             it.copy(currentYearMonth = it.currentYearMonth.plusMonths(1))
@@ -96,9 +95,6 @@ class CaffeineMainViewModel @Inject constructor(
         viewModelScope.launch {
             runCatching {
                 deleteCaffeineUseCase(id)
-            }.onSuccess {
-                // 삭제 성공 후 UI 리스트 갱신
-                loadTodayRecords()
             }.onFailure { throwable ->
                 _uiState.update {
                     it.copy(error = throwable.message ?: "삭제 중 오류가 발생했습니다.")
@@ -112,9 +108,6 @@ class CaffeineMainViewModel @Inject constructor(
         viewModelScope.launch {
             runCatching {
                 editCaffeineUseCase(record)
-            }.onSuccess {
-                // 수정 성공 후 UI 리스트 갱신
-                loadTodayRecords()
             }.onFailure { throwable ->
                 _uiState.update {
                     it.copy(error = throwable.message ?: "수정 중 오류가 발생했습니다.")

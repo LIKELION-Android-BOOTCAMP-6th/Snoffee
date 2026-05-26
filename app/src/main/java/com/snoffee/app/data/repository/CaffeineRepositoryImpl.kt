@@ -4,7 +4,8 @@ import com.snoffee.app.data.datasource.local.CaffeineLocalDataSource
 import com.snoffee.app.data.mapper.CaffeineMapper
 import com.snoffee.app.domain.model.CaffeineRecord
 import com.snoffee.app.domain.repository.CaffeineRepository
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import java.util.Calendar
 import javax.inject.Inject
 
@@ -21,15 +22,16 @@ class CaffeineRepositoryImpl @Inject constructor(
         localDataSource.insertCaffeineRecord(entity)
     }
 
-    override suspend fun getTodayCaffeineRecords(): List<CaffeineRecord> {
+    override fun getTodayCaffeineRecords(): Flow<List<CaffeineRecord>> {
         val startOfDay = getStartOfDay()
         val endOfDay = startOfDay + ONE_DAY
 
         return localDataSource
             .getTodayRecords(startOfDay, endOfDay)
-            .first()
-            .map { entity ->
-                mapper.toDomain(entity)
+            .map { entities ->              // first 제거 후 map으로 변경
+                entities.map { entity ->
+                    mapper.toDomain(entity)
+                }
             }
     }
 
