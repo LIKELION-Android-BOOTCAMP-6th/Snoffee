@@ -5,6 +5,7 @@ import com.snoffee.app.data.mapper.CaffeineMapper
 import com.snoffee.app.domain.model.CaffeineRecord
 import com.snoffee.app.domain.repository.CaffeineRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import java.util.Calendar
 import javax.inject.Inject
@@ -39,7 +40,7 @@ class CaffeineRepositoryImpl @Inject constructor(
         return getCaffeineRecordsByDateRange(
             startTimeMillis = sinceMillis,
             endTimeMillis = Long.MAX_VALUE
-        )
+        ).first()
     }
 
     override suspend fun deleteCaffeineRecord(id: Long) {

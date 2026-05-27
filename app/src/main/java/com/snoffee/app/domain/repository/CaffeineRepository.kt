@@ -18,7 +18,6 @@ interface CaffeineRepository {
     // 카페인 섭취 기록 삭제
     suspend fun deleteCaffeineRecord(id: Long)
 
-
     fun getCaffeineRecordsByDateRange(
         startTimeMillis: Long,
         endTimeMillis: Long
