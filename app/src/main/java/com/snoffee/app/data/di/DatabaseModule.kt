@@ -6,6 +6,7 @@ import com.snoffee.app.data.local.SnoffeeDatabase
 import com.snoffee.app.data.local.dao.CaffeineDao
 import com.snoffee.app.data.local.dao.DrinkDao
 import com.snoffee.app.data.local.dao.SleepDao
+import com.snoffee.app.data.local.dao.UserProfileDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -46,5 +47,11 @@ object DatabaseModule {
     @Singleton
     fun provideSleepDao(database: SnoffeeDatabase): SleepDao {
         return database.sleepDao() // ⚠️ SnoffeeDatabase 클래스 안에 sleepDao()가 정의되어 있어야 합니다!
+    }
+
+    @Provides
+    @Singleton
+    fun provideUserProfileDao(database: SnoffeeDatabase): UserProfileDao {
+        return database.userProfileDao()
     }
 }

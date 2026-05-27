@@ -1,6 +1,8 @@
 package com.snoffee.app.data.repository
 
 import com.snoffee.app.data.datasource.local.UserProfileLocalDataSource
+import com.snoffee.app.data.local.entity.UserProfileEntity
+import com.snoffee.app.domain.model.CaffeineSensitivity
 import com.snoffee.app.domain.model.UserProfile
 import com.snoffee.app.domain.repository.UserProfileRepository
 import javax.inject.Inject
@@ -12,11 +14,40 @@ class UserProfileRepositoryImpl @Inject constructor(
 ) : UserProfileRepository {
 
     override suspend fun saveUserProfile(userProfile: UserProfile) {
-        // TODO: Domain Model → DTO 변환 후 저장
+        val entity = UserProfileEntity(
+            id = userProfile.id,
+            height = userProfile.height,
+            weight = userProfile.weight,
+            sensitivity = when (userProfile.sensitivity) {
+                CaffeineSensitivity.LOW -> "LOW"
+                CaffeineSensitivity.SENSITIVE -> "HIGH"
+                CaffeineSensitivity.NORMAL -> "NORMAL"
+            },
+            targetSleepTime = userProfile.userSleepTime.toString(),
+            targetWakeTime = userProfile.wakeTime.toString()
+        )
+        localDataSource.saveUserProfile(entity)
     }
 
     override suspend fun getUserProfile(): UserProfile? {
-        // TODO: DTO 조회 후 Domain Model로 변환해서 반환
-        return null
+        val entity = localDataSource.getUserProfile() ?: return null
+
+        val sensitivityEnum = when (entity.sensitivity) {
+            "LOW" -> CaffeineSensitivity.LOW
+            "HIGH" -> CaffeineSensitivity.SENSITIVE
+            else -> CaffeineSensitivity.NORMAL
+        }
+
+        return UserProfile(
+            id = entity.id,
+            height = entity.height,
+            weight = entity.weight,
+            dailyCaffeineLimit = 400.0,
+            onboardingCompleted = true,
+            userSleepTime = entity.targetSleepTime.toLongOrNull() ?: 0L,
+            wakeTime = entity.targetWakeTime.toLongOrNull() ?: 0L,
+            sensitivity = sensitivityEnum,
+            cutoffTime = 0L // 초기
+        )
     }
 }

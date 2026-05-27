@@ -3,6 +3,9 @@ package com.snoffee.app.presentation.onboarding
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.snoffee.app.data.datasource.preference.OnboardingPreferenceDataSource
+import com.snoffee.app.domain.model.CaffeineSensitivity
+import com.snoffee.app.domain.model.UserProfile
+import com.snoffee.app.domain.repository.UserProfileRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,11 +22,12 @@ enum class OnboardingStep {
 }
 
 enum class CaffeineSensitivityOption(
-    val title: String
+    val title: String,
+    val domainDomainSensitivity: CaffeineSensitivity
 ) {
-    SENSITIVE("민감함"),
-    NORMAL("보통"),
-    LOW("민감하지 않음")
+    LOW("둔감함", CaffeineSensitivity.LOW),
+    NORMAL("보통", CaffeineSensitivity.NORMAL),
+    SENSITIVE("민감함", CaffeineSensitivity.SENSITIVE)
 }
 
 data class OnboardingUiState(
@@ -34,12 +38,14 @@ data class OnboardingUiState(
     val isCompleted: Boolean = false
 ) {
     val isPersonalInfoValid: Boolean
-        get() = height.isNotBlank() && weight.isNotBlank()
+        get() = height.isNotBlank() && weight.isNotBlank() &&
+                height.toDoubleOrNull() != null && weight.toDoubleOrNull() != null
 }
 
 @HiltViewModel
 class OnboardingViewModel @Inject constructor(
-    private val onboardingPreferenceDataSource: OnboardingPreferenceDataSource
+    private val onboardingPreferenceDataSource: OnboardingPreferenceDataSource,
+    private val userProfileRepository: UserProfileRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(OnboardingUiState())
@@ -85,6 +91,24 @@ class OnboardingViewModel @Inject constructor(
 
     fun completeOnboarding() {
         viewModelScope.launch {
+            val currentState = _uiState.value
+
+            val userHeight = currentState.height.toDoubleOrNull() ?: 0.0
+            val userWeight = currentState.weight.toDoubleOrNull() ?: 0.0
+            val chosenSensitivity = currentState.caffeineSensitivity.domainDomainSensitivity
+
+            val initialProfile = UserProfile(
+                id = 1,
+                height = userHeight,
+                weight = userWeight,
+                dailyCaffeineLimit = 400.0,
+                onboardingCompleted = true,
+                userSleepTime = 2230L,
+                wakeTime = 630L,
+                sensitivity = chosenSensitivity,
+                cutoffTime = 0L
+            )
+            userProfileRepository.saveUserProfile(initialProfile)
             onboardingPreferenceDataSource.setOnboardingCompleted(true)
 
             _uiState.update {
