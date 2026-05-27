@@ -5,6 +5,7 @@ package com.snoffee.app.domain.model
 data class UserProfile(
     val id: Int = 1,                        // PK, 항상 1 (단일 사용자)
     val weight: Double,                     // 체중 (카페인 대사율 보정에 사용)
+    val height: Double,
     val dailyCaffeineLimit: Double,         // 하루 카페인 권장량 (mg)
     val onboardingCompleted: Boolean = false, // 온보딩 완료 여부
     val userSleepTime: Long,                // 목표 수면 시각
