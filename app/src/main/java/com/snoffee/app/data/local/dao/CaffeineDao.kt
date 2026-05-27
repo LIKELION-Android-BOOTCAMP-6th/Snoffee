@@ -23,23 +23,23 @@ interface CaffeineDao {
     @Update
     suspend fun editCaffeineRecord(record: CaffeineEntity)
 
-    // 오늘 기록 조회 (홈 화면 자동 반영용)
+    // 오늘 기록 조회
     @Query(
         "SELECT * FROM caffeine_record " +
                 "WHERE consumed_at " +
                 "BETWEEN :startOfDay AND :endOfDay " +
                 "ORDER BY consumed_at DESC"
     )
-
     fun getTodayRecords(startOfDay: Long, endOfDay: Long): Flow<List<CaffeineEntity>>
 
+    // 날짜 범위 조회
     @Query(
         "SELECT * FROM caffeine_record " +
                 "WHERE consumed_at BETWEEN :startTimeMillis AND :endTimeMillis " +
                 "ORDER BY consumed_at DESC"
     )
-    suspend fun getCaffeineRecordsByDateRange(
+    fun getCaffeineRecordsByDateRange(
         startTimeMillis: Long,
         endTimeMillis: Long
-    ): List<CaffeineEntity>
+    ): Flow<List<CaffeineEntity>>
 }

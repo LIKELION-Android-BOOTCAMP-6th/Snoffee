@@ -1,6 +1,7 @@
 package com.snoffee.app.presentation.caffeine.component
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -75,7 +76,13 @@ fun DrinkListItem(
                     fontWeight = FontWeight.SemiBold,
                     color = colorScheme.onSurface,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .basicMarquee(
+                            iterations = Int.MAX_VALUE,
+                            velocity = 100.dp               // 좌우 스크롤 속도
+                        ) // 좌 -> 우 이동하는 마키 효과 넣기
                 )
                 Text(
                     text = drink.brand,
@@ -86,21 +93,40 @@ fun DrinkListItem(
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            // 카페인 수치
+            // 음료 총 카페인 수치 & 음료 총 용량
             Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    text = "${drink.caffeineMg}",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = colorScheme.primary,
-                    lineHeight = 18.sp
-                )
-                Text(
-                    text = "MG",
-                    fontSize = 13.sp,
-                    color = colorScheme.primary,
-                    letterSpacing = 0.5.sp
-                )
+                Row() {
+                    Text(
+                        text = "${drink.totalCaffeine}",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = colorScheme.primary,
+                        lineHeight = 18.sp
+                    )
+                    Text(
+                        text = " MG",
+                        fontSize = 10.sp,
+                        color = colorScheme.primary,
+                        letterSpacing = 0.5.sp,
+                        lineHeight = 18.sp
+                    )
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "${drink.totalSize}",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = colorScheme.primary,
+                        lineHeight = 18.sp
+                    )
+                    Text(
+                        text = " ML",
+                        fontSize = 10.sp,
+                        color = colorScheme.primary,
+                        letterSpacing = 0.5.sp,
+                        lineHeight = 18.sp
+                    )
+                }
             }
         }
     }
