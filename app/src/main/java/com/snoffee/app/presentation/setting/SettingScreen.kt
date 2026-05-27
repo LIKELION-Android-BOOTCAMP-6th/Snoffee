@@ -87,21 +87,11 @@ fun SettingScreen(
     val displayHeight = userProfile?.height?.let { "${it.toInt()}cm" } ?: "-cm"
     val displayWeight = userProfile?.weight?.let { "${it.toInt()}kg" } ?: "-kg"
 
-    val rawSleep = userProfile?.userSleepTime?.toString() ?: "2230"
-    val displaySleepTime = if (rawSleep.length >= 4) "${rawSleep.substring(0, 2)}:${
-        rawSleep.substring(
-            2,
-            4
-        )
-    }" else "22:30"
+    val rawSleep = userProfile?.userSleepTime?.toString()?.padStart(4, '0') ?: "2230"
+    val displaySleepTime = "${rawSleep.substring(0, 2)}:${rawSleep.substring(2, 4)}"
 
-    val rawWake = userProfile?.wakeTime?.toString() ?: "0630"
-    val displayWakeTime = if (rawWake.length >= 4) "${rawWake.substring(0, 2)}:${
-        rawWake.substring(
-            2,
-            4
-        )
-    }" else "06:30"
+    val rawWake = userProfile?.wakeTime?.toString()?.padStart(4, '0') ?: "0630"
+    val displayWakeTime = "${rawWake.substring(0, 2)}:${rawWake.substring(2, 4)}"
 
     val sensitivityText = when (userProfile?.sensitivity) {
         CaffeineSensitivity.LOW -> "낮음"
@@ -109,7 +99,7 @@ fun SettingScreen(
         else -> "보통"
     }
     val sensitivityFill = when (userProfile?.sensitivity) {
-        CaffeineSensitivity.LOW -> 0.1f
+        CaffeineSensitivity.LOW -> 0.0f
         CaffeineSensitivity.SENSITIVE -> 1.0f
         else -> 0.5f
     }
@@ -229,9 +219,11 @@ fun SettingScreen(
     }
 
     if (showHeightDialog) {
-        val initialHeight = userProfile?.height?.toInt()?.toString() ?: ""
-        var inputHeight by remember { mutableStateOf(initialHeight) }
-
+        var inputHeight by remember {
+            mutableStateOf(
+                userProfile?.height?.toInt()?.toString() ?: ""
+            )
+        }
         AlertDialog(
             onDismissRequest = { showHeightDialog = false },
             title = { Text(text = "신장 수정", fontSize = 16.sp, fontWeight = FontWeight.Bold) },
@@ -263,9 +255,11 @@ fun SettingScreen(
     }
 
     if (showWeightDialog) {
-        val initialWeight = userProfile?.weight?.toInt()?.toString() ?: ""
-        var inputWeight by remember { mutableStateOf(initialWeight) }
-
+        var inputWeight by remember {
+            mutableStateOf(
+                userProfile?.weight?.toInt()?.toString() ?: ""
+            )
+        }
         AlertDialog(
             onDismissRequest = { showWeightDialog = false },
             title = { Text(text = "체중 수정", fontSize = 16.sp, fontWeight = FontWeight.Bold) },
@@ -298,13 +292,15 @@ fun SettingScreen(
 
     if (showSensitivityDialog) {
         val options = listOf("둔감함", "보통", "민감함")
-        val currentInitialIndex = when (userProfile?.sensitivity) {
-            CaffeineSensitivity.LOW -> 0
-            CaffeineSensitivity.SENSITIVE -> 2
-            else -> 1
+        var selectedIndex by remember {
+            mutableIntStateOf(
+                when (userProfile?.sensitivity) {
+                    CaffeineSensitivity.LOW -> 0
+                    CaffeineSensitivity.SENSITIVE -> 2
+                    else -> 1
+                }
+            )
         }
-        var selectedIndex by remember { mutableIntStateOf(currentInitialIndex) }
-
         AlertDialog(
             onDismissRequest = { showSensitivityDialog = false },
             title = { Text(text = "카페인 민감도 변경", fontSize = 16.sp, fontWeight = FontWeight.Bold) },
@@ -336,6 +332,7 @@ fun SettingScreen(
                         2 -> CaffeineSensitivity.SENSITIVE
                         else -> CaffeineSensitivity.NORMAL
                     }
+                    viewModel.updateSensitivity(selectedSensitivity)
                     showSensitivityDialog = false
                 }) { Text("적용", color = SnoffeePrimary) }
             },
@@ -351,16 +348,13 @@ fun SettingScreen(
     }
 
     if (showSleepTimePicker) {
-        val parsedHour =
-            if (rawSleep.length >= 4) rawSleep.substring(0, 2).toIntOrNull() ?: 22 else 22
-        val initialMinute =
-            if (rawSleep.length >= 4) rawSleep.substring(2, 4).toIntOrNull() ?: 30 else 30
-
-        val initialHour = if (parsedHour < 12) parsedHour + 12 else parsedHour
-
         val timePickerState = rememberTimePickerState(
-            initialHour = initialHour,
-            initialMinute = initialMinute,
+            initialHour = if (rawSleep.length >= 4) {
+                val parsedHour = rawSleep.substring(0, 2).toIntOrNull() ?: 22
+                if (parsedHour < 12) parsedHour + 12 else parsedHour
+            } else 22,
+            initialMinute = if (rawSleep.length >= 4) rawSleep.substring(2, 4).toIntOrNull()
+                ?: 30 else 30,
             is24Hour = false
         )
 
@@ -396,15 +390,13 @@ fun SettingScreen(
     }
 
     if (showWakeTimePicker) {
-        val parsedHour = if (rawWake.length >= 4) rawWake.substring(0, 2).toIntOrNull() ?: 6 else 6
-        val initialMinute =
-            if (rawWake.length >= 4) rawWake.substring(2, 4).toIntOrNull() ?: 30 else 30
-
-        val initialHour = if (parsedHour >= 12) parsedHour - 12 else parsedHour
-
         val timePickerState = rememberTimePickerState(
-            initialHour = initialHour,
-            initialMinute = initialMinute,
+            initialHour = if (rawWake.length >= 4) {
+                val parsedHour = rawWake.substring(0, 2).toIntOrNull() ?: 6
+                if (parsedHour >= 12) parsedHour - 12 else parsedHour
+            } else 6,
+            initialMinute = if (rawWake.length >= 4) rawWake.substring(2, 4).toIntOrNull()
+                ?: 30 else 30,
             is24Hour = false
         )
 
