@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -30,7 +29,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.snoffee.app.core.ui.theme.SnoffeeBgBase
-import com.snoffee.app.core.ui.theme.SnoffeeDivider
 import com.snoffee.app.core.ui.theme.SnoffeeError
 import com.snoffee.app.core.ui.theme.SnoffeePrimary
 import com.snoffee.app.core.ui.theme.SnoffeeSurface
@@ -172,15 +170,15 @@ private fun SuccessState(uiState: HomeUiState, onAddCaffeineClick: () -> Unit) {
             Spacer(modifier = Modifier.height(30.dp))
             CaffeineGauge(uiState.residualCaffeineMg, uiState.riskLevel)
             Spacer(modifier = Modifier.height(48.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                InfoColumn("대사 예상 시간", uiState.metabolismTime)
-                Box(modifier = Modifier
-                    .width(1.dp)
-                    .height(30.dp)
-                    .background(SnoffeeDivider))
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(20.dp)
+            ) {
                 InfoColumn("잔류 농도", uiState.concentrationLevel)
+                InfoColumn("대사 예상 시간", uiState.metabolismTime)
             }
-            Spacer(modifier = Modifier.height(30.dp))
+            Spacer(modifier = Modifier.height(45.dp))
             Button(onClick = onAddCaffeineClick, modifier = Modifier.fillMaxWidth()) { Text("카페인 추가") }
         }
     }

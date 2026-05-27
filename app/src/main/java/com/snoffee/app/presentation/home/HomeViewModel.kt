@@ -63,7 +63,10 @@ class HomeViewModel @Inject constructor(
                 val formattedTime = if (residualDouble <= targetMinCaffeine) {
                     "--:--"
                 } else {
-                    SimpleDateFormat("a hh:mm", Locale.KOREAN).format(Date(analysis.cutoffTime))
+                    SimpleDateFormat(
+                        "M월 d일 (E) a h시 m분",
+                        Locale.KOREAN
+                    ).format(Date(analysis.cutoffTime))
                 }
 
                 _uiState.update { state ->
