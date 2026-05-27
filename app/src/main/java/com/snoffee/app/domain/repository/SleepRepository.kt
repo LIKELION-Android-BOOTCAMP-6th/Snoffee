@@ -11,4 +11,5 @@ interface SleepRepository {
         startTimeMillis: Long,
         endTimeMillis: Long
     ): List<SleepData>
+    suspend fun hasHealthPermission(): Boolean
 }

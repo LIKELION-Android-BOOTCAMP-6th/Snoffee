@@ -4,7 +4,6 @@ import com.snoffee.app.domain.model.CaffeineAnalysis
 import com.snoffee.app.domain.repository.CaffeineRepository
 import com.snoffee.app.domain.repository.UserProfileRepository
 import com.snoffee.app.domain.util.CaffeineCalculator
-import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 import kotlin.math.log2
 
@@ -14,8 +13,12 @@ class CalculateResidualUseCase @Inject constructor(
     private val calculator: CaffeineCalculator
 ) {
     suspend operator fun invoke(): CaffeineAnalysis {
-        val todayRecords = caffeineRepository.getTodayCaffeineRecords().first()
+        val now = System.currentTimeMillis()
+        val fiveDaysAgo = now - (5L * 24 * 60 * 60 * 1000)
+
         val userProfile = userProfileRepository.getUserProfile()
+        val records = caffeineRepository.getCaffeineRecordsSince(fiveDaysAgo)
+
         val halfLifeHours = when (
             userProfile?.sensitivity
         ) {
@@ -24,20 +27,23 @@ class CalculateResidualUseCase @Inject constructor(
             3 -> 4.0 // 낮음
             else -> 5.0
         }
-        val now = System.currentTimeMillis()
 
-        val totalResidual = todayRecords.sumOf { record ->
+        val targetMinCaffeine = 10.0
+
+        val totalResidual = records.sumOf { record ->
             val safeConsumedAt = if (record.consumedAt > now) now else record.consumedAt
-            calculator.calculateResidualCaffeine(
+
+            val residual = calculator.calculateResidualCaffeine(
                 intakeCaffeine = record.intakeCaffeine,
                 consumedAt = safeConsumedAt,
                 currentTimeMillis = now,
                 halfLifeHours = halfLifeHours
             )
+
+            if (residual < targetMinCaffeine) 0.0 else residual
         }
 
-        //모든 음료 중 가장 늦게 대사가 끝나는 0mg 시각 찾기
-        val targetMinCaffeine = 0.1
+        //모든 음료 중 가장 늦게 대사가 끝나는 10mg 시각 찾기
         val finalZeroTime = if (totalResidual <= targetMinCaffeine) {
             now
         } else {

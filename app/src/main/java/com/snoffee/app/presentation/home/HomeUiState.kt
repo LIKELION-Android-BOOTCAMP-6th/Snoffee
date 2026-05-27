@@ -10,7 +10,8 @@ data class HomeUiState(
     val errorMessage: String? = null,
     val metabolismTime: String = "--:--",
     val concentrationLevel: String = "-",
-    val recentLogs: List<CaffeineRecord> = emptyList()
+    val recentLogs: List<CaffeineRecord> = emptyList(),
+    val lastUpdated: Long = 0L
 )
 
 enum class CaffeineRiskLevel {

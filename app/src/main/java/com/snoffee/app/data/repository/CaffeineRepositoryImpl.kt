@@ -35,6 +35,13 @@ class CaffeineRepositoryImpl @Inject constructor(
             }
     }
 
+    override suspend fun getCaffeineRecordsSince(sinceMillis: Long): List<CaffeineRecord> {
+        return getCaffeineRecordsByDateRange(
+            startTimeMillis = sinceMillis,
+            endTimeMillis = Long.MAX_VALUE
+        )
+    }
+
     override suspend fun deleteCaffeineRecord(id: Long) {
         localDataSource.deleteCaffeineRecord(id)
     }

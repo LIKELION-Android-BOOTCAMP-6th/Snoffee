@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -23,13 +24,7 @@ class HomeViewModel @Inject constructor(
     private val getTodayCaffeineUseCase: GetTodayCaffeineUseCase
 ) : ViewModel() {
     private val _uiState =
-        MutableStateFlow(
-            HomeUiState(
-                residualCaffeineMg = 0.0,
-                isEmpty = true,
-                isLoading = false
-            )
-        )
+        MutableStateFlow(HomeUiState(isLoading = true))
     val uiState: StateFlow<HomeUiState> =
         _uiState.asStateFlow()
     private var refreshJob: Job? = null
@@ -47,10 +42,12 @@ class HomeViewModel @Inject constructor(
     }
     fun loadResidualCaffeine() {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(
-                isLoading = _uiState.value.recentLogs.isEmpty(),
-                errorMessage = null
-            )
+            _uiState.update {
+                it.copy(
+                    isLoading = it.recentLogs.isEmpty(),
+                    errorMessage = null
+                )
+            }
             runCatching {
                 val residualAnalysis = calculateResidualUseCase()
                 val todayRecords = getTodayCaffeineUseCase().first()
@@ -61,23 +58,35 @@ class HomeViewModel @Inject constructor(
 
                 Pair(residualAnalysis, recentFiveLogs)
             }.onSuccess { (analysis, recentLogs) ->
-                val formattedTime = if (recentLogs.isEmpty()) {
+                val residualDouble = analysis.residualAmount
+                val targetMinCaffeine = 10.0
+
+                val formattedTime = if (residualDouble <= targetMinCaffeine) {
                     "--:--"
                 } else {
-                    SimpleDateFormat("a hh:mm", Locale.KOREAN).format(Date(analysis.cutoffTime))
+                    SimpleDateFormat(
+                        "M월 d일 (E) a h시 m분",
+                        Locale.KOREAN
+                    ).format(Date(analysis.cutoffTime))
                 }
 
-                val residualDouble = analysis.residualAmount
-
-                _uiState.value = _uiState.value.copy(
-                    residualCaffeineMg = residualDouble,
-                    riskLevel = getRiskLevel(residualDouble),
-                    isLoading = false,
-                    isEmpty = residualDouble <= 0 && recentLogs.isEmpty(),
-                    metabolismTime = formattedTime,
-                    concentrationLevel = if (residualDouble >= 150) "높음" else if (residualDouble >= 50) "보통" else "낮음",
-                    recentLogs = recentLogs
-                )
+                _uiState.update { state ->
+                    state.copy(
+                        residualCaffeineMg = residualDouble,
+                        riskLevel = getRiskLevel(residualDouble),
+                        isLoading = false,
+                        isEmpty = residualDouble <= targetMinCaffeine && recentLogs.isEmpty(),
+                        metabolismTime = formattedTime,
+                        concentrationLevel = when {
+                            residualDouble >= 150.0 -> "높음"
+                            residualDouble >= 50.0 -> "보통"
+                            residualDouble > targetMinCaffeine -> "낮음"
+                            else -> "-"
+                        },
+                        recentLogs = recentLogs,
+                        lastUpdated = System.currentTimeMillis()
+                    )
+                }
             }.onFailure { throwable ->
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
