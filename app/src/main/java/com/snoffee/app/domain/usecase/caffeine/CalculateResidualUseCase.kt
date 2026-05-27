@@ -1,6 +1,7 @@
 package com.snoffee.app.domain.usecase.caffeine
 
 import com.snoffee.app.domain.model.CaffeineAnalysis
+import com.snoffee.app.domain.model.CaffeineSensitivity
 import com.snoffee.app.domain.repository.CaffeineRepository
 import com.snoffee.app.domain.repository.UserProfileRepository
 import com.snoffee.app.domain.util.CaffeineCalculator
@@ -20,14 +21,8 @@ class CalculateResidualUseCase @Inject constructor(
             caffeineRepository.getCaffeineRecordsSince(fiveDaysAgo)
         val userProfile =
             userProfileRepository.getUserProfile()
-        val halfLifeHours = when (
-            userProfile?.sensitivity
-        ) {
-            1 -> 6.0 // 민감
-            2 -> 5.0 // 적당
-            3 -> 4.0 // 낮음
-            else -> 5.0
-        }
+        val halfLifeHours =
+            userProfile?.sensitivity?.halfLifeHours ?: CaffeineSensitivity.NORMAL.halfLifeHours
         val targetMinCaffeine = 10.0
 
         val totalResidual = records.sumOf { record ->

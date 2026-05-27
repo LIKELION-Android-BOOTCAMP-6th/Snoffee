@@ -2,6 +2,7 @@ package com.snoffee.app.data.repository
 
 import com.snoffee.app.data.datasource.local.UserProfileLocalDataSource
 import com.snoffee.app.data.local.entity.UserProfileEntity
+import com.snoffee.app.domain.model.CaffeineSensitivity
 import com.snoffee.app.domain.model.UserProfile
 import com.snoffee.app.domain.repository.UserProfileRepository
 import javax.inject.Inject
@@ -18,9 +19,9 @@ class UserProfileRepositoryImpl @Inject constructor(
             height = userProfile.height,
             weight = userProfile.weight,
             sensitivity = when (userProfile.sensitivity) {
-                1 -> "LOW"
-                3 -> "HIGH"
-                else -> "NORMAL"
+                CaffeineSensitivity.LOW -> "LOW"
+                CaffeineSensitivity.SENSITIVE -> "HIGH"
+                CaffeineSensitivity.NORMAL -> "NORMAL"
             },
             targetSleepTime = userProfile.userSleepTime.toString(),
             targetWakeTime = userProfile.wakeTime.toString()
@@ -31,10 +32,10 @@ class UserProfileRepositoryImpl @Inject constructor(
     override suspend fun getUserProfile(): UserProfile? {
         val entity = localDataSource.getUserProfile() ?: return null
 
-        val sensitivityInt = when (entity.sensitivity) {
-            "LOW" -> 1
-            "HIGH" -> 3
-            else -> 2
+        val sensitivityEnum = when (entity.sensitivity) {
+            "LOW" -> CaffeineSensitivity.LOW
+            "HIGH" -> CaffeineSensitivity.SENSITIVE
+            else -> CaffeineSensitivity.NORMAL
         }
 
         return UserProfile(
@@ -45,7 +46,7 @@ class UserProfileRepositoryImpl @Inject constructor(
             onboardingCompleted = true,
             userSleepTime = entity.targetSleepTime.toLongOrNull() ?: 0L,
             wakeTime = entity.targetWakeTime.toLongOrNull() ?: 0L,
-            sensitivity = sensitivityInt,
+            sensitivity = sensitivityEnum,
             cutoffTime = 0L // 초기
         )
     }

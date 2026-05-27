@@ -61,6 +61,7 @@ import com.snoffee.app.core.ui.theme.SnoffeeTextDisabled
 import com.snoffee.app.core.ui.theme.SnoffeeTextHint
 import com.snoffee.app.core.ui.theme.SnoffeeTextMain
 import com.snoffee.app.core.ui.theme.SnoffeeTextMuted
+import com.snoffee.app.domain.model.CaffeineSensitivity
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -103,13 +104,13 @@ fun SettingScreen(
     }" else "06:30"
 
     val sensitivityText = when (userProfile?.sensitivity) {
-        1 -> "낮음"
-        3 -> "높음"
+        CaffeineSensitivity.LOW -> "낮음"
+        CaffeineSensitivity.SENSITIVE -> "높음"
         else -> "보통"
     }
     val sensitivityFill = when (userProfile?.sensitivity) {
-        1 -> 0.1f
-        3 -> 1.0f
+        CaffeineSensitivity.LOW -> 0.1f
+        CaffeineSensitivity.SENSITIVE -> 1.0f
         else -> 0.5f
     }
 
@@ -297,7 +298,12 @@ fun SettingScreen(
 
     if (showSensitivityDialog) {
         val options = listOf("둔감함", "보통", "민감함")
-        var selectedIndex by remember { mutableIntStateOf((userProfile?.sensitivity ?: 2) - 1) }
+        val currentInitialIndex = when (userProfile?.sensitivity) {
+            CaffeineSensitivity.LOW -> 0
+            CaffeineSensitivity.SENSITIVE -> 2
+            else -> 1
+        }
+        var selectedIndex by remember { mutableIntStateOf(currentInitialIndex) }
 
         AlertDialog(
             onDismissRequest = { showSensitivityDialog = false },
@@ -325,7 +331,11 @@ fun SettingScreen(
             },
             confirmButton = {
                 TextButton(onClick = {
-                    viewModel.updateSensitivity(selectedIndex + 1)
+                    val selectedSensitivity = when (selectedIndex) {
+                        0 -> CaffeineSensitivity.LOW
+                        2 -> CaffeineSensitivity.SENSITIVE
+                        else -> CaffeineSensitivity.NORMAL
+                    }
                     showSensitivityDialog = false
                 }) { Text("적용", color = SnoffeePrimary) }
             },

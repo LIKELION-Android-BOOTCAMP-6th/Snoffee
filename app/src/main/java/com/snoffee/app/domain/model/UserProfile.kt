@@ -10,7 +10,7 @@ data class UserProfile(
     val onboardingCompleted: Boolean = false, // 온보딩 완료 여부
     val userSleepTime: Long,                // 목표 수면 시각
     val wakeTime: Long,                     // 기상 시각
-    val sensitivity: Int,                   // 카페인 민감도 (1~3단계, Gemini 파라미터)
+    val sensitivity: CaffeineSensitivity,   // 카페인 민감도
     val cutoffTime: Long                    // 마지막으로 산출된 컷오프 시각 (캐싱용, 없을 수 있음)
 )
 enum class CaffeineSensitivity(

@@ -2,6 +2,7 @@ package com.snoffee.app.presentation.setting
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.snoffee.app.domain.model.CaffeineSensitivity
 import com.snoffee.app.domain.model.UserProfile
 import com.snoffee.app.domain.repository.UserProfileRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -50,10 +51,10 @@ class SettingViewModel @Inject constructor(
     }
 
     // 카페인 민감도 저장 (1~3단계)
-    fun updateSensitivity(level: Int) {
+    fun updateSensitivity(sensitivity: CaffeineSensitivity) {
         viewModelScope.launch {
             val current = _userProfile.value ?: createDefaultProfile()
-            val updated = current.copy(sensitivity = level)
+            val updated = current.copy(sensitivity = sensitivity)
             userProfileRepository.saveUserProfile(updated)
             _userProfile.value = updated
         }
@@ -90,7 +91,7 @@ class SettingViewModel @Inject constructor(
             onboardingCompleted = true,
             userSleepTime = 0L,
             wakeTime = 0L,
-            sensitivity = 2,
+            sensitivity = CaffeineSensitivity.NORMAL,
             cutoffTime = 0L
         )
     }
