@@ -7,9 +7,13 @@ import com.snoffee.app.domain.usecase.caffeine.DeleteCaffeineUseCase
 import com.snoffee.app.domain.usecase.caffeine.EditCaffeineUseCase
 import com.snoffee.app.domain.usecase.caffeine.GetTodayCaffeineUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -25,39 +29,47 @@ class CaffeineMainViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(CaffeineMainUiState())
     val uiState: StateFlow<CaffeineMainUiState> = _uiState.asStateFlow()
+    private var recordsJob: Job? = null
 
     init {
-        loadTodayRecords()
+        val today = LocalDate.now()
+        observeMonthRecords(YearMonth.from(today)) // 이번 달 dot 초기화
+        observeRecordsByDate(today)                // 오늘 기록 초기화
     }
 
-    // 오늘 기록 로드
-    fun loadTodayRecords() {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
-            runCatching { getTodayCaffeineUseCase() }
-                .onSuccess { records ->
-                    _uiState.update { state ->
-                        state.copy(
-                            isLoading = false,
-                            todayRecords = records,
-                            // 기록이 있는 날짜 추출 (캘린더 점 표시)
-                            recordedDates = state.recordedDates + records
-                                .map { record ->
-                                    LocalDate.ofEpochDay(record.consumedAt / 86400000)
-                                }
-                                .toSet(),
-                        )
-                    }
+    // 이번 달 전체 dot 표시용
+    private fun observeMonthRecords(yearMonth: YearMonth) {
+        getTodayCaffeineUseCase(yearMonth) // repository 대신 UseCase 호출
+            .onEach { records ->
+                _uiState.update { state ->
+                    state.copy(
+                        recordedDates = records
+                            .map { LocalDate.ofEpochDay(it.consumedAt / 86400000) }
+                            .toSet()
+                    )
                 }
-                .onFailure { throwable ->
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            error = throwable.message ?: "알 수 없는 오류가 발생했어요",
-                        )
-                    }
+            }
+            .launchIn(viewModelScope)
+    }
+
+    // 선택한 날짜 기록용
+    private fun observeRecordsByDate(date: LocalDate) {
+        recordsJob?.cancel()
+        recordsJob = getTodayCaffeineUseCase(date)
+            .onEach { records ->
+                _uiState.update { state ->
+                    state.copy(
+                        isLoading = false,
+                        todayRecords = records
+                    )
                 }
-        }
+            }
+            .catch { throwable ->
+                _uiState.update {
+                    it.copy(error = throwable.message ?: "알 수 없는 오류가 발생했어요")
+                }
+            }
+            .launchIn(viewModelScope)
     }
 
     // 캘린더 날짜 선택
@@ -68,22 +80,21 @@ class CaffeineMainViewModel @Inject constructor(
                 currentYearMonth = YearMonth.from(date),
             )
         }
-        // TODO: 선택한 날짜 기준으로 기록 조회 (날짜별 조회 UseCase 추가 시 연결)
-        loadTodayRecords()
+        observeRecordsByDate(date)     // 선택 날짜 기준 조회로 교체
     }
 
     // 이전 달 이동
     fun onPrevMonth() {
-        _uiState.update {
-            it.copy(currentYearMonth = it.currentYearMonth.minusMonths(1))
-        }
+        val newMonth = _uiState.value.currentYearMonth.minusMonths(1)
+        _uiState.update { it.copy(currentYearMonth = newMonth) }
+        observeMonthRecords(newMonth) // 월 변경 시 dot 갱신
     }
 
-    //  달 이동
+    //  다음 달 이동
     fun onNextMonth() {
-        _uiState.update {
-            it.copy(currentYearMonth = it.currentYearMonth.plusMonths(1))
-        }
+        val newMonth = _uiState.value.currentYearMonth.plusMonths(1)
+        _uiState.update { it.copy(currentYearMonth = newMonth) }
+        observeMonthRecords(newMonth) // 월 변경 시 dot 갱신
     }
 
     // 에러 초기화
@@ -96,9 +107,6 @@ class CaffeineMainViewModel @Inject constructor(
         viewModelScope.launch {
             runCatching {
                 deleteCaffeineUseCase(id)
-            }.onSuccess {
-                // 삭제 성공 후 UI 리스트 갱신
-                loadTodayRecords()
             }.onFailure { throwable ->
                 _uiState.update {
                     it.copy(error = throwable.message ?: "삭제 중 오류가 발생했습니다.")
@@ -112,9 +120,6 @@ class CaffeineMainViewModel @Inject constructor(
         viewModelScope.launch {
             runCatching {
                 editCaffeineUseCase(record)
-            }.onSuccess {
-                // 수정 성공 후 UI 리스트 갱신
-                loadTodayRecords()
             }.onFailure { throwable ->
                 _uiState.update {
                     it.copy(error = throwable.message ?: "수정 중 오류가 발생했습니다.")

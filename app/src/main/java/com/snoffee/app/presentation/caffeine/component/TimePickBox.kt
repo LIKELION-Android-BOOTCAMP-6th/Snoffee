@@ -41,9 +41,11 @@ import java.util.Locale
 fun TimePickerBox(
     selectedTime: LocalTime,
     onTimeChange: (LocalTime) -> Unit,
+    onErrorChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var showDialog by remember { mutableStateOf(false) }
+    var showFutureTimeError by remember { mutableStateOf(false) }   //  미래 시간으로 입력시 에러 상태 추가
     val formatter = remember { DateTimeFormatter.ofPattern("hh:mm a", Locale.ENGLISH) }
     val formatted = selectedTime.format(formatter)
 
@@ -51,8 +53,19 @@ fun TimePickerBox(
         TimePickerDialog(
             initialTime = selectedTime,
             onConfirm = { hour, minute ->
-                onTimeChange(LocalTime.of(hour, minute))
-                showDialog = false
+                val selected = LocalTime.of(hour, minute)
+                val now = LocalTime.now()
+
+                if (selected.isAfter(now)) {
+                    showFutureTimeError = true
+                    onErrorChange(true)
+                    showDialog = false
+                } else {
+                    showFutureTimeError = false
+                    onErrorChange(false)
+                    onTimeChange(selected)
+                    showDialog = false
+                }
             },
             onDismiss = { showDialog = false }
         )
@@ -61,6 +74,7 @@ fun TimePickerBox(
     BoxVariant(
         formatted = formatted,
         modifier = modifier,
+        isError = showFutureTimeError,
         onClick = { showDialog = true }
     )
 }
@@ -70,10 +84,10 @@ fun TimePickerBox(
 private fun BoxVariant(
     formatted: String,
     modifier: Modifier,
+    isError: Boolean = false, // 에러 상태 추가
     onClick: () -> Unit
 ) {
     val colorScheme = SnoffeeTheme.colorScheme
-    val extColors = SnoffeeTheme.colors
 
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
@@ -119,10 +133,13 @@ private fun BoxVariant(
             }
         }
 
+        // 기존 안내 텍스트 부분을 에러 문구 표시로 사용
         Text(
-            text = stringResource(R.string.caffeine_drink_time_info),
+            text = if (isError) stringResource(R.string.caffeine_error_recode_future_time) // 에러 메시지
+            else stringResource(R.string.caffeine_drink_time_info),
             fontSize = 14.sp,
-            color = extColors.textDisabled,
+            color = if (isError) SnoffeeTheme.colorScheme.error
+            else SnoffeeTheme.colors.textDisabled,
             modifier = Modifier.padding(start = 4.dp, top = 8.dp)
         )
     }
@@ -198,7 +215,8 @@ fun PreviewTimePickerBox() {
         Box(Modifier.padding(16.dp)) {
             TimePickerBox(
                 selectedTime = LocalTime.of(9, 45),
-                onTimeChange = {}
+                onTimeChange = {},
+                onErrorChange = {}
             )
         }
     }

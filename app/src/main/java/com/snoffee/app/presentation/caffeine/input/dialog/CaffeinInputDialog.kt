@@ -94,6 +94,7 @@ fun CaffeineInputDialog(
 
     val caffeineFocusRequester = remember { FocusRequester() }
     val volumeFocusRequester = remember { FocusRequester() }
+    var isTimeError by remember { mutableStateOf(false) }
 
     val colorScheme = SnoffeeTheme.colorScheme
     val extColors = SnoffeeTheme.colors
@@ -332,7 +333,8 @@ fun CaffeineInputDialog(
             // 섭취 시간 영역
             TimePickerBox(
                 selectedTime = consumedAtMilli.toLocalTime(),
-                onTimeChange = { consumedAtMilli = it.toTodayEpochMilli() }
+                onTimeChange = { consumedAtMilli = it.toTodayEpochMilli() },
+                onErrorChange = { hasError -> isTimeError = hasError }
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -351,6 +353,7 @@ fun CaffeineInputDialog(
                     onConfirm(finalRecord)
                     onDismiss()
                 },
+                enabled = !isTimeError,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),

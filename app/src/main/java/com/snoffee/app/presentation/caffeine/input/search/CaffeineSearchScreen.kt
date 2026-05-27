@@ -83,6 +83,7 @@ fun CaffeineSearchScreen(
     val hasQuery = uiState.searchQuery.isNotBlank()
     val listState = rememberLazyListState()
     val context = LocalContext.current
+    var isTimeError by remember { mutableStateOf(false) }
 
     LaunchedEffect(uiState.isSaved) {
         if (uiState.isSaved) onConfirmSuccess()
@@ -136,6 +137,7 @@ fun CaffeineSearchScreen(
                     TimePickerBox(
                         selectedTime = selectedTime,
                         onTimeChange = { selectedTime = it },
+                        onErrorChange = { hasError -> isTimeError = hasError }
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -156,7 +158,7 @@ fun CaffeineSearchScreen(
                                 )
                             }
                         },
-                        enabled = uiState.isRecordEnabled,    // 쿼리가 있을 때만 활성화 등 조건 추가
+                        enabled = uiState.isRecordEnabled && !isTimeError,    // 쿼리가 없을때, 미래 시간일때 비활성화
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(bottom = 12.dp)

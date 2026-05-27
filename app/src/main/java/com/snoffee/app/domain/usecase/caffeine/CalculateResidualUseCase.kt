@@ -7,6 +7,7 @@ import com.snoffee.app.domain.repository.UserProfileRepository
 import com.snoffee.app.domain.util.CaffeineCalculator
 import javax.inject.Inject
 import kotlin.math.log2
+
 class CalculateResidualUseCase @Inject constructor(
     private val caffeineRepository: CaffeineRepository,
     private val userProfileRepository: UserProfileRepository,
@@ -14,7 +15,6 @@ class CalculateResidualUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(): CaffeineAnalysis {
         val now = System.currentTimeMillis()
-
         val fiveDaysAgo = now - (5L * 24 * 60 * 60 * 1000)
 
         val records =

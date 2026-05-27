@@ -10,6 +10,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -49,7 +50,7 @@ class HomeViewModel @Inject constructor(
             }
             runCatching {
                 val residualAnalysis = calculateResidualUseCase()
-                val todayRecords = getTodayCaffeineUseCase()
+                val todayRecords = getTodayCaffeineUseCase().first()
 
                 val recentFiveLogs = todayRecords
                     .sortedByDescending { it.consumedAt }
