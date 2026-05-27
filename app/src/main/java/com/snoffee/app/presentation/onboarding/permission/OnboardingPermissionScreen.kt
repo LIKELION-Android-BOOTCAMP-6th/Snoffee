@@ -27,6 +27,11 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -39,13 +44,18 @@ import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.PermissionController
 import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.records.SleepSessionRecord
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.snoffee.app.core.ui.theme.SnoffeeBgBase
 import com.snoffee.app.core.ui.theme.SnoffeePrimary
 import com.snoffee.app.core.ui.theme.SnoffeeSurface
 import com.snoffee.app.core.ui.theme.SnoffeeSurfaceOverlay
 import com.snoffee.app.core.ui.theme.SnoffeeTextMain
 import com.snoffee.app.core.ui.theme.SnoffeeTextMuted
-
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @Composable
 fun OnboardingPermissionScreen(
@@ -54,6 +64,11 @@ fun OnboardingPermissionScreen(
 ) {
     val context = LocalContext.current
 
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    var showPermissionDeniedMessage by remember {
+        mutableStateOf(false)
+    }
     val healthPermissions = setOf(
         HealthPermission.getReadPermission(
             SleepSessionRecord::class
@@ -73,7 +88,7 @@ fun OnboardingPermissionScreen(
         ) { grantedPermissions ->
 
             if (grantedPermissions.containsAll(healthPermissions)) {
-
+                showPermissionDeniedMessage = false
                 // Health Connect 성공 후 알림 권한 요청
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
 
@@ -84,8 +99,44 @@ fun OnboardingPermissionScreen(
                 } else {
                     onNextClick()
                 }
+            } else {
+                showPermissionDeniedMessage = true
             }
         }
+    DisposableEffect(lifecycleOwner, showPermissionDeniedMessage) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (
+                event == Lifecycle.Event.ON_RESUME &&
+                showPermissionDeniedMessage
+            ) {
+                CoroutineScope(Dispatchers.Main).launch {
+                    val grantedPermissions =
+                        HealthConnectClient
+                            .getOrCreate(context)
+                            .permissionController
+                            .getGrantedPermissions()
+
+                    if (grantedPermissions.containsAll(healthPermissions)) {
+                        showPermissionDeniedMessage = false
+
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            notificationPermissionLauncher.launch(
+                                Manifest.permission.POST_NOTIFICATIONS
+                            )
+                        } else {
+                            onNextClick()
+                        }
+                    }
+                }
+            }
+        }
+
+        lifecycleOwner.lifecycle.addObserver(observer)
+
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -156,8 +207,27 @@ fun OnboardingPermissionScreen(
 
         Spacer(modifier = Modifier.weight(1f))
 
+        if (showPermissionDeniedMessage) {
+
+            Text(
+                text = "수면 데이터 권한이 거부되었어요.\n아래 버튼을 눌러 다시 권한을 허용해주세요.",
+                color = SnoffeeTextMuted,
+                fontSize = 13.sp,
+                lineHeight = 18.sp
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+        }
         Button(
             onClick = {
+                if (showPermissionDeniedMessage) {
+                    context.startActivity(
+                        Intent(
+                            HealthConnectClient.ACTION_HEALTH_CONNECT_SETTINGS
+                        )
+                    )
+                    return@Button
+                }
+
                 val status = HealthConnectClient.getSdkStatus(context)
 
                 when (status) {
@@ -175,7 +245,7 @@ fun OnboardingPermissionScreen(
                     }
 
                     else -> {
-                        onNextClick()
+                        showPermissionDeniedMessage = true
                     }
                 }
             },
@@ -188,7 +258,11 @@ fun OnboardingPermissionScreen(
             )
         ) {
             Text(
-                text = "권한 허용하고 다음으로  →",
+                text = if (showPermissionDeniedMessage) {
+                    "Health Connect 설정 열기  →"
+                } else {
+                    "권한 허용하고 다음으로  →"
+                },
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold
             )
