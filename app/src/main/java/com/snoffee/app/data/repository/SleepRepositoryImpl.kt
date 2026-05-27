@@ -25,11 +25,14 @@ class SleepRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getLatestSleepData(): SleepData? {
-        val healthSleepData = healthDataSource.getLatestSleepData()
+        val healthSleepData = runCatching {
+            healthDataSource.getLatestSleepData()
+        }.getOrNull()
         if (healthSleepData != null) {
             val domain = mapper.toDomain(healthSleepData)
-            val entity = mapper.toEntity(domain)
-            localDataSource.insertSleepData(entity)
+            localDataSource.insertSleepData(
+                mapper.toEntity(domain)
+            )
             return domain
         }
         return localDataSource
@@ -42,14 +45,16 @@ class SleepRepositoryImpl @Inject constructor(
         startTimeMillis: Long,
         endTimeMillis: Long
     ): List<SleepData> {
-        val healthSleepDataList =
+        val healthSleepDataList = runCatching {
             healthDataSource.getSleepDataByDateRange(
                 startTimeMillis = startTimeMillis,
                 endTimeMillis = endTimeMillis
             )
+        }.getOrDefault(emptyList())
         if (healthSleepDataList.isNotEmpty()) {
-            val domainList =
-                healthSleepDataList.map { dto -> mapper.toDomain(dto) }
+            val domainList = healthSleepDataList.map { dto ->
+                mapper.toDomain(dto)
+            }
             domainList.forEach { sleepData ->
                 localDataSource.insertSleepData(
                     mapper.toEntity(sleepData)
@@ -62,6 +67,14 @@ class SleepRepositoryImpl @Inject constructor(
                 startTimeMillis = startTimeMillis,
                 endTimeMillis = endTimeMillis
             )
-            .map { entity -> mapper.toDomain(entity) }
+            .map { entity ->
+                mapper.toDomain(entity)
+            }
+    }
+
+    override suspend fun hasHealthPermission(): Boolean {
+        return runCatching {
+            healthDataSource.hasPermissions()
+        }.getOrDefault(false)
     }
 }

@@ -26,6 +26,7 @@ data class SleepUiState(
     val selectedDate: LocalDate = LocalDate.now(),
     val dailyScores: Map<LocalDate, Int> = emptyMap(),
     val dailySleepTimes: Map<LocalDate, String> = emptyMap(),
+    val hasHealthPermission: Boolean = false,
 
     //에러 or 성공 상태
     val isSavingError: Boolean = false,
@@ -50,6 +51,7 @@ class SleepViewModel @Inject constructor(
     init {
         //데이터 로드
         refreshSleepData()
+        checkHealthPermission()
     }
 
     private fun refreshSleepData() {
@@ -123,6 +125,18 @@ class SleepViewModel @Inject constructor(
                     dailySleepTimes = timesMap,
                     averageScore = avgScore,
                     averageSleepTime = avgTimeLabel
+                )
+            }
+        }
+    }
+
+    fun checkHealthPermission() {
+        viewModelScope.launch {
+            val hasPermission = sleepRepository.hasHealthPermission()
+
+            _uiState.update {
+                it.copy(
+                    hasHealthPermission = hasPermission
                 )
             }
         }
