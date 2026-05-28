@@ -67,7 +67,8 @@ fun SleepDialog(
     //에러 여부 (viewModel에서 전달)
     isSavingError: Boolean = false,
     onRetry: () -> Unit = {},
-    initialData: SleepData? = null
+    initialData: SleepData? = null,
+    defaultDate: LocalDate = LocalDate.now()
 ) {
     val zoneId = ZoneId.systemDefault()
 
@@ -75,7 +76,7 @@ fun SleepDialog(
     var selectedDate by remember {
         mutableStateOf(
             initialData?.let { Instant.ofEpochMilli(it.date).atZone(zoneId).toLocalDate() }
-                ?: LocalDate.now()
+                ?: defaultDate
         )
     }
     var bedTime by remember {

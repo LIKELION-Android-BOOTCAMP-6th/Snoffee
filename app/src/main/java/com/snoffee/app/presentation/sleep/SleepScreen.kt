@@ -300,7 +300,8 @@ fun SleepScreen(viewModel: SleepViewModel = hiltViewModel()) {
             onRetry = {
                 viewModel.retrySave()
             },
-            initialData = editTargetData
+            initialData = editTargetData,
+            defaultDate = uiState.selectedDate
         )
     }
 
