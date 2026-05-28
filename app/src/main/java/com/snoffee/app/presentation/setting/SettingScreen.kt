@@ -92,9 +92,13 @@ fun SettingScreen(
     var showSleepTimePicker by remember { mutableStateOf(false) }
     var showWakeTimePicker by remember { mutableStateOf(false) }
 
-    val displayHeight = userProfile?.height?.let { "${it.toInt()}cm" } ?: "-cm"
-    val displayWeight = userProfile?.weight?.let { "${it.toInt()}kg" } ?: "-kg"
+    val displayHeight = userProfile?.height?.let {
+        if (it % 1.0 == 0.0) "${it.toInt()}cm" else String.format(Locale.US, "%.1fcm", it)
+    } ?: "-cm"
 
+    val displayWeight = userProfile?.weight?.let {
+        if (it % 1.0 == 0.0) "${it.toInt()}kg" else String.format(Locale.US, "%.1fkg", it)
+    } ?: "-kg"
     val rawSleep = userProfile?.userSleepTime?.toString()?.padStart(4, '0') ?: "2230"
     val displaySleepTime = "${rawSleep.substring(0, 2)}:${rawSleep.substring(2, 4)}"
 
@@ -238,9 +242,17 @@ fun SettingScreen(
     if (showHeightDialog) {
         var inputHeight by remember {
             mutableStateOf(
-                userProfile?.height?.toInt()?.toString() ?: ""
+                userProfile?.height?.let {
+                    if (it % 1.0 == 0.0) it.toInt().toString() else String.format(
+                        Locale.US,
+                        "%.1f",
+                        it
+                    )
+                } ?: ""
             )
         }
+        val parsedHeight = inputHeight.toDoubleOrNull()
+        val isHeightValid = parsedHeight != null && parsedHeight > 0.0
         AlertDialog(
             onDismissRequest = { showHeightDialog = false },
             title = { Text(text = "신장 수정", fontSize = 16.sp, fontWeight = FontWeight.Bold) },
@@ -251,6 +263,12 @@ fun SettingScreen(
                     label = { Text("신장 (cm)") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
+                    isError = !isHeightValid && inputHeight.isNotBlank(),
+                    supportingText = {
+                        if (!isHeightValid && inputHeight.isNotBlank()) {
+                            Text(text = "올바른 신장 수치를 입력해 주세요.", color = SnoffeeError)
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth()
                 )
             },
@@ -268,7 +286,9 @@ fun SettingScreen(
                             }
                         }
                     }
-                }) { Text("저장", color = SnoffeePrimary) }
+                },
+                    enabled = isHeightValid
+                ) { Text("저장", color = SnoffeePrimary) }
             },
             dismissButton = {
                 TextButton(onClick = { showHeightDialog = false }) {
@@ -284,9 +304,16 @@ fun SettingScreen(
     if (showWeightDialog) {
         var inputWeight by remember {
             mutableStateOf(
-                userProfile?.weight?.toInt()?.toString() ?: ""
-            )
+                userProfile?.weight?.let {
+                    if (it % 1.0 == 0.0) it.toInt().toString() else String.format(
+                        Locale.US,
+                        "%.1f",
+                        it
+                    )
+                } ?: "")
         }
+        val parsedWeight = inputWeight.toDoubleOrNull()
+        val isWeightValid = parsedWeight != null && parsedWeight > 0.0
         AlertDialog(
             onDismissRequest = { showWeightDialog = false },
             title = { Text(text = "체중 수정", fontSize = 16.sp, fontWeight = FontWeight.Bold) },
@@ -297,6 +324,12 @@ fun SettingScreen(
                     label = { Text("체중 (kg)") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
+                    isError = !isWeightValid && inputWeight.isNotBlank(),
+                    supportingText = {
+                        if (!isWeightValid && inputWeight.isNotBlank()) {
+                            Text(text = "올바른 체중 수치를 입력해 주세요.", color = SnoffeeError)
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth()
                 )
             },
@@ -314,7 +347,9 @@ fun SettingScreen(
                             }
                         }
                     }
-                }) { Text("저장", color = SnoffeePrimary) }
+                },
+                    enabled = isWeightValid
+                ) { Text("저장", color = SnoffeePrimary) }
             },
             dismissButton = {
                 TextButton(onClick = { showWeightDialog = false }) {

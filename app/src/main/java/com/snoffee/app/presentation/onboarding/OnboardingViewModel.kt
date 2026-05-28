@@ -39,8 +39,13 @@ data class OnboardingUiState(
     val isCompleted: Boolean = false
 ) {
     val isPersonalInfoValid: Boolean
-        get() = height.isNotBlank() && weight.isNotBlank() &&
-                height.toDoubleOrNull() != null && weight.toDoubleOrNull() != null
+        get() { // 유효성 검사 추가
+            val parsedHeight = height.toDoubleOrNull()
+            val parsedWeight = weight.toDoubleOrNull()
+
+            return parsedHeight != null && parsedHeight > 0.0 &&
+                    parsedWeight != null && parsedWeight > 0.0
+        }
 }
 
 @HiltViewModel
