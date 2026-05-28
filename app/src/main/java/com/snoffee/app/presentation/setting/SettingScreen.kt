@@ -251,22 +251,27 @@ fun SettingScreen(
                 } ?: ""
             )
         }
+        val decimalRegex = Regex("^\\d*\\.?\\d{0,1}$")
         val parsedHeight = inputHeight.toDoubleOrNull()
-        val isHeightValid = parsedHeight != null && parsedHeight > 0.0
+        val isHeightValid = parsedHeight != null && parsedHeight in 100.0..300.0
         AlertDialog(
             onDismissRequest = { showHeightDialog = false },
             title = { Text(text = "신장 수정", fontSize = 16.sp, fontWeight = FontWeight.Bold) },
             text = {
                 OutlinedTextField(
                     value = inputHeight,
-                    onValueChange = { inputHeight = it },
+                    onValueChange = { newValue ->
+                        if (newValue.isEmpty() || newValue.matches(decimalRegex)) {
+                            inputHeight = newValue
+                        }
+                    },
                     label = { Text("신장 (cm)") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
                     isError = !isHeightValid && inputHeight.isNotBlank(),
                     supportingText = {
                         if (!isHeightValid && inputHeight.isNotBlank()) {
-                            Text(text = "올바른 신장 수치를 입력해 주세요.", color = SnoffeeError)
+                            Text(text = "100~300cm 사이로 입력해 주세요.", color = SnoffeeError)
                         }
                     },
                     modifier = Modifier.fillMaxWidth()
@@ -312,22 +317,27 @@ fun SettingScreen(
                     )
                 } ?: "")
         }
+        val decimalRegex = Regex("^\\d*\\.?\\d{0,1}$")
         val parsedWeight = inputWeight.toDoubleOrNull()
-        val isWeightValid = parsedWeight != null && parsedWeight > 0.0
+        val isWeightValid = parsedWeight != null && parsedWeight in 1.0..400.0
         AlertDialog(
             onDismissRequest = { showWeightDialog = false },
             title = { Text(text = "체중 수정", fontSize = 16.sp, fontWeight = FontWeight.Bold) },
             text = {
                 OutlinedTextField(
                     value = inputWeight,
-                    onValueChange = { inputWeight = it },
+                    onValueChange = { newValue ->
+                        if (newValue.isEmpty() || newValue.matches(decimalRegex)) {
+                            inputWeight = newValue
+                        }
+                    },
                     label = { Text("체중 (kg)") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
                     isError = !isWeightValid && inputWeight.isNotBlank(),
                     supportingText = {
                         if (!isWeightValid && inputWeight.isNotBlank()) {
-                            Text(text = "올바른 체중 수치를 입력해 주세요.", color = SnoffeeError)
+                            Text(text = "1~400kg 사이로 입력해 주세요.", color = SnoffeeError)
                         }
                     },
                     modifier = Modifier.fillMaxWidth()
