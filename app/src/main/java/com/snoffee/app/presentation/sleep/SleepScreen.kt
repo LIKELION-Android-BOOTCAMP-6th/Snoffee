@@ -84,10 +84,10 @@ fun SleepScreen(viewModel: SleepViewModel = hiltViewModel()) {
 
     var editTargetData by remember { mutableStateOf<SleepData?>(null) }
     var showSleepDialog by remember { mutableStateOf(false) }
-    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
 
-    val selectedScore = uiState.dailyScores[uiState.selectedDate] ?: 0
-    val selectedTime = uiState.dailySleepTimes[uiState.selectedDate] ?: "--"
+    var deleteTargetData by remember { mutableStateOf<SleepData?>(null) }
+    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
+    var showLimitAlert by remember { mutableStateOf(false) }
 
     val sleepGrid = remember(
         uiState.currentYearMonth,
@@ -180,67 +180,90 @@ fun SleepScreen(viewModel: SleepViewModel = hiltViewModel()) {
                     color = SnoffeeTextMain
                 )
 
-                SleepInfoCard(
-                    time = selectedTime,
-                    score = selectedScore,
-                    labelPrefix = "기록된"
-                )
-
-                val hasRecord = selectedTime != "--" && selectedScore != 0
-
-                if (hasRecord) {
-                    Row(
+                if (uiState.selectedDateRecords.isEmpty()) {
+                    // 기록이 없을 때
+                    Surface(
+                        shape = RoundedCornerShape(20.dp),
+                        color = SnoffeeSurface,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 4.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            .padding(vertical = 8.dp)
                     ) {
-                        TextButton(
-                            onClick = {
-                                val originalData =
-                                    viewModel.getOriginalSleepData(uiState.selectedDate)
+                        Text(
+                            text = "기록된 수면 데이터가 없습니다.",
+                            modifier = Modifier.padding(24.dp),
+                            textAlign = TextAlign.Center,
+                            color = SnoffeeTextMuted,
+                            fontSize = 14.sp
+                        )
+                    }
+                } else {
+                    // 기록이 1개 이상 있을 때 리스트 형태로 표출
+                    uiState.selectedDateRecords.forEachIndexed { index, record ->
+                        val durationMillis = record.sleepEnd - record.sleepStart
+                        val hours = durationMillis / (1000 * 60 * 60)
+                        val minutes = (durationMillis / (1000 * 60)) % 60
+                        val timeLabel = "${hours}h ${minutes}m"
 
-                                if (originalData != null) {
-                                    editTargetData = originalData
-                                    showSleepDialog = true
-                                }
-                            },
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(46.dp)
-                                .border(
-                                    1.dp,
-                                    SnoffeePrimary,
-                                    RoundedCornerShape(12.dp)
-                                ),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
+                        Column {
                             Text(
-                                text = "기록 수정",
+                                text = "기록 #${index + 1}",
+                                fontSize = 12.sp,
                                 color = SnoffeePrimary,
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 14.sp
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
                             )
-                        }
 
-                        Button(
-                            onClick = {
-                                showDeleteConfirmDialog = true
-                            },
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(46.dp),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFFFFEBEE),
-                                contentColor = Color(0xFFC62828)
+                            // 각각의 기록 정보 카드
+                            SleepInfoCard(
+                                time = timeLabel,
+                                score = record.deepSleepRatio,
+                                labelPrefix = "수면"
                             )
-                        ) {
-                            Text(
-                                text = "기록 삭제",
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 14.sp
-                            )
+
+                            // 개별 수정 / 삭제 버튼
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 6.dp, bottom = 12.dp),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                TextButton(
+                                    onClick = {
+                                        editTargetData = record
+                                        showSleepDialog = true
+                                    },
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(38.dp)
+                                        .border(1.dp, SnoffeePrimary, RoundedCornerShape(8.dp)),
+                                    shape = RoundedCornerShape(8.dp)
+                                ) {
+                                    Text(
+                                        "수정",
+                                        color = SnoffeePrimary,
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                }
+
+                                Button(
+                                    onClick = {
+                                        deleteTargetData = record
+                                        showDeleteConfirmDialog = true
+                                    },
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(38.dp),
+                                    shape = RoundedCornerShape(8.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = Color(0xFFFFEBEE),
+                                        contentColor = Color(0xFFC62828)
+                                    )
+                                ) {
+                                    Text("삭제", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                                }
+                            }
                         }
                     }
                 }
@@ -265,19 +288,23 @@ fun SleepScreen(viewModel: SleepViewModel = hiltViewModel()) {
 
                 Button(
                     onClick = {
-                        editTargetData = null
-                        showSleepDialog = true
+                        if (uiState.selectedDateRecords.size >= 3) {
+                            showLimitAlert = true // 3개 이상이면 추가 금지 팝업
+                        } else {
+                            editTargetData = null
+                            showSleepDialog = true
+                        }
                     },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(54.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = SnoffeePrimary
+                        containerColor = if (uiState.selectedDateRecords.size >= 3) Color.Gray else SnoffeePrimary
                     )
                 ) {
                     Text(
-                        text = "수면 추가하기",
+                        text = if (uiState.selectedDateRecords.size >= 3) "수면 추가 완료 (최대 3개)" else "수면 추가하기",
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -300,11 +327,28 @@ fun SleepScreen(viewModel: SleepViewModel = hiltViewModel()) {
             onRetry = {
                 viewModel.retrySave()
             },
-            initialData = editTargetData
+            initialData = editTargetData,
+            defaultDate = uiState.selectedDate,
+            existingRecords = uiState.selectedDateRecords
         )
     }
 
-    if (showDeleteConfirmDialog) {
+    if (showLimitAlert) {
+        AlertDialog(
+            onDismissRequest = { showLimitAlert = false },
+            title = { Text("등록 제한 안내", fontWeight = FontWeight.Bold) },
+            text = { Text("수면 기록은 하루에 최대 3개까지만 기입할 수 있습니다.") },
+            confirmButton = {
+                TextButton(onClick = { showLimitAlert = false }) {
+                    Text("확인", color = SnoffeePrimary)
+                }
+            },
+            shape = RoundedCornerShape(16.dp),
+            containerColor = SnoffeePrimaryLight
+        )
+    }
+
+    if (showDeleteConfirmDialog && deleteTargetData != null) {
         AlertDialog(
             onDismissRequest = {
                 showDeleteConfirmDialog = false
@@ -318,15 +362,17 @@ fun SleepScreen(viewModel: SleepViewModel = hiltViewModel()) {
             },
             text = {
                 Text(
-                    text = "${uiState.selectedDate.format(DateTimeFormatter.ofPattern("M월 d일"))}의 수면 기록을 삭제하시겠습니까?\n삭제된 데이터는 복구할 수 없습니다.",
+                    text = "선택하신 수면 기록을 삭제하시겠습니까?\n" +
+                            "삭제된 데이터는 복구할 수 없습니다.",
                     color = SnoffeeTextMain
                 )
             },
             confirmButton = {
                 TextButton(
                     onClick = {
-                        viewModel.deleteSleepRecord(uiState.selectedDate)
+                        viewModel.deleteSleepRecord(deleteTargetData!!)
                         showDeleteConfirmDialog = false
+                        deleteTargetData = null
                     }
                 ) {
                     Text(
@@ -339,9 +385,11 @@ fun SleepScreen(viewModel: SleepViewModel = hiltViewModel()) {
             dismissButton = {
                 TextButton(
                     onClick = {
-                        showDeleteConfirmDialog = false
+                        showDeleteConfirmDialog = false;
+                        deleteTargetData = null
                     }
-                ) {
+                )
+                {
                     Text(
                         text = "취소",
                         color = SnoffeeTextHint

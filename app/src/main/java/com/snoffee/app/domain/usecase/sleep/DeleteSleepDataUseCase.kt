@@ -8,6 +8,6 @@ class DeleteSleepDataUseCase @Inject constructor(
     private val repository: SleepRepository
 ) {
     suspend operator fun invoke(sleepData: SleepData): Result<Unit> = runCatching {
-        repository.saveSleepData(sleepData.copy(deepSleepRatio = 0))
+        repository.deleteSleepData(sleepData)
     }
 }

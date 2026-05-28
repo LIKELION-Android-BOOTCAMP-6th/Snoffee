@@ -4,6 +4,7 @@ import com.snoffee.app.data.local.entity.SleepEntity
 
 interface SleepLocalDataSource {
     suspend fun insertSleepData(sleepData: SleepEntity)
+    suspend fun deleteSleepData(sleepData: SleepEntity)
     suspend fun getLatestSleepData(): SleepEntity?
     suspend fun getSleepDataByDateRange(
         startTimeMillis: Long,

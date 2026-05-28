@@ -1,6 +1,7 @@
 package com.snoffee.app.data.local.dao
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -10,6 +11,9 @@ import com.snoffee.app.data.local.entity.SleepEntity
 interface SleepDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertSleepData(sleepData: SleepEntity)
+
+    @Delete
+    suspend fun deleteSleepData(sleepData: SleepEntity)
 
     @Query(
         """

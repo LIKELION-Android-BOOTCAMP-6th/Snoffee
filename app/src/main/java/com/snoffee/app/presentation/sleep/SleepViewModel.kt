@@ -25,7 +25,7 @@ data class SleepUiState(
     val averageScore: Int = 0,
     val selectedDate: LocalDate = LocalDate.now(),
     val dailyScores: Map<LocalDate, Int> = emptyMap(),
-    val dailySleepTimes: Map<LocalDate, String> = emptyMap(),
+    val selectedDateRecords: List<SleepData> = emptyList(),
     val hasHealthPermission: Boolean = false,
 
     //에러 or 성공 상태
@@ -46,7 +46,7 @@ class SleepViewModel @Inject constructor(
     private var pendingRecord: SleepData? = null
 
     //이번 달 데이터 원본 객체 저장 보관함
-    private var currentMonthRawData = mapOf<LocalDate, SleepData>()
+    private var currentMonthRawData = mapOf<LocalDate, List<SleepData>>()
 
     init {
         //데이터 로드
@@ -68,61 +68,45 @@ class SleepViewModel @Inject constructor(
             // DB(Room + 삼성헬스 통합)에서 이번 달 데이터 리스트 가져오기
             val sleepList = sleepRepository.getSleepDataByDateRange(startMillis, endMillis)
 
+            // 날짜별 리스트 그룹화
+            val groupedData = sleepList
+                .filter { it.deepSleepRatio > 0 }
+                .groupBy { Instant.ofEpochMilli(it.date).atZone(zoneId).toLocalDate() }
+
+            currentMonthRawData = groupedData
+
             // 캘린더 UI에 맞게 Map 데이터 형태로 가공하기
             val scoresMap = mutableMapOf<LocalDate, Int>()
-            val timesMap = mutableMapOf<LocalDate, String>()
-            val rawDataMap = mutableMapOf<LocalDate, SleepData>()
+            var totalMonthlyScore = 0
+            var totalMonthlySleepMillis = 0L
+            val activeDaysCount = groupedData.size
 
-            var totalScore = 0
-            var totalSleepMillis = 0L
-            var recordCount = 0
+            groupedData.forEach { (localDate, records) ->
+                // 하루에 기록이 여러 개일 경우, 캘린더 셀에 평균 점수
+                val dayAvgScore = records.map { it.deepSleepRatio }.average().toInt()
+                scoresMap[localDate] = dayAvgScore
 
-            if (sleepList.isNotEmpty()) {
-                sleepList.forEach { sleepData ->
-                    if (sleepData.deepSleepRatio > 0) {
-                        // 밀리초 타임스탬프를 LocalDate로 역변환
-                        val localDate =
-                            Instant.ofEpochMilli(sleepData.date).atZone(zoneId).toLocalDate()
+                val dayTotalSleepMillis = records.sumOf { it.sleepEnd - it.sleepStart }
 
-                        rawDataMap[localDate] = sleepData
-                        val finalScore = sleepData.deepSleepRatio
-                        scoresMap[localDate] = finalScore
-
-                        //날짜별 총 수면 시간 계산 (종료 시간 - 시작 시간)
-                        val durationMillis = sleepData.sleepEnd - sleepData.sleepStart
-                        val duration = Duration.ofMillis(durationMillis)
-                        val hours = duration.toHours()
-                        val minutes = duration.toMinutes() % 60
-                        timesMap[localDate] = "${hours}h ${minutes}m"
-
-                        totalScore += finalScore
-                        totalSleepMillis += durationMillis
-                        recordCount++
-                    }
-                }
+                totalMonthlyScore += dayAvgScore
+                totalMonthlySleepMillis += dayTotalSleepMillis
             }
-            currentMonthRawData = rawDataMap
-
-            //월 평균 계산
-            val avgScore = if (recordCount > 0) totalScore / recordCount else 0
-            val avgTimeLabel = if (recordCount > 0) {
-                val averageSleepMillis = totalSleepMillis / recordCount
-                val avgDuration = Duration.ofMillis(averageSleepMillis)
+            val avgScore = if (activeDaysCount > 0) totalMonthlyScore / activeDaysCount else 0
+            val avgTimeLabel = if (activeDaysCount > 0) {
+                // 하루 평균 수면 밀리초 = 당월 총 수면 시간 / 기록이 있는 일수
+                val averageSleepMillisPerDay = totalMonthlySleepMillis / activeDaysCount
+                val avgDuration = Duration.ofMillis(averageSleepMillisPerDay)
 
                 val hours = avgDuration.toHours()
                 val minutes = avgDuration.toMinutes() % 60
-
                 String.format(Locale.KOREA, "%dh %02dm", hours, minutes)
-
             } else {
                 "0h 00m"
             }
-
-            // 가공 완료된 실시간 데이터들로 UI State를 최종 업데이트
             _uiState.update {
                 it.copy(
                     dailyScores = scoresMap,
-                    dailySleepTimes = timesMap,
+                    selectedDateRecords = groupedData[it.selectedDate] ?: emptyList(),
                     averageScore = avgScore,
                     averageSleepTime = avgTimeLabel
                 )
@@ -142,26 +126,35 @@ class SleepViewModel @Inject constructor(
         }
     }
 
-    fun getOriginalSleepData(date: LocalDate): SleepData? {
-        return currentMonthRawData[date]
-    }
     fun onPrevMonth() {
         _uiState.update {
-            it.copy(currentYearMonth = it.currentYearMonth.minusMonths(1))
+            val nextMonth = it.currentYearMonth.minusMonths(1)
+            it.copy(
+                currentYearMonth = nextMonth,
+                selectedDate = nextMonth.atDay(1)
+            )
         }
         refreshSleepData()
     }
 
     fun onNextMonth() {
         _uiState.update {
-            it.copy(currentYearMonth = it.currentYearMonth.plusMonths(1))
+            val nextMonth = it.currentYearMonth.plusMonths(1)
+            it.copy(
+                currentYearMonth = nextMonth,
+                selectedDate = nextMonth.atDay(1)
+            )
         }
         refreshSleepData()
     }
 
+
     fun onDateSelected(date: LocalDate) {
         _uiState.update {
-            it.copy(selectedDate = date)
+            it.copy(
+                selectedDate = date,
+                selectedDateRecords = currentMonthRawData[date] ?: emptyList()
+            )
         }
     }
 
@@ -182,23 +175,15 @@ class SleepViewModel @Inject constructor(
         }
     }
 
-    fun deleteSleepRecord(data: LocalDate) {
+    fun deleteSleepRecord(record: SleepData) {
         viewModelScope.launch {
-            val zoneId = ZoneId.systemDefault()
-            val startOfDayMillis = data.atStartOfDay(zoneId).toInstant().toEpochMilli()
-            val endOfDayMillis = data.atTime(23, 59, 59).atZone(zoneId).toInstant().toEpochMilli()
+            _uiState.update { it.copy(isSavingError = false) }
+            val result = deleteSleepDataUseCase(record)
 
-            val dayRecords =
-                sleepRepository.getSleepDataByDateRange(startOfDayMillis, endOfDayMillis)
-
-            if (dayRecords.isNotEmpty()) {
-                val result = deleteSleepDataUseCase(dayRecords.first())
-
-                if (result.isSuccess) {
-                    refreshSleepData()
-                } else {
-                    _uiState.update { it.copy(isSavingError = true) }
-                }
+            if (result.isSuccess) {
+                refreshSleepData()
+            } else {
+                _uiState.update { it.copy(isSavingError = true) }
             }
         }
     }

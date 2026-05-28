@@ -24,6 +24,18 @@ class SleepRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun deleteSleepData(
+        sleepData: SleepData
+    ): Result<Unit> {
+        return runCatching {
+            // 1. 도메인 모델(SleepData)을 mapper를 통해 DB 엔티티(SleepEntity)로 변환합니다.
+            val entity = mapper.toEntity(sleepData)
+
+            // 2. LocalDataSource의 완전 삭제 메서드를 호출합니다.
+            localDataSource.deleteSleepData(entity)
+        }
+    }
+
     override suspend fun getLatestSleepData(): SleepData? {
         val healthSleepData = runCatching {
             healthDataSource.getLatestSleepData()
