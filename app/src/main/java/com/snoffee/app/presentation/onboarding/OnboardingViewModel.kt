@@ -1,5 +1,6 @@
 package com.snoffee.app.presentation.onboarding
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.snoffee.app.data.datasource.preference.OnboardingPreferenceDataSource
@@ -89,30 +90,36 @@ class OnboardingViewModel @Inject constructor(
         _uiState.update { it.copy(caffeineSensitivity = value) }
     }
 
-    fun completeOnboarding() {
+    fun completeOnboarding(onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
-            val currentState = _uiState.value
+            try {
+                val currentState = _uiState.value
+                val userHeight = currentState.height.toDoubleOrNull() ?: 168.0
+                val userWeight = currentState.weight.toDoubleOrNull() ?: 62.0
+                val chosenSensitivity = currentState.caffeineSensitivity.domainDomainSensitivity
 
-            val userHeight = currentState.height.toDoubleOrNull() ?: 0.0
-            val userWeight = currentState.weight.toDoubleOrNull() ?: 0.0
-            val chosenSensitivity = currentState.caffeineSensitivity.domainDomainSensitivity
+                val initialProfile = UserProfile(
+                    id = 1,
+                    height = userHeight,
+                    weight = userWeight,
+                    dailyCaffeineLimit = 400.0,
+                    onboardingCompleted = true,
+                    userSleepTime = 2230L,
+                    wakeTime = 630L,
+                    sensitivity = chosenSensitivity,
+                    cutoffTime = 0L
+                )
 
-            val initialProfile = UserProfile(
-                id = 1,
-                height = userHeight,
-                weight = userWeight,
-                dailyCaffeineLimit = 400.0,
-                onboardingCompleted = true,
-                userSleepTime = 2230L,
-                wakeTime = 630L,
-                sensitivity = chosenSensitivity,
-                cutoffTime = 0L
-            )
-            userProfileRepository.saveUserProfile(initialProfile)
-            onboardingPreferenceDataSource.setOnboardingCompleted(true)
+                // DB 저장 및 Preference 기록
+                userProfileRepository.saveUserProfile(initialProfile)
+                onboardingPreferenceDataSource.setOnboardingCompleted(true)
 
-            _uiState.update {
-                it.copy(isCompleted = true)
+                _uiState.update { it.copy(isCompleted = true) }
+                onResult(true)
+
+            } catch (e: Exception) {
+                Log.e("Onboarding", "DB 저장 실패", e)
+                onResult(false)
             }
         }
     }
