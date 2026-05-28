@@ -31,6 +31,7 @@ import com.snoffee.app.core.ui.theme.SnoffeeSurface
 import com.snoffee.app.core.ui.theme.SnoffeeTextMain
 import com.snoffee.app.core.ui.theme.SnoffeeTextMuted
 import com.snoffee.app.core.ui.theme.SnoffeeWarning
+import java.time.YearMonth
 
 @Composable
 fun TrendReportView(uiState: ReportUiState) {
@@ -74,8 +75,25 @@ fun TrendReportView(uiState: ReportUiState) {
                     .background(SnoffeeSurface)
                     .padding(16.dp)
             ) {
-                // 🛠️ 변수명을 uiState.monthlyCaffeineTrend 로 정확하게 매핑했습니다.
-                val chartDataMap: Map<String, Double> = uiState.monthlyCaffeineTrend
+                val currentMonth = YearMonth.now()
+
+                val orderedMonths: List<String> =
+                    listOf(
+                        currentMonth.minusMonths(2),
+                        currentMonth.minusMonths(1),
+                        currentMonth
+                    ).map { yearMonth -> "${yearMonth.monthValue}월" }
+                val chartDataMap: Map<String, Double> = orderedMonths.associateWith { month ->
+                    uiState.monthlyCaffeineTrend[month] ?: 0.0
+                }
+                val maxEntry = chartDataMap.maxByOrNull { entry -> entry.value }
+
+                val peakMonth = maxEntry?.takeIf { it.value > 0.0 }?.key ?: "-"
+
+                val peakAmount = maxEntry?.value?.toInt() ?: 0
+
+                val highestCaffeineLimit: Double = (chartDataMap.values.maxOrNull() ?: 1.0)
+                    .coerceAtLeast(1.0)
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -89,11 +107,6 @@ fun TrendReportView(uiState: ReportUiState) {
                         fontWeight = FontWeight.Bold
                     )
 
-                    // 최고 실측치 동적 파싱 연동 (람다 식 매개변수 명시로 타입 추론 보장)
-                    val maxEntry = chartDataMap.maxByOrNull { entry -> entry.value }
-                    val peakMonth = maxEntry?.key ?: "-"
-                    val peakAmount = maxEntry?.value?.toInt() ?: 0
-
                     Text(
                         text = "최고치: ${peakAmount}mg ($peakMonth)",
                         color = SnoffeeError,
@@ -104,25 +117,24 @@ fun TrendReportView(uiState: ReportUiState) {
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // X축 달 순서 정렬 및 최대 한도 구하기 (명확한 타입 제공으로 연산자 에러 방지)
-                val orderedMonths: List<String> = chartDataMap.keys.sortedBy { monthName ->
-                    monthName.replace("월", "").toIntOrNull() ?: 0
-                }
-                val highestCaffeineLimit: Double =
-                    (chartDataMap.values.maxOrNull() ?: 1.0).coerceAtLeast(1.0)
-
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(140.dp)
+                        .height(150.dp)
                         .padding(horizontal = 12.dp),
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.Bottom
                 ) {
                     orderedMonths.forEach { month ->
-                        val caffeineValue: Double = chartDataMap[month] ?: 0.0
-                        val barRatio: Float =
-                            (caffeineValue / highestCaffeineLimit).toFloat().coerceIn(0.05f, 1f)
+                        val caffeineValue: Double =
+                            chartDataMap[month] ?: 0.0
+                        val barRatio: Float = if (caffeineValue <= 0.0) {
+                            0f
+                        } else {
+                            (caffeineValue / highestCaffeineLimit)
+                                .toFloat()
+                                .coerceIn(0.08f, 1f)
+                        }
 
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
@@ -134,17 +146,31 @@ fun TrendReportView(uiState: ReportUiState) {
                                     .fillMaxWidth(),
                                 contentAlignment = Alignment.BottomCenter
                             ) {
-                                Box(
-                                    modifier = Modifier
-                                        .width(22.dp)
-                                        .fillMaxHeight(barRatio)
-                                        .background(
-                                            SnoffeeWarning,
-                                            RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp)
-                                        )
-                                )
+                                if (barRatio > 0f) {
+                                    Box(
+                                        modifier = Modifier
+                                            .width(22.dp)
+                                            .fillMaxHeight(barRatio)
+                                            .background(
+                                                SnoffeeWarning,
+                                                RoundedCornerShape(
+                                                    topStart = 4.dp,
+                                                    topEnd = 4.dp
+                                                )
+                                            )
+                                    )
+                                }
                             }
+
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(1.dp)
+                                    .background(SnoffeeBgWarm)
+                            )
+
                             Spacer(modifier = Modifier.height(8.dp))
+
                             Text(
                                 text = month,
                                 color = SnoffeeTextMuted,
