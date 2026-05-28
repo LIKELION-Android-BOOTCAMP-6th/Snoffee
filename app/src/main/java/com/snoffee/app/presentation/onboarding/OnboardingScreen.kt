@@ -53,7 +53,8 @@ fun OnboardingScreen(
 
         OnboardingStep.COMPLETE -> {
             OnboardingCompleteScreen(
-                onStartClick = viewModel::completeOnboarding
+                onStartClick = { /* LauchedEffect가 이벤트를 catch */ },
+                viewModel = viewModel
             )
         }
     }

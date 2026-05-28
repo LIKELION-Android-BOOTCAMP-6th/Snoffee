@@ -1,5 +1,6 @@
 package com.snoffee.app.presentation.setting
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.snoffee.app.domain.model.CaffeineSensitivity
@@ -31,54 +32,84 @@ class SettingViewModel @Inject constructor(
     }
 
     // 신장 업데이트
-    fun updateHeight(newHeight: Double) {
+    fun updateHeight(newHeight: Double, onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
             val current = _userProfile.value ?: createDefaultProfile()
             val updated = current.copy(height = newHeight)
-            userProfileRepository.saveUserProfile(updated)
-            _userProfile.value = updated
+            try {
+                userProfileRepository.saveUserProfile(updated)
+                _userProfile.value = updated
+                onResult(true) // 성공
+            } catch (e: Exception) {
+                Log.e("SettingViewModel", "신장 저장 실패", e)
+                onResult(false) // 실패
+            }
         }
     }
 
     // 체중 업데이트
-    fun updateWeight(newWeight: Double) {
+    fun updateWeight(newWeight: Double, onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
             val current = _userProfile.value ?: createDefaultProfile()
             val updated = current.copy(weight = newWeight)
-            userProfileRepository.saveUserProfile(updated)
-            _userProfile.value = updated
+            try {
+                userProfileRepository.saveUserProfile(updated)
+                _userProfile.value = updated
+                onResult(true) // 성공
+            } catch (e: Exception) {
+                Log.e("SettingViewModel", "체중 저장 실패", e)
+                onResult(false) // 실패
+            }
         }
     }
 
     // 카페인 민감도 저장 (1~3단계)
-    fun updateSensitivity(sensitivity: CaffeineSensitivity) {
+    fun updateSensitivity(sensitivity: CaffeineSensitivity, onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
             val current = _userProfile.value ?: createDefaultProfile()
             val updated = current.copy(sensitivity = sensitivity)
-            userProfileRepository.saveUserProfile(updated)
-            _userProfile.value = updated
+            try {
+                userProfileRepository.saveUserProfile(updated)
+                _userProfile.value = updated
+                onResult(true) // 성공
+            } catch (e: Exception) {
+                Log.e("SettingViewModel", "민감도 저장 실패", e)
+                onResult(false) // 실패
+            }
         }
     }
 
     // 목표 수면 시간 업데이트
-    fun updateSleepTime(newSleepTimeStr: String) {
+    fun updateSleepTime(newSleepTimeStr: String, onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
             val current = _userProfile.value ?: createDefaultProfile()
             val timeLong = newSleepTimeStr.replace(":", "").toLongOrNull() ?: 0L
             val updated = current.copy(userSleepTime = timeLong)
-            userProfileRepository.saveUserProfile(updated)
-            _userProfile.value = updated
+            try {
+                userProfileRepository.saveUserProfile(updated)
+                _userProfile.value = updated
+                onResult(true) // 성공
+            } catch (e: Exception) {
+                Log.e("SettingViewModel", "목표 수면 시간 저장 실패", e)
+                onResult(false) // 실패
+            }
         }
     }
 
     // 목표 기상 시간 업데이트
-    fun updateWakeTime(newWakeTimeStr: String) {
+    fun updateWakeTime(newWakeTimeStr: String, onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
             val current = _userProfile.value ?: createDefaultProfile()
             val timeLong = newWakeTimeStr.replace(":", "").toLongOrNull() ?: 0L
             val updated = current.copy(wakeTime = timeLong)
-            userProfileRepository.saveUserProfile(updated)
-            _userProfile.value = updated
+            try {
+                userProfileRepository.saveUserProfile(updated)
+                _userProfile.value = updated
+                onResult(true) // 성공
+            } catch (e: Exception) {
+                Log.e("SettingViewModel", "목표 기상 시간 저장 실패", e)
+                onResult(false) // 실패
+            }
         }
     }
 

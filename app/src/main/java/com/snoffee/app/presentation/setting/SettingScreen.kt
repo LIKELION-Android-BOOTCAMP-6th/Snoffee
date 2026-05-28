@@ -26,6 +26,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
@@ -39,6 +42,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -62,6 +66,7 @@ import com.snoffee.app.core.ui.theme.SnoffeeTextHint
 import com.snoffee.app.core.ui.theme.SnoffeeTextMain
 import com.snoffee.app.core.ui.theme.SnoffeeTextMuted
 import com.snoffee.app.domain.model.CaffeineSensitivity
+import kotlinx.coroutines.launch
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -78,15 +83,22 @@ fun SettingScreen(
 
     val userProfile by viewModel.userProfile.collectAsState()
 
+    val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+
     var showHeightDialog by remember { mutableStateOf(false) }
     var showWeightDialog by remember { mutableStateOf(false) }
     var showSensitivityDialog by remember { mutableStateOf(false) }
     var showSleepTimePicker by remember { mutableStateOf(false) }
     var showWakeTimePicker by remember { mutableStateOf(false) }
 
-    val displayHeight = userProfile?.height?.let { "${it.toInt()}cm" } ?: "-cm"
-    val displayWeight = userProfile?.weight?.let { "${it.toInt()}kg" } ?: "-kg"
+    val displayHeight = userProfile?.height?.let {
+        if (it % 1.0 == 0.0) "${it.toInt()}cm" else String.format(Locale.US, "%.1fcm", it)
+    } ?: "-cm"
 
+    val displayWeight = userProfile?.weight?.let {
+        if (it % 1.0 == 0.0) "${it.toInt()}kg" else String.format(Locale.US, "%.1fkg", it)
+    } ?: "-kg"
     val rawSleep = userProfile?.userSleepTime?.toString()?.padStart(4, '0') ?: "2230"
     val displaySleepTime = "${rawSleep.substring(0, 2)}:${rawSleep.substring(2, 4)}"
 
@@ -104,115 +116,124 @@ fun SettingScreen(
         else -> 0.5f
     }
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(SnoffeeBgBase)
-            .verticalScroll(scrollState)
-            .padding(horizontal = 16.dp, vertical = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
+    Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
+        containerColor = Color.Transparent
+    ) { innerPadding ->
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 4.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+            modifier = modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .background(SnoffeeBgBase)
+                .verticalScroll(scrollState)
+                .padding(horizontal = 16.dp, vertical = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text(
-                text = "내 신체 및 설정 정보",
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Bold,
-                color = SnoffeeTextMain
-            )
-            Text(
-                text = "체내 남은 카페인 계산 및 알림 기준이 됩니다.",
-                fontSize = 13.sp,
-                color = SnoffeeTextMuted
-            )
-        }
-
-        Spacer(modifier = Modifier.height(4.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            InfoCard(
-                title = "신장",
-                value = displayHeight,
+            Column(
                 modifier = Modifier
-                    .weight(1f)
-                    .clickable { showHeightDialog = true }
-            )
-            InfoCard(
-                title = "체중",
-                value = displayWeight,
-                modifier = Modifier
-                    .weight(1f)
-                    .clickable { showWeightDialog = true }
-            )
-        }
-
-        Box(modifier = Modifier.clickable { showSensitivityDialog = true }) {
-            CaffeineSensitivityCard(statusText = sensitivityText, progressFill = sensitivityFill)
-        }
-
-        TimeSettingCard(
-            title = "목표 수면 시간",
-            time = displaySleepTime,
-            iconRes = R.drawable.ic_main_bottombar_sleep,
-            onClick = { showSleepTimePicker = true }
-        )
-        TimeSettingCard(
-            title = "목표 기상 시간",
-            time = displayWakeTime,
-            iconRes = R.drawable.ic_setting_light_mode,
-            onClick = { showWakeTimePicker = true }
-        )
-
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(
-                text = "앱 설정",
-                fontSize = 13.sp,
-                color = SnoffeeTextMuted,
-                fontWeight = FontWeight.Medium,
-                modifier = Modifier.padding(start = 4.dp, bottom = 2.dp)
-            )
-
-            Card(
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = SnoffeeSurface),
-                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                    .fillMaxWidth()
+                    .padding(horizontal = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                Column {
-                    MenuRowItem(
-                        title = "알림 설정",
-                        iconRes = R.drawable.ic_setting_bell,
-                        onClick = onNotificationSettingClick
-                    )
+                Text(
+                    text = "내 신체 및 설정 정보",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = SnoffeeTextMain
+                )
+                Text(
+                    text = "체내 남은 카페인 계산 및 알림 기준이 됩니다.",
+                    fontSize = 13.sp,
+                    color = SnoffeeTextMuted
+                )
+            }
 
-                    MenuRowItemWithSwitch(
-                        title = "다크 모드",
-                        iconRes = R.drawable.ic_main_bottombar_sleep,
-                        checked = isDarkMode,
-                        onCheckedChange = { isDarkMode = it }
-                    )
+            Spacer(modifier = Modifier.height(4.dp))
 
-                    MenuRowItem(
-                        title = "언어 설정",
-                        value = "한국어",
-                        iconRes = R.drawable.ic_setting_language,
-                        onClick = onLanguageSettingClick
-                    )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                InfoCard(
+                    title = "신장",
+                    value = displayHeight,
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable { showHeightDialog = true }
+                )
+                InfoCard(
+                    title = "체중",
+                    value = displayWeight,
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable { showWeightDialog = true }
+                )
+            }
 
-                    MenuRowItem(
-                        title = "도움말",
-                        iconRes = R.drawable.ic_setting_question,
-                        onClick = onHelpClick
-                    )
+            Box(modifier = Modifier.clickable { showSensitivityDialog = true }) {
+                CaffeineSensitivityCard(
+                    statusText = sensitivityText,
+                    progressFill = sensitivityFill
+                )
+            }
+
+            TimeSettingCard(
+                title = "목표 수면 시간",
+                time = displaySleepTime,
+                iconRes = R.drawable.ic_main_bottombar_sleep,
+                onClick = { showSleepTimePicker = true }
+            )
+            TimeSettingCard(
+                title = "목표 기상 시간",
+                time = displayWakeTime,
+                iconRes = R.drawable.ic_setting_light_mode,
+                onClick = { showWakeTimePicker = true }
+            )
+
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    text = "앱 설정",
+                    fontSize = 13.sp,
+                    color = SnoffeeTextMuted,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(start = 4.dp, bottom = 2.dp)
+                )
+
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = SnoffeeSurface),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                ) {
+                    Column {
+                        MenuRowItem(
+                            title = "알림 설정",
+                            iconRes = R.drawable.ic_setting_bell,
+                            onClick = onNotificationSettingClick
+                        )
+
+                        MenuRowItemWithSwitch(
+                            title = "다크 모드",
+                            iconRes = R.drawable.ic_main_bottombar_sleep,
+                            checked = isDarkMode,
+                            onCheckedChange = { isDarkMode = it }
+                        )
+
+                        MenuRowItem(
+                            title = "언어 설정",
+                            value = "한국어",
+                            iconRes = R.drawable.ic_setting_language,
+                            onClick = onLanguageSettingClick
+                        )
+
+                        MenuRowItem(
+                            title = "도움말",
+                            iconRes = R.drawable.ic_setting_question,
+                            onClick = onHelpClick
+                        )
+                    }
                 }
             }
         }
@@ -221,9 +242,17 @@ fun SettingScreen(
     if (showHeightDialog) {
         var inputHeight by remember {
             mutableStateOf(
-                userProfile?.height?.toInt()?.toString() ?: ""
+                userProfile?.height?.let {
+                    if (it % 1.0 == 0.0) it.toInt().toString() else String.format(
+                        Locale.US,
+                        "%.1f",
+                        it
+                    )
+                } ?: ""
             )
         }
+        val parsedHeight = inputHeight.toDoubleOrNull()
+        val isHeightValid = parsedHeight != null && parsedHeight > 0.0
         AlertDialog(
             onDismissRequest = { showHeightDialog = false },
             title = { Text(text = "신장 수정", fontSize = 16.sp, fontWeight = FontWeight.Bold) },
@@ -234,14 +263,32 @@ fun SettingScreen(
                     label = { Text("신장 (cm)") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
+                    isError = !isHeightValid && inputHeight.isNotBlank(),
+                    supportingText = {
+                        if (!isHeightValid && inputHeight.isNotBlank()) {
+                            Text(text = "올바른 신장 수치를 입력해 주세요.", color = SnoffeeError)
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth()
                 )
             },
             confirmButton = {
                 TextButton(onClick = {
-                    inputHeight.toDoubleOrNull()?.let { viewModel.updateHeight(it) }
-                    showHeightDialog = false
-                }) { Text("저장", color = SnoffeePrimary) }
+                    inputHeight.toDoubleOrNull()?.let { heightValue ->
+                        //실패 시 팝업 유지 및 스낵바 전송
+                        viewModel.updateHeight(heightValue) { success ->
+                            if (success) {
+                                showHeightDialog = false
+                            } else {
+                                scope.launch {
+                                    snackbarHostState.showSnackbar("신장 정보 저장에 실패했습니다. 다시 시도해 주세요.")
+                                }
+                            }
+                        }
+                    }
+                },
+                    enabled = isHeightValid
+                ) { Text("저장", color = SnoffeePrimary) }
             },
             dismissButton = {
                 TextButton(onClick = { showHeightDialog = false }) {
@@ -257,9 +304,16 @@ fun SettingScreen(
     if (showWeightDialog) {
         var inputWeight by remember {
             mutableStateOf(
-                userProfile?.weight?.toInt()?.toString() ?: ""
-            )
+                userProfile?.weight?.let {
+                    if (it % 1.0 == 0.0) it.toInt().toString() else String.format(
+                        Locale.US,
+                        "%.1f",
+                        it
+                    )
+                } ?: "")
         }
+        val parsedWeight = inputWeight.toDoubleOrNull()
+        val isWeightValid = parsedWeight != null && parsedWeight > 0.0
         AlertDialog(
             onDismissRequest = { showWeightDialog = false },
             title = { Text(text = "체중 수정", fontSize = 16.sp, fontWeight = FontWeight.Bold) },
@@ -270,14 +324,32 @@ fun SettingScreen(
                     label = { Text("체중 (kg)") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
+                    isError = !isWeightValid && inputWeight.isNotBlank(),
+                    supportingText = {
+                        if (!isWeightValid && inputWeight.isNotBlank()) {
+                            Text(text = "올바른 체중 수치를 입력해 주세요.", color = SnoffeeError)
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth()
                 )
             },
             confirmButton = {
                 TextButton(onClick = {
-                    inputWeight.toDoubleOrNull()?.let { viewModel.updateWeight(it) }
-                    showWeightDialog = false
-                }) { Text("저장", color = SnoffeePrimary) }
+                    inputWeight.toDoubleOrNull()?.let { weightValue ->
+                        //실패 시 팝업 유지 및 스낵바 전송
+                        viewModel.updateWeight(weightValue) { success ->
+                            if (success) {
+                                showWeightDialog = false
+                            } else {
+                                scope.launch {
+                                    snackbarHostState.showSnackbar("체중 정보 저장에 실패했습니다. 다시 시도해 주세요.")
+                                }
+                            }
+                        }
+                    }
+                },
+                    enabled = isWeightValid
+                ) { Text("저장", color = SnoffeePrimary) }
             },
             dismissButton = {
                 TextButton(onClick = { showWeightDialog = false }) {
@@ -332,8 +404,16 @@ fun SettingScreen(
                         2 -> CaffeineSensitivity.SENSITIVE
                         else -> CaffeineSensitivity.NORMAL
                     }
-                    viewModel.updateSensitivity(selectedSensitivity)
-                    showSensitivityDialog = false
+                    //실패 시 팝업 유지 및 스낵바 전송
+                    viewModel.updateSensitivity(selectedSensitivity) { success ->
+                        if (success) {
+                            showSensitivityDialog = false
+                        } else {
+                            scope.launch {
+                                snackbarHostState.showSnackbar("민감도 변경 사항을 저장하지 못했습니다.")
+                            }
+                        }
+                    }
                 }) { Text("적용", color = SnoffeePrimary) }
             },
             dismissButton = {
@@ -374,8 +454,16 @@ fun SettingScreen(
                         timePickerState.hour,
                         timePickerState.minute
                     )
-                    viewModel.updateSleepTime(formattedTime)
-                    showSleepTimePicker = false
+                    //실패 시 팝업 유지 및 스낵바 전송
+                    viewModel.updateSleepTime(formattedTime) { success ->
+                        if (success) {
+                            showSleepTimePicker = false
+                        } else {
+                            scope.launch {
+                                snackbarHostState.showSnackbar("수면 시간 설정 저장에 실패했습니다.")
+                            }
+                        }
+                    }
                 }) { Text("변경", color = SnoffeePrimary) }
             },
             dismissButton = {
@@ -416,8 +504,16 @@ fun SettingScreen(
                         timePickerState.hour,
                         timePickerState.minute
                     )
-                    viewModel.updateWakeTime(formattedTime)
-                    showWakeTimePicker = false
+                    // 🌟 ViewModel 결과 관찰하여 실패 시 팝업 유지 및 스낵바 전송
+                    viewModel.updateWakeTime(formattedTime) { success ->
+                        if (success) {
+                            showWakeTimePicker = false
+                        } else {
+                            scope.launch {
+                                snackbarHostState.showSnackbar("기상 시간 설정 저장에 실패했습니다.")
+                            }
+                        }
+                    }
                 }) { Text("변경", color = SnoffeePrimary) }
             },
             dismissButton = {
