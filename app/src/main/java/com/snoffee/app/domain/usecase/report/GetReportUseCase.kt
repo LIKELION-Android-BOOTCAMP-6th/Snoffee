@@ -4,6 +4,7 @@ import com.snoffee.app.domain.model.CaffeineRecord
 import com.snoffee.app.domain.model.SleepData
 import com.snoffee.app.domain.repository.CaffeineRepository
 import com.snoffee.app.domain.repository.SleepRepository
+import kotlinx.coroutines.flow.first
 import java.util.Calendar
 import javax.inject.Inject
 
@@ -26,7 +27,7 @@ class GetReportUseCase @Inject constructor(
             caffeineRepository.getCaffeineRecordsByDateRange(
                 startTimeMillis = range.startTimeMillis,
                 endTimeMillis = range.endTimeMillis
-            )
+            ).first()
         val sleepData =
             sleepRepository.getSleepDataByDateRange(
                 startTimeMillis = range.startTimeMillis,

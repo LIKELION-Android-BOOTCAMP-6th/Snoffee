@@ -25,10 +25,10 @@ class CaffeineLocalDataSourceImpl @Inject constructor(
         dao.editCaffeineRecord(record)
     }
 
-    override suspend fun getCaffeineRecordsByDateRange(
+    override fun getCaffeineRecordsByDateRange(
         startTimeMillis: Long,
         endTimeMillis: Long
-    ): List<CaffeineEntity> {
+    ): Flow<List<CaffeineEntity>> {
         return dao.getCaffeineRecordsByDateRange(
             startTimeMillis = startTimeMillis,
             endTimeMillis = endTimeMillis

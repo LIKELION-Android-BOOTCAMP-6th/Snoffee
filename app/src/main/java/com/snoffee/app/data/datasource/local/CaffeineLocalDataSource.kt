@@ -12,8 +12,8 @@ interface CaffeineLocalDataSource {
 
     suspend fun editCaffeineRecord(record: CaffeineEntity)          // 카페인 기록 수정
 
-    suspend fun getCaffeineRecordsByDateRange(
+    fun getCaffeineRecordsByDateRange(
         startTimeMillis: Long,
         endTimeMillis: Long
-    ): List<CaffeineEntity>
+    ): Flow<List<CaffeineEntity>>
 }
