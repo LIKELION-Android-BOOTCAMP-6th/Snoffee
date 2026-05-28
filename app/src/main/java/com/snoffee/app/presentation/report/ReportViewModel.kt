@@ -152,6 +152,13 @@ class ReportViewModel @Inject constructor(
                 )
             } else "0h 00m"
 
+            val highLowSleepCompare =
+                calculateHighLowCaffeineSleepCompare(
+                    caffeineRecords = monthlyResult.caffeineRecords,
+                    sleepData = monthlyResult.sleepData,
+                    zoneId = zoneId
+                )
+
             //전체 기간 통합 평균 및 BEST / WORST 월 분석
             val totalAvgSleepStr = if (trendResult.sleepData.isNotEmpty()) {
                 val totalSleep = trendResult.sleepData.sumOf { it.sleepEnd - it.sleepStart }
@@ -240,9 +247,12 @@ class ReportViewModel @Inject constructor(
                     weeklyAvgSleepTime = weeklyAvgSleepStr,
                     weeklyCaffeineChartData = weeklyResult.caffeineChartData,
                     weeklySleepChartData = weeklyResult.sleepChartData,
+                    monthlyCaffeineTrend = trendResult.monthlyCaffeineChartData,
                     monthlyAvgCaffeine = monthlyAvgCaffeine,
                     monthlyAvgSleepTime = monthlyAvgSleepStr,
                     totalAvgSleepTime = totalAvgSleepStr,
+                    highCaffeineDaySleepTime = highLowSleepCompare.first,
+                    lowCaffeineDaySleepTime = highLowSleepCompare.second,
                     bestMonthLabel = bestMonth?.format(
                         DateTimeFormatter.ofPattern(
                             "M월"
@@ -258,6 +268,76 @@ class ReportViewModel @Inject constructor(
                 )
             }
         }
+    }
+
+    private fun calculateHighLowCaffeineSleepCompare(
+        caffeineRecords: List<com.snoffee.app.domain.model.CaffeineRecord>,
+        sleepData: List<SleepData>,
+        zoneId: ZoneId
+    ): Pair<String, String> {
+        if (caffeineRecords.isEmpty() || sleepData.isEmpty()) {
+            return "0h 00m" to "0h 00m"
+        }
+
+        val caffeineByDate =
+            caffeineRecords.groupBy { record ->
+                Instant.ofEpochMilli(record.consumedAt)
+                    .atZone(zoneId)
+                    .toLocalDate()
+            }.mapValues { entry ->
+                entry.value.sumOf { record ->
+                    record.intakeCaffeine
+                }
+            }
+
+        val sleepByDate =
+            sleepData.groupBy { sleep ->
+                Instant.ofEpochMilli(sleep.sleepEnd)
+                    .atZone(zoneId)
+                    .toLocalDate()
+            }.mapValues { entry ->
+                entry.value.map { sleep ->
+                    sleep.sleepEnd - sleep.sleepStart
+                }.average().toLong()
+            }
+
+        val matchedDates =
+            caffeineByDate.keys.intersect(sleepByDate.keys)
+
+        if (matchedDates.isEmpty()) {
+            return "0h 00m" to "0h 00m"
+        }
+
+        val highCaffeineDate =
+            matchedDates.maxByOrNull { date ->
+                caffeineByDate[date] ?: 0.0
+            }
+
+        val lowCaffeineDate =
+            matchedDates.minByOrNull { date ->
+                caffeineByDate[date] ?: 0.0
+            }
+
+        val highSleepMillis =
+            highCaffeineDate?.let { sleepByDate[it] } ?: 0L
+
+        val lowSleepMillis =
+            lowCaffeineDate?.let { sleepByDate[it] } ?: 0L
+
+        return formatSleepMillis(highSleepMillis) to formatSleepMillis(lowSleepMillis)
+    }
+
+    private fun formatSleepMillis(
+        millis: Long
+    ): String {
+        val duration = Duration.ofMillis(millis)
+
+        return String.format(
+            Locale.KOREA,
+            "%dh %02dm",
+            duration.toHours(),
+            duration.toMinutes() % 60
+        )
     }
 
     private fun calculatePeriodData(start: LocalDate, end: LocalDate) {

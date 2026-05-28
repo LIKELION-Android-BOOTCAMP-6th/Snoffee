@@ -179,9 +179,10 @@ fun MonthlyReportView(uiState: ReportUiState) {
                 // TODO
                 // 대조 수면 데이터 시각화 바 컴포넌트
                 val highSleepValue =
-                    uiState.highCaffeineDaySleepTime.replace("h", "").trim().toDoubleOrNull() ?: 0.0
+                    parseSleepHourValue(uiState.highCaffeineDaySleepTime)
+
                 val lowSleepValue =
-                    uiState.lowCaffeineDaySleepTime.replace("h", "").trim().toDoubleOrNull() ?: 0.0
+                    parseSleepHourValue(uiState.lowCaffeineDaySleepTime)
                 val maxSleepCompare = maxOf(highSleepValue, lowSleepValue, 1.0)
 
                 Row(
@@ -252,4 +253,24 @@ fun MonthlyReportView(uiState: ReportUiState) {
             }
         }
     }
+}
+
+private fun parseSleepHourValue(
+    sleepTime: String
+): Double {
+    val parts = sleepTime.split(" ")
+
+    val hours =
+        parts.getOrNull(0)
+            ?.replace("h", "")
+            ?.toDoubleOrNull()
+            ?: 0.0
+
+    val minutes =
+        parts.getOrNull(1)
+            ?.replace("m", "")
+            ?.toDoubleOrNull()
+            ?: 0.0
+
+    return hours + (minutes / 60.0)
 }
