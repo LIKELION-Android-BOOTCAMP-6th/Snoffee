@@ -47,6 +47,8 @@ fun OnboardingScreen(
                 onSensitivityClick = viewModel::updateCaffeineSensitivity,
                 onNextClick = viewModel::moveToNextStep,
                 onBackClick = viewModel::moveToPreviousStep,
+                isHeightValid = uiState.isHeightValid,
+                isWeightValid = uiState.isWeightValid,
                 isNextEnabled = uiState.isPersonalInfoValid
             )
         }

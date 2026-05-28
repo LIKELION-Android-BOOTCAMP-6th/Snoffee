@@ -1,10 +1,12 @@
 package com.snoffee.app.presentation.onboarding.health
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -33,6 +35,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.snoffee.app.core.ui.theme.SnoffeeBgBase
+import com.snoffee.app.core.ui.theme.SnoffeeError
 import com.snoffee.app.core.ui.theme.SnoffeePrimary
 import com.snoffee.app.core.ui.theme.SnoffeePrimarySubtle
 import com.snoffee.app.core.ui.theme.SnoffeeSurface
@@ -51,6 +54,8 @@ fun PersonalInfoSetupScreen(
     onSensitivityClick: (CaffeineSensitivityOption) -> Unit,
     onNextClick: () -> Unit,
     onBackClick: () -> Unit,
+    isHeightValid: Boolean,
+    isWeightValid: Boolean,
     isNextEnabled: Boolean
 ) {
     Column(
@@ -80,20 +85,32 @@ fun PersonalInfoSetupScreen(
 
         Spacer(modifier = Modifier.height(28.dp))
 
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(IntrinsicSize.Max),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.Top
+        ) {
+            val isHeightError = height.isNotBlank() && !isHeightValid
             InfoInputCard(
                 title = "신장",
                 value = height,
                 unit = "cm",
                 onValueChange = onHeightChange,
+                isError = isHeightError,
+                errorMessage = "100~300cm 입력 가능",
                 modifier = Modifier.weight(1f)
             )
 
+            val isWeightError = weight.isNotBlank() && !isWeightValid
             InfoInputCard(
                 title = "체중",
                 value = weight,
                 unit = "kg",
                 onValueChange = onWeightChange,
+                isError = isWeightError,
+                errorMessage = "1~400kg 입력 가능",
                 modifier = Modifier.weight(1f)
             )
         }
@@ -173,30 +190,41 @@ private fun InfoInputCard(
     value: String,
     unit: String,
     onValueChange: (String) -> Unit,
+    isError: Boolean,
+    errorMessage: String,
     modifier: Modifier = Modifier
 ) {
     Column(
         modifier = modifier
+            .fillMaxHeight()
             .shadow(12.dp, RoundedCornerShape(16.dp))
             .background(SnoffeeSurface, RoundedCornerShape(16.dp))
+            .border(
+                width = if (isError) 1.5.dp else 0.dp,
+                color = if (isError) SnoffeeError else Color.Transparent,
+                shape = RoundedCornerShape(16.dp)
+            )
             .padding(16.dp)
     ) {
         Text(
             text = title,
-            color = SnoffeePrimary,
+            color = if (isError) SnoffeeError else SnoffeePrimary,
             fontSize = 12.sp,
             fontWeight = FontWeight.Bold
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        Row(verticalAlignment = Alignment.Bottom) {
+        Row(
+            verticalAlignment = Alignment.Bottom,
+            modifier = Modifier.fillMaxWidth()
+        ) {
             TextField(
                 value = value,
                 onValueChange = onValueChange,
                 modifier = Modifier.weight(1f),
                 placeholder = {
-                    Text("0")
+                    Text("0", color = SnoffeeTextMuted)
                 },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(
@@ -207,14 +235,27 @@ private fun InfoInputCard(
                     unfocusedContainerColor = Color.Transparent,
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent
-                )
+                ),
+                isError = isError
             )
 
             Text(
                 text = unit,
-                color = SnoffeeTextMuted,
+                color = if (isError) SnoffeeError else SnoffeeTextMuted,
                 fontSize = 18.sp,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 11.dp)
+            )
+        }
+        if (isError) {
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = errorMessage,
+                color = SnoffeeError,
+                fontSize = 11.sp,
+                modifier = Modifier.padding(start = 4.dp),
+                fontWeight = FontWeight.Medium,
+                lineHeight = 14.sp
             )
         }
     }

@@ -38,14 +38,24 @@ data class OnboardingUiState(
     val caffeineSensitivity: CaffeineSensitivityOption = CaffeineSensitivityOption.NORMAL,
     val isCompleted: Boolean = false
 ) {
-    val isPersonalInfoValid: Boolean
-        get() { // 유효성 검사 추가
-            val parsedHeight = height.toDoubleOrNull()
-            val parsedWeight = weight.toDoubleOrNull()
-
-            return parsedHeight != null && parsedHeight > 0.0 &&
-                    parsedWeight != null && parsedWeight > 0.0
+    //키 유효성 (100~300)
+    val isHeightValid: Boolean
+        get() {
+            if (height.isBlank()) return false
+            val parsed = height.toDoubleOrNull()
+            return parsed != null && parsed in 100.0..300.0
         }
+
+    //체중 유효성 (1 ~ 400)
+    val isWeightValid: Boolean
+        get() {
+            if (weight.isBlank()) return false
+            val parsed = weight.toDoubleOrNull()
+            return parsed != null && parsed in 1.0..400.0
+        }
+
+    val isPersonalInfoValid: Boolean
+        get() = isHeightValid && isWeightValid
 }
 
 @HiltViewModel
@@ -57,6 +67,7 @@ class OnboardingViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(OnboardingUiState())
     val uiState: StateFlow<OnboardingUiState> = _uiState.asStateFlow()
 
+    private val decimalRegex = Regex("^\\d*\\.?\\d{0,1}$")
     fun moveToNextStep() {
         _uiState.update {
             it.copy(
@@ -84,11 +95,15 @@ class OnboardingViewModel @Inject constructor(
     }
 
     fun updateHeight(value: String) {
-        _uiState.update { it.copy(height = value) }
+        if (value.isEmpty() || value.matches(decimalRegex)) {
+            _uiState.update { it.copy(height = value) }
+        }
     }
 
     fun updateWeight(value: String) {
-        _uiState.update { it.copy(weight = value) }
+        if (value.isEmpty() || value.matches(decimalRegex)) {
+            _uiState.update { it.copy(weight = value) }
+        }
     }
 
     fun updateCaffeineSensitivity(value: CaffeineSensitivityOption) {
