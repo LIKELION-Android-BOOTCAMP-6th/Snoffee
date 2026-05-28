@@ -68,7 +68,8 @@ fun SleepDialog(
     isSavingError: Boolean = false,
     onRetry: () -> Unit = {},
     initialData: SleepData? = null,
-    defaultDate: LocalDate = LocalDate.now()
+    defaultDate: LocalDate = LocalDate.now(),
+    existingRecords: List<SleepData> = emptyList()
 ) {
     val zoneId = ZoneId.systemDefault()
 
@@ -95,13 +96,16 @@ fun SleepDialog(
                 when (it.deepSleepRatio) {
                     95 -> 4  // 😄
                     80 -> 3  // 🙂
-                    68 -> 2  // 😐
+                    65 -> 2  // 😐
                     50 -> 1  // 🙁
                     else -> 0 // 😫 (30점 이하)
                 }
             } ?: 2
         )
     }
+    var showTimeOrderError by remember { mutableStateOf(false) }
+    var lastWakeUpTimeLabel by remember { mutableStateOf("") }
+
     // Picker 노출 여부
     var showDatePicker by remember { mutableStateOf(false) }
     var showBedTimePicker by remember { mutableStateOf(false) }
@@ -115,6 +119,7 @@ fun SleepDialog(
     var tempRecord by remember { mutableStateOf<SleepData?>(null) }
 
     var showTimeValidationError by remember { mutableStateOf(false) }
+    var showLimitBoundsError by remember { mutableStateOf(false) }
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
@@ -236,6 +241,47 @@ fun SleepDialog(
                             val dateTimestamp =
                                 selectedDate.atStartOfDay(zoneId).toInstant().toEpochMilli()
 
+                            val minAllowStart =
+                                selectedDate.minusDays(1).atTime(20, 0).atZone(zoneId).toInstant()
+                                    .toEpochMilli() // 전날 오후 8시
+                            val maxAllowEnd = selectedDate.atTime(14, 0).atZone(zoneId).toInstant()
+                                .toEpochMilli() // 당일 오후 2시
+
+                            if (startTimestamp < minAllowStart || endTimestamp > maxAllowEnd) {
+                                showLimitBoundsError = true // 에러 팝업 활성화
+                                return@Button
+                            }
+
+                            val otherRecords =
+                                existingRecords.filter { it.id != (initialData?.id ?: 0) }
+
+                            val isOverlapped = otherRecords.any { existing ->
+                                // 새 취침시간이 기존 수면 종료보다 이전이면서, 새 기상시간이 기존 수면 시작보다 이후인 경우 (겹침 발생)
+                                startTimestamp < existing.sleepEnd && endTimestamp > existing.sleepStart
+                            }
+                            if (isOverlapped) {
+                                // 시간 중복 에러 상태
+                                showTimeOrderError = true
+                                return@Button
+                            }
+
+                            if (otherRecords.isNotEmpty()) {
+                                // 기존 기록 중 가장 늦은 기상 시간
+                                val maxExistingEnd = otherRecords.maxOf { it.sleepEnd }
+
+                                // 새로운 취침 시간이 기존의 가장 늦은 기상 시간보다 이전이라면 차단
+                                if (startTimestamp < maxExistingEnd) {
+                                    val lastWakeDateTime = LocalDateTime.ofInstant(
+                                        Instant.ofEpochMilli(maxExistingEnd),
+                                        zoneId
+                                    )
+                                    lastWakeUpTimeLabel =
+                                        lastWakeDateTime.format(DateTimeFormatter.ofPattern("HH:mm"))
+                                    showTimeOrderError = true
+                                    return@Button
+                                }
+                            }
+
                             val totalSleepMillis = endTimestamp - startTimestamp
                             val totalHours = totalSleepMillis / (1000L * 60 * 60)
                             if (totalHours >= 16) {
@@ -274,6 +320,21 @@ fun SleepDialog(
                             if (initialData != null) "수정 완료" else "저장하기",
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp
+                        )
+                    }
+
+                    if (showTimeOrderError) {
+                        AlertDialog(
+                            onDismissRequest = { showTimeOrderError = false },
+                            title = { Text("시간 설정 오류", fontWeight = FontWeight.Bold) },
+                            text = { Text("이미 등록된 수면 기록 시간대와 겹칩니다.\n기존 기록 전/후의 겹치지 않는 시간으로 입력해 주세요.") },
+                            confirmButton = {
+                                TextButton(onClick = { showTimeOrderError = false }) {
+                                    Text("확인", color = SnoffeePrimary)
+                                }
+                            },
+                            shape = RoundedCornerShape(16.dp),
+                            containerColor = SnoffeePrimaryLight
                         )
                     }
 
@@ -370,6 +431,21 @@ fun SleepDialog(
             initialTime = wakeUpTime,
             onTimeSelected = { wakeUpTime = it; showWakeUpTimePicker = false },
             onDismiss = { showWakeUpTimePicker = false })
+    }
+
+    if (showLimitBoundsError) {
+        AlertDialog(
+            onDismissRequest = { showLimitBoundsError = false },
+            title = { Text("수면 시간 범위 초과", fontWeight = FontWeight.Bold) },
+            text = { Text("수면 기록은 취침 오후 8시(20:00)부터 다음날 기상 오후 2시(14:00) 까지만 기입할 수 있습니다.\n설정된 시간을 다시 확인해 주세요.") },
+            confirmButton = {
+                TextButton(onClick = { showLimitBoundsError = false }) {
+                    Text("확인", color = SnoffeePrimary)
+                }
+            },
+            shape = RoundedCornerShape(16.dp),
+            containerColor = SnoffeePrimaryLight
+        )
     }
 }
 
