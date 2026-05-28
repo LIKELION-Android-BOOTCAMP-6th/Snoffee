@@ -6,6 +6,7 @@ import com.snoffee.app.domain.model.SleepData
 // 실제 구현은 SleepRepositoryImpl
 interface SleepRepository {
     suspend fun saveSleepData(sleepData: SleepData): Result<Unit>  // 수면 데이터 저장
+    suspend fun deleteSleepData(sleepData: SleepData): Result<Unit> // 수면 데이터 삭제
     suspend fun getLatestSleepData(): SleepData?            // 최근 수면 데이터 조회 (없을 수 있음)
     suspend fun getSleepDataByDateRange(
         startTimeMillis: Long,

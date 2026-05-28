@@ -10,6 +10,9 @@ class SleepLocalDataSourceImpl @Inject constructor(
     override suspend fun insertSleepData(sleepData: SleepEntity) {
         sleepDao.insertSleepData(sleepData)
     }
+    override suspend fun deleteSleepData(sleepData: SleepEntity) {
+        sleepDao.deleteSleepData(sleepData)
+    }
 
     override suspend fun getLatestSleepData(): SleepEntity? {
         return sleepDao.getLatestSleepData()
