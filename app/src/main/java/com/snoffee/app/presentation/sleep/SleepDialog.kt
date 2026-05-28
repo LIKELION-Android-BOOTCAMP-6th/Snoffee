@@ -106,6 +106,8 @@ fun SleepDialog(
     var showTimeOrderError by remember { mutableStateOf(false) }
     var lastWakeUpTimeLabel by remember { mutableStateOf("") }
 
+    var showFutureTimeError by remember { mutableStateOf(false) }
+
     // Picker 노출 여부
     var showDatePicker by remember { mutableStateOf(false) }
     var showBedTimePicker by remember { mutableStateOf(false) }
@@ -227,11 +229,19 @@ fun SleepDialog(
                     // 저장 버튼
                     Button(
                         onClick = {
+                            val now = LocalDateTime.now(zoneId)
                             // 취침 시간이 기상 시간보다 늦으면 '전날'로 계산하는 로직
                             val adjustedBedDate = if (bedTime.isAfter(wakeUpTime)) {
                                 selectedDate.minusDays(1)
                             } else {
                                 selectedDate
+                            }
+                            val bedLocalDateTime = LocalDateTime.of(adjustedBedDate, bedTime)
+                            val wakeUpLocalDateTime = LocalDateTime.of(selectedDate, wakeUpTime)
+
+                            if (bedLocalDateTime.isAfter(now) || wakeUpLocalDateTime.isAfter(now)) {
+                                showFutureTimeError = true
+                                return@Button
                             }
 
                             val startTimestamp = LocalDateTime.of(adjustedBedDate, bedTime)
@@ -320,6 +330,20 @@ fun SleepDialog(
                             if (initialData != null) "수정 완료" else "저장하기",
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp
+                        )
+                    }
+                    if (showFutureTimeError) {
+                        AlertDialog(
+                            onDismissRequest = { showFutureTimeError = false },
+                            title = { Text("시간 설정 오류", fontWeight = FontWeight.Bold) },
+                            text = { Text("아직 오지 않은 미래의 시간은 수면 기록으로 등록할 수 없습니다.\n현재 스마트폰 시간을 확인해 주세요.") },
+                            confirmButton = {
+                                TextButton(onClick = { showFutureTimeError = false }) {
+                                    Text("확인", color = SnoffeePrimary)
+                                }
+                            },
+                            shape = RoundedCornerShape(16.dp),
+                            containerColor = SnoffeePrimaryLight
                         )
                     }
 
