@@ -1,6 +1,7 @@
 package com.snoffee.app.presentation.report
 
 import com.snoffee.app.domain.model.CaffeineRecord
+import com.snoffee.app.domain.model.SleepData
 import java.time.LocalDate
 
 data class ReportUiState(
@@ -12,6 +13,7 @@ data class ReportUiState(
     val hasTodayRecord: Boolean = false,
     val todayTotalCaffeine: Int = 0,
     val todayCaffeineRecords: List<CaffeineRecord> = emptyList(),
+    val todaySleepRecords: List<SleepData> = emptyList(),
 
     //주간 데이터 영역
     val weeklyAvgCaffeine: Int = 0,

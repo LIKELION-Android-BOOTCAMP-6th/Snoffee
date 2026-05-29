@@ -31,6 +31,7 @@ import com.snoffee.app.core.ui.theme.SnoffeeTextHint
 import com.snoffee.app.core.ui.theme.SnoffeeTextMain
 import com.snoffee.app.core.ui.theme.SnoffeeTextMuted
 import com.snoffee.app.core.ui.theme.SnoffeeWarning
+import java.time.Duration
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -117,7 +118,7 @@ fun DailyReportView(uiState: ReportUiState) {
             }
         }
 
-        // 카페인 기록 타임라인 리스트 카드
+        // 오늘의 기록 타임라인 리스트 카드
         item {
             Column(
                 modifier = Modifier
@@ -135,8 +136,8 @@ fun DailyReportView(uiState: ReportUiState) {
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // 카페인 및 수면 기록 타임라인 분기
-                if (uiState.todayCaffeineRecords.isEmpty() && !uiState.hasTodayRecord) {
+                // 카페인 기록과 수면 기록이 모두 존재하지 않는 완전 공백 상태 검증
+                if (uiState.todayCaffeineRecords.isEmpty() && uiState.todaySleepRecords.isEmpty()) {
                     Text(
                         text = "오늘 등록된 기록이 없습니다.",
                         color = SnoffeeTextHint,
@@ -144,7 +145,7 @@ fun DailyReportView(uiState: ReportUiState) {
                         modifier = Modifier.padding(vertical = 8.dp)
                     )
                 } else {
-                    //카페인 기록 리스트
+                    // 1. 카페인 기록 리스트 루프 출력
                     uiState.todayCaffeineRecords.forEach { record ->
                         val formattedTime = runCatching {
                             Instant.ofEpochMilli(record.consumedAt)
@@ -153,24 +154,55 @@ fun DailyReportView(uiState: ReportUiState) {
                                 .format(DateTimeFormatter.ofPattern("a hh:mm", Locale.KOREAN))
                         }.getOrDefault("시간 정보 없음")
 
-                        // 고카페인(150mg 이상)일 경우 경고 컬러 트리거
                         val isHighCaffeine = record.intakeCaffeine >= 150.0
 
                         DailyRecordItem(
                             time = formattedTime,
-                            title = if (record.brandName.isNotEmpty()) "[${record.brandName}] ${record.drinkName}" else record.drinkName, // ◀ [수정] record.drinkName 반영 및 브랜드명 결합
+                            title = if (record.brandName.isNotEmpty()) "[${record.brandName}] ${record.drinkName}" else record.drinkName,
                             value = "${record.intakeCaffeine.toInt()} mg",
                             typeColor = if (isHighCaffeine) SnoffeeWarning else SnoffeePrimary
                         )
                     }
 
-                    //수면
-                    DailyRecordItem(
-                        time = uiState.todaySleepStart,
-                        title = "수면 기록 시작",
-                        value = if (uiState.hasTodayRecord) "수면 진입" else "기록 없음",
-                        typeColor = SnoffeeInfo
-                    )
+                    // 2. ★ [변경] 오늘 등록한 수면 기록이 여러 개(최대 3개)이면 모두 개별 리스트 아이템으로 출력
+                    if (uiState.todaySleepRecords.isNotEmpty()) {
+                        // 수면 시작 시간 기준으로 깔끔하게 정렬하여 타임라인 정립
+                        val sortedSleepRecords =
+                            uiState.todaySleepRecords.sortedBy { it.sleepStart }
+
+                        sortedSleepRecords.forEachIndexed { index, sleepData ->
+                            val startTime = Instant.ofEpochMilli(sleepData.sleepStart)
+                                .atZone(ZoneId.systemDefault())
+                                .toLocalTime()
+                                .format(DateTimeFormatter.ofPattern("HH:mm"))
+
+                            val endTime = Instant.ofEpochMilli(sleepData.sleepEnd)
+                                .atZone(ZoneId.systemDefault())
+                                .toLocalTime()
+                                .format(DateTimeFormatter.ofPattern("HH:mm"))
+
+                            val durationMillis = sleepData.sleepEnd - sleepData.sleepStart
+                            val duration = Duration.ofMillis(durationMillis)
+                            val hourLabel = duration.toHours()
+                            val minuteLabel = duration.toMinutes() % 60
+
+                            // 여러 개인 경우 수면 기록 #1, #2 형태로 동적 네이밍 매핑
+                            DailyRecordItem(
+                                time = "$startTime ~ $endTime",
+                                title = if (sortedSleepRecords.size > 1) "수면 기록 #${index + 1}" else "오늘의 수면",
+                                value = "${hourLabel}h ${minuteLabel}m 수면",
+                                typeColor = SnoffeeInfo
+                            )
+                        }
+                    } else {
+                        // 오늘 범위 내에 수면 기록이 하나도 없을 경우의 폴백 홀더
+                        DailyRecordItem(
+                            time = "--:--",
+                            title = "수면 기록",
+                            value = "기록 없음",
+                            typeColor = SnoffeeInfo
+                        )
+                    }
                 }
             }
         }
