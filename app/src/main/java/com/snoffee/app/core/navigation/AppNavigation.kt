@@ -1,4 +1,7 @@
 package com.snoffee.app.core.navigation
+
+import java.time.LocalDate
+
 sealed class Screen(val route: String) {
     // 온보딩
     object Onboarding : Screen("onboarding")
@@ -8,7 +11,9 @@ sealed class Screen(val route: String) {
 
     // 카페인
     object Caffeine : Screen("caffeine")
-    object CaffeineSearch : Screen("caffeine_search")
+    object CaffeineSearch : Screen("caffeine_search/{selectedDate}") {
+        fun createRoute(selectedDate: LocalDate) = "caffeine_search/$selectedDate"
+    }
 
     // 수면
     object Sleep : Screen("sleep")

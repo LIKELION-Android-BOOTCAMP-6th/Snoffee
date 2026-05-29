@@ -130,7 +130,7 @@ fun buildCalendarGrid(
 @Composable
 fun CaffeineMainScreen(
     viewModel: CaffeineMainViewModel = hiltViewModel(),
-    onRecordClick: () -> Unit = {},
+    onRecordClick: (LocalDate) -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var pendingDeleteRecordId by remember { mutableStateOf<Long?>(null) }
@@ -263,7 +263,7 @@ fun CaffeineMainScreen(
                     )
 
                     Button(
-                        onClick = onRecordClick,
+                        onClick = { onRecordClick(uiState.selectedDate) },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(54.dp),
@@ -311,7 +311,8 @@ fun CaffeineMainScreen(
                                     )
                                     showEditDialog = false
                                 },
-                                editingRecord = editingRecord
+                                editingRecord = editingRecord,
+                                selectedDate = uiState.selectedDate
                             )
                         }
                     }

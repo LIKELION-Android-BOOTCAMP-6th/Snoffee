@@ -1,5 +1,6 @@
 package com.snoffee.app.core.util
 
+import android.util.Log
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -7,11 +8,17 @@ import java.time.LocalTime
 import java.time.ZoneId
 
 object Utils {
-    // LocalTime -> 밀리초(Long) 타임스탬프 변환
-    fun LocalTime.toTodayEpochMilli(): Long {
-        return LocalDateTime.now()
-            .with(this)
+    // Long(Epoch Milli) -> LocalDateTime 변환 함수
+    fun Long.toLocalDateTime(): LocalDateTime {
+        return Instant.ofEpochMilli(this)
             .atZone(ZoneId.systemDefault())
+            .toLocalDateTime()
+    }
+
+    // LocalDateTime -> Long(Epoch Milli) 변환 함수
+    fun LocalDateTime.toEpochMilli(): Long {
+        Log.d("LocalDateTime", "LocalDateTime $this")
+        return this.atZone(ZoneId.systemDefault())
             .toInstant()
             .toEpochMilli()
     }

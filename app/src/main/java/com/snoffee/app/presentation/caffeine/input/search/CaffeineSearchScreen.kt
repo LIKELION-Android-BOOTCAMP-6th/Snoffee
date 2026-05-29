@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -61,24 +62,29 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.snoffee.app.R
 import com.snoffee.app.core.ui.theme.SnoffeeTheme
-import com.snoffee.app.core.util.Utils.toTodayEpochMilli
+import com.snoffee.app.core.util.Utils.toEpochMilli
 import com.snoffee.app.domain.model.CaffeineRecord
 import com.snoffee.app.presentation.caffeine.component.DrinkListItem
 import com.snoffee.app.presentation.caffeine.component.SearchBar
 import com.snoffee.app.presentation.caffeine.component.TimePickerBox
 import com.snoffee.app.presentation.caffeine.input.dialog.CaffeineInputDialog
+import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 
 // 카페인 추가 검색 화면
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CaffeineSearchScreen(
+    selectedDate: LocalDate,
     onBack: () -> Unit,
     onConfirmSuccess: () -> Unit,
     onNavigateToDirectInput: () -> Unit,
     viewModel: CaffeineSearchViewModel = hiltViewModel()
 ) {
-    var selectedTime by remember { mutableStateOf(LocalTime.now()) }
+    var selectedTime by remember {
+        mutableStateOf(LocalDateTime.of(selectedDate, LocalTime.now()))
+    }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val hasQuery = uiState.searchQuery.isNotBlank()
     val listState = rememberLazyListState()
@@ -103,6 +109,7 @@ fun CaffeineSearchScreen(
 
     Scaffold(
         containerColor = colorScheme.background,
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
@@ -153,7 +160,7 @@ fun CaffeineSearchScreen(
                                         brandName = drink.brand,
                                         intakeSize = drink.totalSize,
                                         intakeCaffeine = drink.totalCaffeine,
-                                        consumedAt = selectedTime.toTodayEpochMilli()
+                                        consumedAt = selectedTime.toEpochMilli()
                                     )
                                 )
                             }
@@ -183,7 +190,7 @@ fun CaffeineSearchScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
+                .padding(top = innerPadding.calculateTopPadding())
                 .padding(horizontal = 16.dp)
         ) {
             Surface(
@@ -210,7 +217,7 @@ fun CaffeineSearchScreen(
             Spacer(modifier = Modifier.height(12.dp))
 
             if (!hasQuery) {
-                EmptySearchState(viewModel, selectedTime, onConfirmSuccess)
+                EmptySearchState(viewModel, selectedTime, selectedDate, onConfirmSuccess)
             } else {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -233,6 +240,7 @@ fun CaffeineSearchScreen(
                 DirectRegisterBanner(
                     viewModel = viewModel,
                     selectedTime = selectedTime,
+                    selectedDate = selectedDate,
                     onConfirmSuccess = onConfirmSuccess,
                     onClick = onNavigateToDirectInput
                 )
@@ -293,7 +301,8 @@ fun CaffeineSearchScreen(
 @Composable
 private fun EmptySearchState(
     viewModel: CaffeineSearchViewModel,
-    selectedTime: LocalTime,
+    selectedTime: LocalDateTime,
+    selectedDate: LocalDate,
     onConfirmSuccess: () -> Unit,
 ) {
     val colorScheme = MaterialTheme.colorScheme
@@ -370,12 +379,13 @@ private fun EmptySearchState(
                                         brandName = "직접 입력",
                                         intakeSize = record.intakeSize,
                                         intakeCaffeine = record.intakeCaffeine,
-                                        consumedAt = selectedTime.toTodayEpochMilli()
+                                        consumedAt = record.consumedAt
                                     )
                                 )
                                 showDialog = false
                                 onConfirmSuccess()
-                            }
+                            },
+                            selectedDate = selectedDate
                         )
                     }
                 }
@@ -395,7 +405,8 @@ private fun EmptySearchState(
 @Composable
 private fun DirectRegisterBanner(
     viewModel: CaffeineSearchViewModel,
-    selectedTime: LocalTime,
+    selectedTime: LocalDateTime,
+    selectedDate: LocalDate,
     onConfirmSuccess: () -> Unit,
     onClick: () -> Unit
 ) { // onClick은 기존 유지
@@ -462,12 +473,13 @@ private fun DirectRegisterBanner(
                                 brandName = "직접 입력",
                                 intakeSize = record.intakeSize,
                                 intakeCaffeine = record.intakeCaffeine,
-                                consumedAt = selectedTime.toTodayEpochMilli()
+                                consumedAt = record.consumedAt
                             )
                         )
                         showDialog = false
                         onConfirmSuccess()  // 추가
-                    }
+                    },
+                    selectedDate = selectedDate
                 )
             }
         }
