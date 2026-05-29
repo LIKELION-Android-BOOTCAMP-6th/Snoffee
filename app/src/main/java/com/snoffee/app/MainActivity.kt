@@ -65,38 +65,35 @@ class MainActivity : ComponentActivity() {
                 )
 
                 //앱 전체 레이아웃
-                Scaffold(
-                    topBar = {
-                        // 온보딩 화면이 아닐 때만 상단 앱바 표시
-                        if (currentRoute !in fullScreenRoutes) {
-                            SnoffeeAppBar(
-                                //탭바에 따른 제목 변경
-                                title = topBarTitle,
-                                onNotificationClick = {
-                                    // 알림 아이콘 클릭 시 로직 (알림 화면 이동 등)
-                                }
-                            )
-                        }
-                    },
-                    bottomBar = {
-                        // 온보딩 화면이 아닐 때만 하단 탭바 표시
-                        if (currentRoute !in fullScreenRoutes) {
-                            SnoffeeBottomBar(navController = navController)
-                        }
-                    },
-                    containerColor = SnoffeeBgBase
-                ) { innerPadding ->
-                    //중앙 콘텐츠 영역 (NavHost)
-                    // innerPadding을 통해 콘텐츠가 앱바나 탭바에 가려지지 않도록 설정
+                val isFullScreenRoute = currentRoute in fullScreenRoutes
+
+                if (isFullScreenRoute) {
                     AppNavHost(
                         navController = navController,
-                        modifier = if (currentRoute in fullScreenRoutes) {
-                            Modifier  // fullScreen 화면은 패딩 없음
-                        } else {
-                            Modifier.padding(innerPadding)
-                        },
+                        modifier = Modifier,
                         startDestination = startDestination
                     )
+                } else {
+                    Scaffold(
+                        topBar = {
+                            SnoffeeAppBar(
+                                title = topBarTitle,
+                                onNotificationClick = {
+                                    // 알림 아이콘 클릭 시 로직
+                                }
+                            )
+                        },
+                        bottomBar = {
+                            SnoffeeBottomBar(navController = navController)
+                        },
+                        containerColor = SnoffeeBgBase
+                    ) { innerPadding ->
+                        AppNavHost(
+                            navController = navController,
+                            modifier = Modifier.padding(innerPadding),
+                            startDestination = startDestination
+                        )
+                    }
                 }
             }
         }
