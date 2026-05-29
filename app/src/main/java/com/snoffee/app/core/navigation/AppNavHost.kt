@@ -3,8 +3,10 @@ package com.snoffee.app.core.navigation
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import com.snoffee.app.presentation.caffeine.input.search.CaffeineSearchScreen
 import com.snoffee.app.presentation.caffeine.main.CaffeineMainScreen
 import com.snoffee.app.presentation.home.HomeScreen
@@ -12,6 +14,7 @@ import com.snoffee.app.presentation.onboarding.OnboardingScreen
 import com.snoffee.app.presentation.report.ReportScreen
 import com.snoffee.app.presentation.setting.SettingScreen
 import com.snoffee.app.presentation.sleep.SleepScreen
+import java.time.LocalDate
 
 @Composable
 fun AppNavHost(
@@ -65,19 +68,31 @@ fun AppNavHost(
 
         //카페인 입력/목록 화면
         composable(Screen.Caffeine.route) {
-            CaffeineMainScreen {
-                navController.navigate(Screen.CaffeineSearch.route)
-            }
+            CaffeineMainScreen(
+                onRecordClick = { selectedDate ->
+                    navController.navigate(Screen.CaffeineSearch.createRoute(selectedDate))
+                }
+            )
         }
 
         // 카페인 검색/추가 화면 [A-4-4]
-        composable(Screen.CaffeineSearch.route) {
+        composable(
+            Screen.CaffeineSearch.route,
+            arguments = listOf(
+                navArgument("selectedDate") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val dateString = backStackEntry.arguments?.getString("selectedDate")
+            val selectedDate = dateString?.let { LocalDate.parse(it) } ?: LocalDate.now()
+
             CaffeineSearchScreen(
+                selectedDate = selectedDate,
                 onBack = { navController.popBackStack() },
-                onConfirmSuccess = { navController.popBackStack() }, // 추가
+                onConfirmSuccess = { navController.popBackStack() },
                 onNavigateToDirectInput = {}
             )
         }
+
         //수면 화면
         composable(Screen.Sleep.route) {
             SleepScreen() // presentation.sleep.SleepScreen

@@ -25,6 +25,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -43,17 +44,20 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.snoffee.app.R
 import com.snoffee.app.core.ui.theme.SnoffeeTheme
-import com.snoffee.app.core.util.Utils.toLocalTime
-import com.snoffee.app.core.util.Utils.toTodayEpochMilli
+import com.snoffee.app.core.util.Utils.toEpochMilli
+import com.snoffee.app.core.util.Utils.toLocalDateTime
 import com.snoffee.app.domain.model.CaffeineRecord
 import com.snoffee.app.presentation.caffeine.component.TimePickerBox
+import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 
 @Composable
 fun CaffeineInputDialog(
     onDismiss: () -> Unit = {},
     onConfirm: (CaffeineRecord) -> Unit = {},
-    editingRecord: CaffeineRecord? = null
+    editingRecord: CaffeineRecord? = null,
+    selectedDate: LocalDate = LocalDate.now()
 ) {
     val isEditMode = editingRecord != null
 
@@ -86,9 +90,10 @@ fun CaffeineInputDialog(
     }
 
     // 섭취 시간 상태
-    var consumedAtMilli by remember(editingRecord) {
-        mutableStateOf(
-            editingRecord?.consumedAt ?: LocalTime.now().toTodayEpochMilli()
+    var consumedAtMilli by remember(editingRecord, selectedDate) {
+        mutableLongStateOf(
+            editingRecord?.consumedAt ?: LocalDateTime.of(selectedDate, LocalTime.now())
+                .toEpochMilli()
         )
     }
 
@@ -332,8 +337,10 @@ fun CaffeineInputDialog(
 
             // 섭취 시간 영역
             TimePickerBox(
-                selectedTime = consumedAtMilli.toLocalTime(),
-                onTimeChange = { consumedAtMilli = it.toTodayEpochMilli() },
+                selectedTime = consumedAtMilli.toLocalDateTime(),
+                onTimeChange = { newDateTime ->
+                    consumedAtMilli = newDateTime.toEpochMilli()
+                },
                 onErrorChange = { hasError -> isTimeError = hasError }
             )
 

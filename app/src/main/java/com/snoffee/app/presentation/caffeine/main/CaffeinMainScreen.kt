@@ -130,12 +130,13 @@ fun buildCalendarGrid(
 @Composable
 fun CaffeineMainScreen(
     viewModel: CaffeineMainViewModel = hiltViewModel(),
-    onRecordClick: () -> Unit = {},
+    onRecordClick: (LocalDate) -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var pendingDeleteRecordId by remember { mutableStateOf<Long?>(null) }
     var showEditDialog by remember { mutableStateOf(false) }
     var editingRecord by remember { mutableStateOf<CaffeineRecord?>(null) }
+    val isFutureDate = uiState.selectedDate.isAfter(LocalDate.now())            // 미래 날짜 여부 판단
 
     val calendarGrid =
         remember(uiState.currentYearMonth, uiState.selectedDate, uiState.recordedDates) {
@@ -162,6 +163,8 @@ fun CaffeineMainScreen(
             viewModel.onErrorDismiss()
         }
     }
+
+    val extColors = SnoffeeTheme.colors
 
     // 삭제 확인 다이얼로그
     pendingDeleteRecordId?.let { recordId ->
@@ -262,22 +265,41 @@ fun CaffeineMainScreen(
                         onDeleteClick = { recordId -> pendingDeleteRecordId = recordId }
                     )
 
-                    Button(
-                        onClick = onRecordClick,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(54.dp),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary,
-                        ),
-                    ) {
-                        Text(
-                            text = stringResource(R.string.caffeine_record_button),
-                            fontWeight = FontWeight.Medium,
-                            fontSize = 20.sp
-                        )
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(
+                            onClick = { onRecordClick(uiState.selectedDate) },
+                            enabled = !isFutureDate,        // 미래 날짜면 비활성화
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(54.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary,
+                                disabledContainerColor = MaterialTheme.colorScheme.primary.copy(
+                                    alpha = 0.3f
+                                ),
+                                disabledContentColor = MaterialTheme.colorScheme.onPrimary.copy(
+                                    alpha = 0.5f
+                                ),
+                            ),
+                        ) {
+                            Text(
+                                text = stringResource(R.string.caffeine_record_button),
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 20.sp
+                            )
+                        }
+                        // 미래 날짜일때 기록하는 상황 메러 문구 노출
+                        if (isFutureDate) {
+                            Text(
+                                text = stringResource(R.string.caffeine_error_recode_future_date),
+                                fontSize = 13.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.Center
+                            )
+                        }
                     }
                 }
 
@@ -311,7 +333,8 @@ fun CaffeineMainScreen(
                                     )
                                     showEditDialog = false
                                 },
-                                editingRecord = editingRecord
+                                editingRecord = editingRecord,
+                                selectedDate = uiState.selectedDate
                             )
                         }
                     }

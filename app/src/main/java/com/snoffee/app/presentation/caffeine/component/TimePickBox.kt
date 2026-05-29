@@ -33,14 +33,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.snoffee.app.R
 import com.snoffee.app.core.ui.theme.SnoffeeTheme
-import java.time.LocalTime
+import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 @Composable
 fun TimePickerBox(
-    selectedTime: LocalTime,
-    onTimeChange: (LocalTime) -> Unit,
+    selectedTime: LocalDateTime,
+    onTimeChange: (LocalDateTime) -> Unit,
     onErrorChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -53,8 +53,9 @@ fun TimePickerBox(
         TimePickerDialog(
             initialTime = selectedTime,
             onConfirm = { hour, minute ->
-                val selected = LocalTime.of(hour, minute)
-                val now = LocalTime.now()
+                val selected =
+                    selectedTime.withHour(hour).withMinute(minute).withSecond(0).withNano(0)
+                val now = LocalDateTime.now()
 
                 if (selected.isAfter(now)) {
                     showFutureTimeError = true
@@ -149,7 +150,7 @@ private fun BoxVariant(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TimePickerDialog(
-    initialTime: LocalTime,
+    initialTime: LocalDateTime,
     onConfirm: (Int, Int) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -214,7 +215,7 @@ fun PreviewTimePickerBox() {
     SnoffeeTheme {
         Box(Modifier.padding(16.dp)) {
             TimePickerBox(
-                selectedTime = LocalTime.of(9, 45),
+                selectedTime = LocalDateTime.of(2026, 5, 28, 9, 45),
                 onTimeChange = {},
                 onErrorChange = {}
             )
