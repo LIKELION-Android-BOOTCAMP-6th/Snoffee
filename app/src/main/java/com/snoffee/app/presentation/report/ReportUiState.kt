@@ -39,6 +39,7 @@ data class ReportUiState(
     // 공통 비어있음 분기점 검증용
     val isDbEmpty: Boolean = true,
     val isLoading: Boolean = false,
+    val totalSleepDaysCount: Int = 0,
 
     //기간 데이터 영역
     val startDate: LocalDate = LocalDate.now().minusDays(6), // 기본값: 최근 1주일
