@@ -39,6 +39,8 @@ data class ReportUiState(
     // 공통 비어있음 분기점 검증용
     val isDbEmpty: Boolean = true,
     val isLoading: Boolean = false,
+    val isError: Boolean = false,
+    val errorMessage: String? = null,
     val totalSleepDaysCount: Int = 0,
 
     //기간 데이터 영역

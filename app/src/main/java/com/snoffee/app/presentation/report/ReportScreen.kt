@@ -105,6 +105,12 @@ fun ReportScreen(
                 if (uiState.isLoading) {
                     //스피너 노출 (연속 클릭 깜빡임 방지)
                     LoadingSpinner()
+                } else if (uiState.isError) {
+                    // 에러 발생 시 에러 화면 표출 및 재시도 로직 바인딩
+                    ReportErrorView(
+                        message = uiState.errorMessage ?: "일시적인 오류가 발생했습니다.",
+                        onRetryClick = { viewModel.loadReportData() }
+                    )
                 } else if (uiState.isDbEmpty) {
                     //데이터 없음
                     if (selectedTab in listOf("기간", "일간")) {

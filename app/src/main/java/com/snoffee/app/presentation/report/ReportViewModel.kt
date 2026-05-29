@@ -81,243 +81,266 @@ class ReportViewModel @Inject constructor(
     }
     fun loadReportData() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
+            _uiState.update { it.copy(isLoading = true, isError = false, errorMessage = null) }
             val zoneId = ZoneId.systemDefault()
             val nowMillis = System.currentTimeMillis()
 
 
-            val dailyDeferred =
-                async { getReportUseCase(GetReportUseCase.ReportPeriod.DAILY, nowMillis) }
-            val weeklyDeferred =
-                async { getReportUseCase(GetReportUseCase.ReportPeriod.WEEKLY, nowMillis) }
-            val monthlyDeferred =
-                async { getReportUseCase(GetReportUseCase.ReportPeriod.MONTHLY, nowMillis) }
-            val trendDeferred =
-                async { getReportUseCase(GetReportUseCase.ReportPeriod.TREND, nowMillis) }
+            try {
+                val dailyDeferred =
+                    async { getReportUseCase(GetReportUseCase.ReportPeriod.DAILY, nowMillis) }
+                val weeklyDeferred =
+                    async { getReportUseCase(GetReportUseCase.ReportPeriod.WEEKLY, nowMillis) }
+                val monthlyDeferred =
+                    async { getReportUseCase(GetReportUseCase.ReportPeriod.MONTHLY, nowMillis) }
+                val trendDeferred =
+                    async { getReportUseCase(GetReportUseCase.ReportPeriod.TREND, nowMillis) }
 
-            val dailyResult = dailyDeferred.await()
-            val weeklyResult = weeklyDeferred.await()
-            val monthlyResult = monthlyDeferred.await()
-            val trendResult = trendDeferred.await()
+                val dailyResult = dailyDeferred.await()
+                val weeklyResult = weeklyDeferred.await()
+                val monthlyResult = monthlyDeferred.await()
+                val trendResult = trendDeferred.await()
 
-            if (dailyResult.isEmpty && weeklyResult.isEmpty && monthlyResult.isEmpty && trendResult.isEmpty) {
-                _uiState.update {
-                    it.copy(
-                        isDbEmpty = true,
-                        isLoading = false,
-                        totalSleepDaysCount = 0
+                if (dailyResult.isEmpty && weeklyResult.isEmpty && monthlyResult.isEmpty && trendResult.isEmpty) {
+                    _uiState.update {
+                        it.copy(
+                            isDbEmpty = true,
+                            isLoading = false,
+                            totalSleepDaysCount = 0
+                        )
+                    }
+                    return@launch
+                }
+                val totalSleepDaysCount = trendResult.sleepData.groupBy {
+                    Instant.ofEpochMilli(it.sleepEnd).atZone(zoneId).toLocalDate()
+                }.size
+
+                //일간 데이터
+                val todayTotalCaffeine =
+                    dailyResult.caffeineRecords.sumOf { it.intakeCaffeine }.toInt()
+                val todayLocalDate = dailyResult.caffeineRecords.firstOrNull()?.let {
+                    Instant.ofEpochMilli(it.consumedAt).atZone(zoneId).toLocalDate()
+                } ?: Instant.ofEpochMilli(nowMillis).atZone(zoneId).toLocalDate()
+
+                val minAllowStart =
+                    todayLocalDate.minusDays(1).atTime(20, 0).atZone(zoneId).toInstant()
+                        .toEpochMilli()
+                val maxAllowEnd =
+                    todayLocalDate.atTime(14, 0).atZone(zoneId).toInstant().toEpochMilli()
+
+                val todaySleepRecords = trendResult.sleepData.filter {
+                    it.sleepStart >= minAllowStart && it.sleepEnd <= maxAllowEnd
+                }
+
+                var todayHours = 0
+                var todayMinutes = 0
+                var todayTimeStr = "0h 00m"
+                var todayStartStr = "--:--"
+                val hasTodayRecord = todaySleepRecords.isNotEmpty()
+
+                if (hasTodayRecord) {
+                    val totalTodayMillis = todaySleepRecords.sumOf { it.sleepEnd - it.sleepStart }
+                    val duration = Duration.ofMillis(totalTodayMillis)
+
+                    todayHours = duration.toHours().toInt()
+                    todayMinutes = (duration.toMinutes() % 60).toInt()
+                    todayTimeStr =
+                        String.format(Locale.KOREA, "%dh %02dm", todayHours, todayMinutes)
+
+                    val earliestSleepStart = todaySleepRecords.minOf { it.sleepStart }
+                    todayStartStr =
+                        Instant.ofEpochMilli(earliestSleepStart).atZone(zoneId).toLocalTime()
+                            .format(DateTimeFormatter.ofPattern("HH:mm"))
+                }
+
+                //주간 데이터
+                val weeklyAvgCaffeine = if (weeklyResult.caffeineRecords.isNotEmpty()) {
+                    (weeklyResult.caffeineRecords.sumOf { it.intakeCaffeine } / 7).toInt()
+                } else 0
+
+                val weeklyAvgSleepStr = if (weeklyResult.sleepData.isNotEmpty()) {
+                    val weeklySleepByDate = weeklyResult.sleepData.groupBy {
+                        Instant.ofEpochMilli(it.sleepEnd).atZone(zoneId).toLocalDate()
+                    }
+                    val totalWeeklySleepMillis =
+                        weeklyResult.sleepData.sumOf { it.sleepEnd - it.sleepStart }
+
+                    val avgDuration =
+                        Duration.ofMillis(totalWeeklySleepMillis / weeklySleepByDate.size)
+                    String.format(
+                        Locale.KOREA,
+                        "%dh %02dm",
+                        avgDuration.toHours(),
+                        avgDuration.toMinutes() % 60
+                    )
+                } else "0h 00m"
+
+                //월간 데이터
+                val monthlyAvgCaffeine = if (monthlyResult.caffeineRecords.isNotEmpty()) {
+                    (monthlyResult.caffeineRecords.sumOf { it.intakeCaffeine } / 30).toInt()
+                } else 0
+                val monthlyAvgSleepStr = if (monthlyResult.sleepData.isNotEmpty()) {
+                    val monthlySleepByDate = monthlyResult.sleepData.groupBy {
+                        Instant.ofEpochMilli(it.sleepEnd).atZone(zoneId).toLocalDate()
+                    }
+                    val totalMonthlySleepMillis =
+                        monthlyResult.sleepData.sumOf { it.sleepEnd - it.sleepStart }
+
+                    val avgDuration =
+                        Duration.ofMillis(totalMonthlySleepMillis / monthlySleepByDate.size)
+                    String.format(
+                        Locale.KOREA,
+                        "%dh %02dm",
+                        avgDuration.toHours(),
+                        avgDuration.toMinutes() % 60
+                    )
+                } else "0h 00m"
+
+                val highLowSleepCompare =
+                    calculateHighLowCaffeineSleepCompare(
+                        caffeineRecords = monthlyResult.caffeineRecords,
+                        sleepData = monthlyResult.sleepData,
+                        zoneId = zoneId
+                    )
+
+                //전체 기간 통합 평균 및 BEST / WORST 월 분석
+                val totalAvgSleepStr = if (trendResult.sleepData.isNotEmpty()) {
+                    val totalSleepByDate = trendResult.sleepData.groupBy {
+                        Instant.ofEpochMilli(it.sleepEnd).atZone(zoneId).toLocalDate()
+                    }
+                    val totalSleepMillis =
+                        trendResult.sleepData.sumOf { it.sleepEnd - it.sleepStart }
+
+                    val avgDuration = Duration.ofMillis(totalSleepMillis / totalSleepByDate.size)
+                    String.format(
+                        Locale.KOREA,
+                        "%dh %02dm",
+                        avgDuration.toHours(),
+                        avgDuration.toMinutes() % 60
+                    )
+                } else "0h 00m"
+
+                val monthlyGroups = trendResult.sleepData.groupBy {
+                    java.time.YearMonth.from(
+                        Instant.ofEpochMilli(it.date).atZone(zoneId).toLocalDate()
                     )
                 }
-                return@launch
-            }
-            val totalSleepDaysCount = trendResult.sleepData.groupBy {
-                Instant.ofEpochMilli(it.sleepEnd).atZone(zoneId).toLocalDate()
-            }.size
+                var bestMonth: java.time.YearMonth? = null
+                var worstMonth: java.time.YearMonth? = null
+                var maxScore = -1
+                var minScore = 999
 
-            //일간 데이터
-            val todayTotalCaffeine = dailyResult.caffeineRecords.sumOf { it.intakeCaffeine }.toInt()
-            val todayLocalDate = dailyResult.caffeineRecords.firstOrNull()?.let {
-                Instant.ofEpochMilli(it.consumedAt).atZone(zoneId).toLocalDate()
-            } ?: Instant.ofEpochMilli(nowMillis).atZone(zoneId).toLocalDate()
+                monthlyGroups.forEach { (yearMonth, records) ->
+                    val dailyAvgScores = records.groupBy {
+                        Instant.ofEpochMilli(it.date).atZone(zoneId).toLocalDate()
+                    }.map { entry -> entry.value.map { it.deepSleepRatio }.average() }
 
-            val minAllowStart =
-                todayLocalDate.minusDays(1).atTime(20, 0).atZone(zoneId).toInstant().toEpochMilli()
-            val maxAllowEnd = todayLocalDate.atTime(14, 0).atZone(zoneId).toInstant().toEpochMilli()
+                    val avgScore = dailyAvgScores.average().toInt()
+                    if (avgScore > maxScore) {
+                        maxScore = avgScore; bestMonth = yearMonth
+                    }
+                    if (avgScore < minScore) {
+                        minScore = avgScore; worstMonth = yearMonth
+                    }
+                }
 
-            val todaySleepRecords = trendResult.sleepData.filter {
-                it.sleepStart >= minAllowStart && it.sleepEnd <= maxAllowEnd
-            }
+                val defaultStart = _uiState.value.startDate
+                val defaultEnd = _uiState.value.endDate
 
-            var todayHours = 0
-            var todayMinutes = 0
-            var todayTimeStr = "0h 00m"
-            var todayStartStr = "--:--"
-            val hasTodayRecord = todaySleepRecords.isNotEmpty()
+                // 기간 탭에 맵핑할 데이터 필터링 수행
+                val filteredCaffeine = trendResult.caffeineRecords.filter {
+                    val recDate = Instant.ofEpochMilli(it.consumedAt).atZone(zoneId).toLocalDate()
+                    (!recDate.isBefore(defaultStart)) && (!recDate.isAfter(defaultEnd))
+                }
+                val filteredSleep = trendResult.sleepData.filter {
+                    val recDate = Instant.ofEpochMilli(it.sleepEnd).atZone(zoneId).toLocalDate()
+                    (!recDate.isBefore(defaultStart)) && (!recDate.isAfter(defaultEnd))
+                }
 
-            if (hasTodayRecord) {
-                val totalTodayMillis = todaySleepRecords.sumOf { it.sleepEnd - it.sleepStart }
-                val duration = Duration.ofMillis(totalTodayMillis)
+                val daysBetween = (java.time.temporal.ChronoUnit.DAYS.between(
+                    defaultStart,
+                    defaultEnd
+                ) + 1).coerceAtLeast(1)
 
-                todayHours = duration.toHours().toInt()
-                todayMinutes = (duration.toMinutes() % 60).toInt()
-                todayTimeStr = String.format(Locale.KOREA, "%dh %02dm", todayHours, todayMinutes)
+                val periodTotalCaffeine = filteredCaffeine.sumOf { it.intakeCaffeine }.toInt()
+                val periodAvgCaffeine = (periodTotalCaffeine / daysBetween).toInt()
 
-                val earliestSleepStart = todaySleepRecords.minOf { it.sleepStart }
-                todayStartStr =
-                    Instant.ofEpochMilli(earliestSleepStart).atZone(zoneId).toLocalTime()
-                    .format(DateTimeFormatter.ofPattern("HH:mm"))
-            }
+                val periodTotalSleepMillis = filteredSleep.sumOf { it.sleepEnd - it.sleepStart }
+                val periodTotalSleepStr = String.format(
+                    Locale.KOREA, "%dh %02dm",
+                    Duration.ofMillis(periodTotalSleepMillis).toHours(),
+                    Duration.ofMillis(periodTotalSleepMillis).toMinutes() % 60
+                )
 
-            //주간 데이터
-            val weeklyAvgCaffeine = if (weeklyResult.caffeineRecords.isNotEmpty()) {
-                (weeklyResult.caffeineRecords.sumOf { it.intakeCaffeine } / 7).toInt()
-            } else 0
-
-            val weeklyAvgSleepStr = if (weeklyResult.sleepData.isNotEmpty()) {
-                val weeklySleepByDate = weeklyResult.sleepData.groupBy {
+                val periodSleepDaysCount = filteredSleep.groupBy {
                     Instant.ofEpochMilli(it.sleepEnd).atZone(zoneId).toLocalDate()
-                }
-                val totalWeeklySleepMillis =
-                    weeklyResult.sleepData.sumOf { it.sleepEnd - it.sleepStart }
-
-                val avgDuration = Duration.ofMillis(totalWeeklySleepMillis / weeklySleepByDate.size)
-                String.format(
-                    Locale.KOREA,
-                    "%dh %02dm",
-                    avgDuration.toHours(),
-                    avgDuration.toMinutes() % 60
-                )
-            } else "0h 00m"
-
-            //월간 데이터
-            val monthlyAvgCaffeine = if (monthlyResult.caffeineRecords.isNotEmpty()) {
-                (monthlyResult.caffeineRecords.sumOf { it.intakeCaffeine } / 30).toInt()
-            } else 0
-            val monthlyAvgSleepStr = if (monthlyResult.sleepData.isNotEmpty()) {
-                val monthlySleepByDate = monthlyResult.sleepData.groupBy {
-                    Instant.ofEpochMilli(it.sleepEnd).atZone(zoneId).toLocalDate()
-                }
-                val totalMonthlySleepMillis =
-                    monthlyResult.sleepData.sumOf { it.sleepEnd - it.sleepStart }
-
-                val avgDuration =
-                    Duration.ofMillis(totalMonthlySleepMillis / monthlySleepByDate.size)
-                String.format(
-                    Locale.KOREA,
-                    "%dh %02dm",
-                    avgDuration.toHours(),
-                    avgDuration.toMinutes() % 60
-                )
-            } else "0h 00m"
-
-            val highLowSleepCompare =
-                calculateHighLowCaffeineSleepCompare(
-                    caffeineRecords = monthlyResult.caffeineRecords,
-                    sleepData = monthlyResult.sleepData,
-                    zoneId = zoneId
+                }.size
+                val periodAvgSleepMillis =
+                    if (periodSleepDaysCount > 0) periodTotalSleepMillis / periodSleepDaysCount else 0L
+                val periodAvgSleepStr = String.format(
+                    Locale.KOREA, "%dh %02dm",
+                    Duration.ofMillis(periodAvgSleepMillis).toHours(),
+                    Duration.ofMillis(periodAvgSleepMillis).toMinutes() % 60
                 )
 
-            //전체 기간 통합 평균 및 BEST / WORST 월 분석
-            val totalAvgSleepStr = if (trendResult.sleepData.isNotEmpty()) {
-                val totalSleepByDate = trendResult.sleepData.groupBy {
-                    Instant.ofEpochMilli(it.sleepEnd).atZone(zoneId).toLocalDate()
+                _uiState.update {
+                    it.copy(
+                        isDbEmpty = false,
+                        isLoading = false,
+                        totalSleepDaysCount = totalSleepDaysCount,
+
+                        periodTotalCaffeine = periodTotalCaffeine,
+                        periodAvgCaffeine = periodAvgCaffeine,
+                        periodTotalSleepTime = periodTotalSleepStr,
+                        periodAvgSleepTime = periodAvgSleepStr,
+                        periodCaffeineRecords = filteredCaffeine,
+
+                        todaySleepTime = todayTimeStr,
+                        todaySleepHours = todayHours,
+                        todaySleepMinutes = todayMinutes,
+                        todaySleepStart = todayStartStr,
+                        hasTodayRecord = hasTodayRecord,
+                        todayTotalCaffeine = todayTotalCaffeine,
+                        todayCaffeineRecords = dailyResult.caffeineRecords,
+                        todaySleepRecords = todaySleepRecords,
+
+                        weeklyAvgCaffeine = weeklyAvgCaffeine,
+                        weeklyAvgSleepTime = weeklyAvgSleepStr,
+                        weeklyCaffeineChartData = weeklyResult.caffeineChartData,
+                        weeklySleepChartData = weeklyResult.sleepChartData,
+                        monthlyCaffeineTrend = trendResult.monthlyCaffeineChartData,
+                        monthlyAvgCaffeine = monthlyAvgCaffeine,
+                        monthlyAvgSleepTime = monthlyAvgSleepStr,
+                        totalAvgSleepTime = totalAvgSleepStr,
+                        highCaffeineDaySleepTime = highLowSleepCompare.first,
+                        lowCaffeineDaySleepTime = highLowSleepCompare.second,
+                        bestMonthLabel = bestMonth?.format(
+                            DateTimeFormatter.ofPattern(
+                                "M월"
+                            )
+                        ) ?: "데이터 없음",
+                        bestMonthScore = if (maxScore != -1) maxScore else 0,
+                        worstMonthLabel = worstMonth?.format(
+                            DateTimeFormatter.ofPattern(
+                                "M월"
+                            )
+                        ) ?: "데이터 없음",
+                        worstMonthScore = if (minScore != 999) minScore else 0
+                    )
                 }
-                val totalSleepMillis = trendResult.sleepData.sumOf { it.sleepEnd - it.sleepStart }
-
-                val avgDuration = Duration.ofMillis(totalSleepMillis / totalSleepByDate.size)
-                String.format(
-                    Locale.KOREA,
-                    "%dh %02dm",
-                    avgDuration.toHours(),
-                    avgDuration.toMinutes() % 60
-                )
-            } else "0h 00m"
-
-            val monthlyGroups = trendResult.sleepData.groupBy {
-                java.time.YearMonth.from(Instant.ofEpochMilli(it.date).atZone(zoneId).toLocalDate())
-            }
-            var bestMonth: java.time.YearMonth? = null
-            var worstMonth: java.time.YearMonth? = null
-            var maxScore = -1
-            var minScore = 999
-
-            monthlyGroups.forEach { (yearMonth, records) ->
-                val dailyAvgScores = records.groupBy {
-                    Instant.ofEpochMilli(it.date).atZone(zoneId).toLocalDate()
-                }.map { entry -> entry.value.map { it.deepSleepRatio }.average() }
-
-                val avgScore = dailyAvgScores.average().toInt()
-                if (avgScore > maxScore) {
-                    maxScore = avgScore; bestMonth = yearMonth
+            } catch (e: Exception) {
+                val errorMsg = when (e) {
+                    is java.lang.IllegalStateException -> "삼성 헬스 연동에 실패했습니다. 권한 설정을 확인해 주세요."
+                    is android.database.sqlite.SQLiteException -> "데이터베이스 읽기 오류가 발생했습니다."
+                    else -> "리포트 데이터를 불러오는 중 알 수 없는 오류가 발생했습니다."
                 }
-                if (avgScore < minScore) {
-                    minScore = avgScore; worstMonth = yearMonth
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        isError = true,
+                        errorMessage = errorMsg
+                    )
                 }
-            }
-
-            val defaultStart = _uiState.value.startDate
-            val defaultEnd = _uiState.value.endDate
-
-            // 기간 탭에 맵핑할 데이터 필터링 수행
-            val filteredCaffeine = trendResult.caffeineRecords.filter {
-                val recDate = Instant.ofEpochMilli(it.consumedAt).atZone(zoneId).toLocalDate()
-                (!recDate.isBefore(defaultStart)) && (!recDate.isAfter(defaultEnd))
-            }
-            val filteredSleep = trendResult.sleepData.filter {
-                val recDate = Instant.ofEpochMilli(it.sleepEnd).atZone(zoneId).toLocalDate()
-                (!recDate.isBefore(defaultStart)) && (!recDate.isAfter(defaultEnd))
-            }
-
-            val daysBetween = (java.time.temporal.ChronoUnit.DAYS.between(
-                defaultStart,
-                defaultEnd
-            ) + 1).coerceAtLeast(1)
-
-            val periodTotalCaffeine = filteredCaffeine.sumOf { it.intakeCaffeine }.toInt()
-            val periodAvgCaffeine = (periodTotalCaffeine / daysBetween).toInt()
-
-            val periodTotalSleepMillis = filteredSleep.sumOf { it.sleepEnd - it.sleepStart }
-            val periodTotalSleepStr = String.format(
-                Locale.KOREA, "%dh %02dm",
-                Duration.ofMillis(periodTotalSleepMillis).toHours(),
-                Duration.ofMillis(periodTotalSleepMillis).toMinutes() % 60
-            )
-
-            val periodSleepDaysCount = filteredSleep.groupBy {
-                Instant.ofEpochMilli(it.sleepEnd).atZone(zoneId).toLocalDate()
-            }.size
-            val periodAvgSleepMillis =
-                if (periodSleepDaysCount > 0) periodTotalSleepMillis / periodSleepDaysCount else 0L
-            val periodAvgSleepStr = String.format(
-                Locale.KOREA, "%dh %02dm",
-                Duration.ofMillis(periodAvgSleepMillis).toHours(),
-                Duration.ofMillis(periodAvgSleepMillis).toMinutes() % 60
-            )
-
-            _uiState.update {
-                it.copy(
-                    isDbEmpty = false,
-                    isLoading = false,
-                    totalSleepDaysCount = totalSleepDaysCount,
-
-                    periodTotalCaffeine = periodTotalCaffeine,
-                    periodAvgCaffeine = periodAvgCaffeine,
-                    periodTotalSleepTime = periodTotalSleepStr,
-                    periodAvgSleepTime = periodAvgSleepStr,
-                    periodCaffeineRecords = filteredCaffeine,
-
-                    todaySleepTime = todayTimeStr,
-                    todaySleepHours = todayHours,
-                    todaySleepMinutes = todayMinutes,
-                    todaySleepStart = todayStartStr,
-                    hasTodayRecord = hasTodayRecord,
-                    todayTotalCaffeine = todayTotalCaffeine,
-                    todayCaffeineRecords = dailyResult.caffeineRecords,
-                    todaySleepRecords = todaySleepRecords,
-
-                    weeklyAvgCaffeine = weeklyAvgCaffeine,
-                    weeklyAvgSleepTime = weeklyAvgSleepStr,
-                    weeklyCaffeineChartData = weeklyResult.caffeineChartData,
-                    weeklySleepChartData = weeklyResult.sleepChartData,
-                    monthlyCaffeineTrend = trendResult.monthlyCaffeineChartData,
-                    monthlyAvgCaffeine = monthlyAvgCaffeine,
-                    monthlyAvgSleepTime = monthlyAvgSleepStr,
-                    totalAvgSleepTime = totalAvgSleepStr,
-                    highCaffeineDaySleepTime = highLowSleepCompare.first,
-                    lowCaffeineDaySleepTime = highLowSleepCompare.second,
-                    bestMonthLabel = bestMonth?.format(
-                        DateTimeFormatter.ofPattern(
-                            "M월"
-                        )
-                    ) ?: "데이터 없음",
-                    bestMonthScore = if (maxScore != -1) maxScore else 0,
-                    worstMonthLabel = worstMonth?.format(
-                        DateTimeFormatter.ofPattern(
-                            "M월"
-                        )
-                    ) ?: "데이터 없음",
-                    worstMonthScore = if (minScore != 999) minScore else 0
-                )
             }
         }
     }
