@@ -44,14 +44,9 @@ fun AppNavHost(
             HomeScreen( // presentation.home.HomeScreen
                 onAddCaffeineClick = {
                     //카페인 추가 버튼 -> 카페인 검색 화면으로 이동
-                    navController.navigate(Screen.CaffeineSearch.route) {
-                        // 기본 시작 화면(보통 Home)의 상위 스택을 모두 비워 탭 간 이동 시 화면이 쌓이지 않게 합니다.
-                        popUpTo(navController.graph.startDestinationId) {
-                            saveState = true
-                        }
-                        // 같은 화면이 연속으로 쌓이는 것을 방지
+                    navController.navigate(Screen.CaffeineSearch.createRoute(LocalDate.now())) {
+                        popUpTo(navController.graph.startDestinationId) { saveState = true }
                         launchSingleTop = true
-                        // 다른 탭으로 이동했다가 돌아왔을 때 이전 상태를 복원
                         restoreState = true
                     }
                 },
@@ -100,7 +95,13 @@ fun AppNavHost(
 
         //리포트 화면
         composable(Screen.Report.route) {
-            ReportScreen() // presentation.report.ReportScreen
+            ReportScreen( // presentation.report.ReportScreen
+                onAddCaffeineClick = {
+                    navController.navigate(Screen.CaffeineSearch.createRoute(LocalDate.now())) {
+                        launchSingleTop = true
+                    }
+                }
+            )
         }
 
         //설정 화면
