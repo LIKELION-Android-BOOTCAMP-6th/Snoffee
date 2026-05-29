@@ -1,6 +1,7 @@
 package com.snoffee.app.presentation.onboarding.permission
 
 import android.Manifest
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
@@ -63,7 +64,6 @@ fun OnboardingPermissionScreen(
     onBackClick: () -> Unit
 ) {
     val context = LocalContext.current
-
     val lifecycleOwner = LocalLifecycleOwner.current
 
     var showPermissionDeniedMessage by remember {
@@ -82,6 +82,31 @@ fun OnboardingPermissionScreen(
             onNextClick()
         }
 
+    fun requestNotificationOrNext() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            notificationPermissionLauncher.launch(
+                Manifest.permission.POST_NOTIFICATIONS
+            )
+        } else {
+            onNextClick()
+        }
+    }
+
+    fun checkHealthPermissionAndContinue() {
+        CoroutineScope(Dispatchers.Main).launch {
+            val grantedPermissions =
+                HealthConnectClient
+                    .getOrCreate(context)
+                    .permissionController
+                    .getGrantedPermissions()
+
+            if (grantedPermissions.containsAll(healthPermissions)) {
+                showPermissionDeniedMessage = false
+                requestNotificationOrNext()
+            }
+        }
+    }
+
     val healthPermissionLauncher =
         rememberLauncherForActivityResult(
             PermissionController.createRequestPermissionResultContract()
@@ -89,45 +114,16 @@ fun OnboardingPermissionScreen(
 
             if (grantedPermissions.containsAll(healthPermissions)) {
                 showPermissionDeniedMessage = false
-                // Health Connect 성공 후 알림 권한 요청
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-
-                    notificationPermissionLauncher.launch(
-                        Manifest.permission.POST_NOTIFICATIONS
-                    )
-
-                } else {
-                    onNextClick()
-                }
+                requestNotificationOrNext()
             } else {
                 showPermissionDeniedMessage = true
             }
         }
+
     DisposableEffect(lifecycleOwner, showPermissionDeniedMessage) {
         val observer = LifecycleEventObserver { _, event ->
-            if (
-                event == Lifecycle.Event.ON_RESUME &&
-                showPermissionDeniedMessage
-            ) {
-                CoroutineScope(Dispatchers.Main).launch {
-                    val grantedPermissions =
-                        HealthConnectClient
-                            .getOrCreate(context)
-                            .permissionController
-                            .getGrantedPermissions()
-
-                    if (grantedPermissions.containsAll(healthPermissions)) {
-                        showPermissionDeniedMessage = false
-
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                            notificationPermissionLauncher.launch(
-                                Manifest.permission.POST_NOTIFICATIONS
-                            )
-                        } else {
-                            onNextClick()
-                        }
-                    }
-                }
+            if (event == Lifecycle.Event.ON_RESUME && showPermissionDeniedMessage) {
+                checkHealthPermissionAndContinue()
             }
         }
 
@@ -137,18 +133,17 @@ fun OnboardingPermissionScreen(
             lifecycleOwner.lifecycle.removeObserver(observer)
         }
     }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(SnoffeeBgBase)
             .padding(horizontal = 20.dp, vertical = 28.dp)
     ) {
-
         Column(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-
             Text(
                 text = "Snoffee",
                 color = SnoffeePrimary,
@@ -208,9 +203,8 @@ fun OnboardingPermissionScreen(
         Spacer(modifier = Modifier.weight(1f))
 
         if (showPermissionDeniedMessage) {
-
             Text(
-                text = "수면 데이터 권한이 거부되었어요.\n아래 버튼을 눌러 다시 권한을 허용해주세요.",
+                text = "수면 데이터 권한이 거부되었어요.\n아래 버튼을 눌러 Health Connect에서 권한을 허용해주세요.",
                 color = SnoffeeTextMuted,
                 fontSize = 13.sp,
                 lineHeight = 18.sp
@@ -220,32 +214,21 @@ fun OnboardingPermissionScreen(
         Button(
             onClick = {
                 if (showPermissionDeniedMessage) {
-                    context.startActivity(
-                        Intent(
-                            HealthConnectClient.ACTION_HEALTH_CONNECT_SETTINGS
-                        )
-                    )
+                    openHealthConnectSettingsOrStore(context)
                     return@Button
                 }
 
-                val status = HealthConnectClient.getSdkStatus(context)
-
-                when (status) {
+                when (HealthConnectClient.getSdkStatus(context)) {
                     HealthConnectClient.SDK_AVAILABLE -> {
                         healthPermissionLauncher.launch(healthPermissions)
                     }
 
                     HealthConnectClient.SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED -> {
-                        context.startActivity(
-                            Intent(
-                                Intent.ACTION_VIEW,
-                                Uri.parse("market://details?id=com.google.android.apps.healthdata")
-                            )
-                        )
+                        openHealthConnectStore(context)
                     }
 
                     else -> {
-                        showPermissionDeniedMessage = true
+                        openHealthConnectStore(context)
                     }
                 }
             },
@@ -279,13 +262,45 @@ fun OnboardingPermissionScreen(
     }
 }
 
+private fun openHealthConnectSettingsOrStore(
+    context: Context
+) {
+    try {
+        context.startActivity(
+            Intent(
+                HealthConnectClient.ACTION_HEALTH_CONNECT_SETTINGS
+            )
+        )
+    } catch (e: Exception) {
+        openHealthConnectStore(context)
+    }
+}
+
+private fun openHealthConnectStore(
+    context: Context
+) {
+    try {
+        context.startActivity(
+            Intent(
+                Intent.ACTION_VIEW,
+                Uri.parse("market://details?id=com.google.android.apps.healthdata")
+            )
+        )
+    } catch (e: Exception) {
+        context.startActivity(
+            Intent(
+                Intent.ACTION_VIEW,
+                Uri.parse("https://play.google.com/store/apps/details?id=com.google.android.apps.healthdata")
+            )
+        )
+    }
+}
 @Composable
 private fun PermissionCard(
     icon: ImageVector,
     title: String,
     description: String
 ) {
-
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -294,14 +309,12 @@ private fun PermissionCard(
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-
         Box(
             modifier = Modifier
                 .size(48.dp)
                 .background(SnoffeeSurfaceOverlay, RoundedCornerShape(12.dp)),
             contentAlignment = Alignment.Center
         ) {
-
             Icon(
                 imageVector = icon,
                 contentDescription = null,
@@ -314,7 +327,6 @@ private fun PermissionCard(
         Column(
             modifier = Modifier.weight(1f)
         ) {
-
             Text(
                 text = title,
                 color = SnoffeeTextMain,
@@ -338,7 +350,6 @@ private fun PermissionCard(
                 ),
             contentAlignment = Alignment.Center
         ) {
-
             Box(
                 modifier = Modifier
                     .size(10.dp)

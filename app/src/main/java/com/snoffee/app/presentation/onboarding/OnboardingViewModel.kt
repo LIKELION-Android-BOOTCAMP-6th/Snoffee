@@ -1,12 +1,13 @@
 package com.snoffee.app.presentation.onboarding
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.snoffee.app.data.datasource.preference.OnboardingPreferenceDataSource
 import com.snoffee.app.domain.model.CaffeineSensitivity
-import com.snoffee.app.domain.model.UserProfile
 import com.snoffee.app.domain.repository.UserProfileRepository
+import com.snoffee.app.domain.usecase.onboarding.CompleteOnboardingUseCase
+import com.snoffee.app.domain.usecase.onboarding.ValidateDecimalInputUseCase
+import com.snoffee.app.domain.usecase.onboarding.ValidateOnboardingInputUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -36,38 +37,21 @@ data class OnboardingUiState(
     val height: String = "",
     val weight: String = "",
     val caffeineSensitivity: CaffeineSensitivityOption = CaffeineSensitivityOption.NORMAL,
+    val isHeightValid: Boolean = false,
+    val isWeightValid: Boolean = false,
+    val isPersonalInfoValid: Boolean = false,
     val isCompleted: Boolean = false
-) {
-    //키 유효성 (100~300)
-    val isHeightValid: Boolean
-        get() {
-            if (height.isBlank()) return false
-            val parsed = height.toDoubleOrNull()
-            return parsed != null && parsed in 100.0..300.0
-        }
-
-    //체중 유효성 (1 ~ 400)
-    val isWeightValid: Boolean
-        get() {
-            if (weight.isBlank()) return false
-            val parsed = weight.toDoubleOrNull()
-            return parsed != null && parsed in 1.0..400.0
-        }
-
-    val isPersonalInfoValid: Boolean
-        get() = isHeightValid && isWeightValid
-}
-
+)
 @HiltViewModel
 class OnboardingViewModel @Inject constructor(
     private val onboardingPreferenceDataSource: OnboardingPreferenceDataSource,
-    private val userProfileRepository: UserProfileRepository
+    private val userProfileRepository: UserProfileRepository,
+    private val validateOnboardingInputUseCase: ValidateOnboardingInputUseCase,
+    private val validateDecimalInputUseCase: ValidateDecimalInputUseCase,
+    private val completeOnboardingUseCase: CompleteOnboardingUseCase
 ) : ViewModel() {
-
     private val _uiState = MutableStateFlow(OnboardingUiState())
     val uiState: StateFlow<OnboardingUiState> = _uiState.asStateFlow()
-
-    private val decimalRegex = Regex("^\\d*\\.?\\d{0,1}$")
     fun moveToNextStep() {
         _uiState.update {
             it.copy(
@@ -95,14 +79,33 @@ class OnboardingViewModel @Inject constructor(
     }
 
     fun updateHeight(value: String) {
-        if (value.isEmpty() || value.matches(decimalRegex)) {
-            _uiState.update { it.copy(height = value) }
+        if (!validateDecimalInputUseCase(value)) return
+        _uiState.update {
+            it.copy(height = value)
         }
+        validatePersonalInfo()
     }
 
     fun updateWeight(value: String) {
-        if (value.isEmpty() || value.matches(decimalRegex)) {
-            _uiState.update { it.copy(weight = value) }
+        if (!validateDecimalInputUseCase(value)) return
+        _uiState.update {
+            it.copy(weight = value)
+        }
+        validatePersonalInfo()
+    }
+
+    private fun validatePersonalInfo() {
+        val state = _uiState.value
+        val result = validateOnboardingInputUseCase(
+            height = state.height,
+            weight = state.weight
+        )
+        _uiState.update {
+            it.copy(
+                isHeightValid = result.isHeightValid,
+                isWeightValid = result.isWeightValid,
+                isPersonalInfoValid = result.isPersonalInfoValid
+            )
         }
     }
 
@@ -112,33 +115,20 @@ class OnboardingViewModel @Inject constructor(
 
     fun completeOnboarding(onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
-            try {
-                val currentState = _uiState.value
-                val userHeight = currentState.height.toDoubleOrNull() ?: 168.0
-                val userWeight = currentState.weight.toDoubleOrNull() ?: 62.0
-                val chosenSensitivity = currentState.caffeineSensitivity.domainDomainSensitivity
+            val state = _uiState.value
 
-                val initialProfile = UserProfile(
-                    id = 1,
-                    height = userHeight,
-                    weight = userWeight,
-                    dailyCaffeineLimit = 400.0,
-                    onboardingCompleted = true,
-                    userSleepTime = 2230L,
-                    wakeTime = 630L,
-                    sensitivity = chosenSensitivity,
-                    cutoffTime = 0L
-                )
+            val result = completeOnboardingUseCase(
+                height = state.height,
+                weight = state.weight,
+                sensitivity = state.caffeineSensitivity.domainDomainSensitivity
+            )
 
-                // DB 저장 및 Preference 기록
-                userProfileRepository.saveUserProfile(initialProfile)
-                onboardingPreferenceDataSource.setOnboardingCompleted(true)
-
-                _uiState.update { it.copy(isCompleted = true) }
+            if (result.isSuccess) {
+                _uiState.update {
+                    it.copy(isCompleted = true)
+                }
                 onResult(true)
-
-            } catch (e: Exception) {
-                Log.e("Onboarding", "DB 저장 실패", e)
+            } else {
                 onResult(false)
             }
         }
