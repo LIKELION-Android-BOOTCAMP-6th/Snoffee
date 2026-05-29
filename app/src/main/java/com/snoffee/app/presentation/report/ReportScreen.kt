@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.snoffee.app.core.ui.component.LoadingSpinner
 import com.snoffee.app.core.ui.theme.SnoffeeBgBase
 import com.snoffee.app.core.ui.theme.SnoffeePrimary
 import com.snoffee.app.core.ui.theme.SnoffeeSurface
@@ -33,7 +34,10 @@ import com.snoffee.app.core.ui.theme.SnoffeeTextMuted
 import com.snoffee.app.presentation.sleep.SleepDialog
 
 @Composable
-fun ReportScreen(viewModel: ReportViewModel = hiltViewModel()) {
+fun ReportScreen(
+    viewModel: ReportViewModel = hiltViewModel(),
+    onAddCaffeineClick: () -> Unit = {}
+) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     val isSavingError by viewModel.isSavingError.collectAsStateWithLifecycle()
@@ -74,7 +78,13 @@ fun ReportScreen(viewModel: ReportViewModel = hiltViewModel()) {
                             .weight(1f)
                             .clip(RoundedCornerShape(20.dp))
                             .background(if (isSelected) SnoffeePrimary else SnoffeeSurface)
-                            .clickable { selectedTab = tab }
+                            .clickable {
+                                if (selectedTab != tab) {
+                                    selectedTab = tab
+                                    viewModel.onTabChanged()
+                                    viewModel.loadReportData()
+                                }
+                            }
                             .padding(vertical = 8.dp),
                         contentAlignment = Alignment.Center
                     ) {
@@ -92,22 +102,50 @@ fun ReportScreen(viewModel: ReportViewModel = hiltViewModel()) {
                     .fillMaxSize()
                     .weight(1f)
             ) {
-                if (uiState.isDbEmpty) {
-                    ReportEmptyView(
-                        onRecordClick = { showSleepDialog = true }
-                    )
-                } else {
-                    when (selectedTab) {
-                        "기간" -> PeriodReportView(
-                            uiState = uiState,
-                            onDateRangeChanged = { start, end ->
-                                viewModel.updatePeriodRange(start, end)
-                            }
+                if (uiState.isLoading) {
+                    //스피너 노출 (연속 클릭 깜빡임 방지)
+                    LoadingSpinner()
+                } else if (uiState.isDbEmpty) {
+                    //데이터 없음
+                    if (selectedTab in listOf("기간", "일간")) {
+                        ReportEmptyView(
+                            title = "데이터가 아직 없습니다",
+                            subtitle = "카페인 섭취와 수면을 기록해 보세요.",
+                            onRecordClick = { showSleepDialog = true },
+                            onCaffeineClick = onAddCaffeineClick
                         )
-                        "일간" -> DailyReportView(uiState = uiState)
-                        "주간" -> WeeklyReportView(uiState = uiState)
-                        "월간" -> MonthlyReportView(uiState = uiState)
-                        "추이" -> TrendReportView(uiState = uiState)
+                    } else {
+                        // 주간/월간/추이 탭인데 데이터가 아예 없는 경우 (기존 유지)
+                        ReportEmptyView(
+                            onRecordClick = { showSleepDialog = true }
+                        )
+                    }
+                } else {
+                    //데이터 존재 & 탭별 조건 확인
+                    val isInsufficientData =
+                        selectedTab in listOf("주간", "월간", "추이") && uiState.totalSleepDaysCount < 3
+
+                    if (isInsufficientData) {
+                        // 주간/월간/추이 수면 데이터가 3일 미만인 경우 엠티 뷰 가이드 노출
+                        ReportEmptyView(
+                            title = "$selectedTab 분석 정보가 부족합니다",
+                            subtitle = "정확한 통계를 위해 수면을 3일 이상 기록해 주세요.",
+                            onRecordClick = { showSleepDialog = true }
+                        )
+                    } else {
+                        when (selectedTab) {
+                            "기간" -> PeriodReportView(
+                                uiState = uiState,
+                                onDateRangeChanged = { start, end ->
+                                    viewModel.updatePeriodRange(start, end)
+                                }
+                            )
+
+                            "일간" -> DailyReportView(uiState = uiState)
+                            "주간" -> WeeklyReportView(uiState = uiState)
+                            "월간" -> MonthlyReportView(uiState = uiState)
+                            "추이" -> TrendReportView(uiState = uiState)
+                        }
                     }
                 }
             }

@@ -101,9 +101,18 @@ class ReportViewModel @Inject constructor(
             val trendResult = trendDeferred.await()
 
             if (dailyResult.isEmpty && weeklyResult.isEmpty && monthlyResult.isEmpty && trendResult.isEmpty) {
-                _uiState.update { it.copy(isDbEmpty = true, isLoading = false) }
+                _uiState.update {
+                    it.copy(
+                        isDbEmpty = true,
+                        isLoading = false,
+                        totalSleepDaysCount = 0
+                    )
+                }
                 return@launch
             }
+            val totalSleepDaysCount = trendResult.sleepData.groupBy {
+                Instant.ofEpochMilli(it.sleepEnd).atZone(zoneId).toLocalDate()
+            }.size
 
             //일간 데이터
             val todayTotalCaffeine = dailyResult.caffeineRecords.sumOf { it.intakeCaffeine }.toInt()
@@ -269,6 +278,7 @@ class ReportViewModel @Inject constructor(
                 it.copy(
                     isDbEmpty = false,
                     isLoading = false,
+                    totalSleepDaysCount = totalSleepDaysCount,
 
                     periodTotalCaffeine = periodTotalCaffeine,
                     periodAvgCaffeine = periodAvgCaffeine,
@@ -433,5 +443,8 @@ class ReportViewModel @Inject constructor(
                 )
             }
         }
+    }
+    fun onTabChanged() {
+        _uiState.update { it.copy(isLoading = true) }
     }
 }

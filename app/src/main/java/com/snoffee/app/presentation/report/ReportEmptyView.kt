@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,7 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Assessment
-import androidx.compose.material3.Icon // ◀ 중복 한정자 제거를 위해 단독 임포트 추가
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -32,7 +33,10 @@ import com.snoffee.app.core.ui.theme.SnoffeeTextMain
 
 @Composable
 fun ReportEmptyView(
-    onRecordClick: () -> Unit
+    title: String = "데이터가 아직 없습니다",
+    subtitle: String = "수면을 기록해 보세요.",
+    onRecordClick: () -> Unit,
+    onCaffeineClick: (() -> Unit)? = null
 ) {
     Box(
         modifier = Modifier
@@ -61,7 +65,7 @@ fun ReportEmptyView(
             Spacer(modifier = Modifier.height(32.dp))
 
             Text(
-                text = "데이터가 아직 없습니다",
+                text = title,
                 color = SnoffeeTextMain,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold
@@ -71,7 +75,7 @@ fun ReportEmptyView(
 
             // 가이드 서브 텍스트
             Text(
-                text = "수면을 기록해 보세요.",
+                text = subtitle,
                 color = SnoffeeTextHint,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Normal
@@ -80,23 +84,67 @@ fun ReportEmptyView(
             Spacer(modifier = Modifier.height(40.dp))
 
             // 수면 기록하기 버튼
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(0.85f)
-                    .height(54.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(SnoffeePrimaryDark)
-                    .clickable {
-                        onRecordClick()
-                    },
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "수면 기록하기",
-                    color = SnoffeeSurface,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold
-                )
+            if (onCaffeineClick != null) {
+                // 기간, 일간 탭에서 완전 공백일 때: 두 버튼 가로 나란히 배치
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(0.9f),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // 수면 기록하기 버튼
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(54.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(SnoffeePrimaryDark)
+                            .clickable { onRecordClick() },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "수면 기록하기",
+                            color = SnoffeeSurface,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    // 카페인 기록하기 버튼
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(54.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(SnoffeeSurface)
+                            .clickable { onCaffeineClick() },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "카페인 기록하기",
+                            color = SnoffeeTextMain,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            } else {
+                //수면 기록 버튼만
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(0.85f)
+                        .height(54.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(SnoffeePrimaryDark)
+                        .clickable { onRecordClick() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "수면 기록하기",
+                        color = SnoffeeSurface,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
         }
     }
