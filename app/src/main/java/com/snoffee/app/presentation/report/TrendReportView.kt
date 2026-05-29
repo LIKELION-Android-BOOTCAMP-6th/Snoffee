@@ -2,12 +2,10 @@ package com.snoffee.app.presentation.report
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -31,21 +29,17 @@ import com.snoffee.app.core.ui.theme.SnoffeeSurface
 import com.snoffee.app.core.ui.theme.SnoffeeTextMain
 import com.snoffee.app.core.ui.theme.SnoffeeTextMuted
 import com.snoffee.app.core.ui.theme.SnoffeeWarning
+import com.snoffee.app.presentation.report.component.BarChartItem
+import com.snoffee.app.presentation.report.component.InteractiveBarChart
 import java.time.YearMonth
 
 @Composable
 fun TrendReportView(uiState: ReportUiState) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(
-            start = 16.dp,
-            top = 4.dp,
-            end = 16.dp,
-            bottom = 24.dp
-        ),
+        contentPadding = PaddingValues(16.dp, 4.dp, 16.dp, 24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // 전체 기간 통합 수면 평균 카드
         item {
             Column(
                 modifier = Modifier
@@ -55,7 +49,7 @@ fun TrendReportView(uiState: ReportUiState) {
                     .padding(vertical = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(text = "전체 기간 수면 평균", color = SnoffeeTextMuted, fontSize = 13.sp)
+                Text("전체 기간 수면 평균", color = SnoffeeTextMuted, fontSize = 13.sp)
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
                     text = uiState.totalAvgSleepTime,
@@ -66,7 +60,6 @@ fun TrendReportView(uiState: ReportUiState) {
             }
         }
 
-        // 월별 카페인 섭취 추이
         item {
             Column(
                 modifier = Modifier
@@ -76,24 +69,19 @@ fun TrendReportView(uiState: ReportUiState) {
                     .padding(16.dp)
             ) {
                 val currentMonth = YearMonth.now()
+                val orderedMonths = listOf(
+                    currentMonth.minusMonths(2),
+                    currentMonth.minusMonths(1),
+                    currentMonth
+                ).map { "${it.monthValue}월" }
 
-                val orderedMonths: List<String> =
-                    listOf(
-                        currentMonth.minusMonths(2),
-                        currentMonth.minusMonths(1),
-                        currentMonth
-                    ).map { yearMonth -> "${yearMonth.monthValue}월" }
-                val chartDataMap: Map<String, Double> = orderedMonths.associateWith { month ->
-                    uiState.monthlyCaffeineTrend[month] ?: 0.0
+                val chartDataMap = orderedMonths.associateWith {
+                    uiState.monthlyCaffeineTrend[it] ?: 0.0
                 }
-                val maxEntry = chartDataMap.maxByOrNull { entry -> entry.value }
 
+                val maxEntry = chartDataMap.maxByOrNull { it.value }
                 val peakMonth = maxEntry?.takeIf { it.value > 0.0 }?.key ?: "-"
-
                 val peakAmount = maxEntry?.value?.toInt() ?: 0
-
-                val highestCaffeineLimit: Double = (chartDataMap.values.maxOrNull() ?: 1.0)
-                    .coerceAtLeast(1.0)
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -117,73 +105,20 @@ fun TrendReportView(uiState: ReportUiState) {
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(150.dp)
-                        .padding(horizontal = 12.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalAlignment = Alignment.Bottom
-                ) {
-                    orderedMonths.forEach { month ->
-                        val caffeineValue: Double =
-                            chartDataMap[month] ?: 0.0
-                        val barRatio: Float = if (caffeineValue <= 0.0) {
-                            0f
-                        } else {
-                            (caffeineValue / highestCaffeineLimit)
-                                .toFloat()
-                                .coerceIn(0.08f, 1f)
-                        }
-
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.width(54.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .fillMaxWidth(),
-                                contentAlignment = Alignment.BottomCenter
-                            ) {
-                                if (barRatio > 0f) {
-                                    Box(
-                                        modifier = Modifier
-                                            .width(22.dp)
-                                            .fillMaxHeight(barRatio)
-                                            .background(
-                                                SnoffeeWarning,
-                                                RoundedCornerShape(
-                                                    topStart = 4.dp,
-                                                    topEnd = 4.dp
-                                                )
-                                            )
-                                    )
-                                }
-                            }
-
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(1.dp)
-                                    .background(SnoffeeBgWarm)
-                            )
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            Text(
-                                text = month,
-                                color = SnoffeeTextMuted,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-                    }
-                }
+                InteractiveBarChart(
+                    data = orderedMonths.map { month ->
+                        BarChartItem(
+                            label = month,
+                            value = chartDataMap[month] ?: 0.0
+                        )
+                    },
+                    valueSuffix = "mg",
+                    barWidth = 22.dp,
+                    barColor = SnoffeeWarning
+                )
             }
         }
 
-        // 수면 점수 변화 및 Best & Worst 월 매핑 결과
         item {
             Column(
                 modifier = Modifier
@@ -198,12 +133,13 @@ fun TrendReportView(uiState: ReportUiState) {
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold
                 )
+
                 Spacer(modifier = Modifier.height(16.dp))
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    // BEST 월 매핑
                     Row(
                         modifier = Modifier
                             .weight(1f)
@@ -214,20 +150,19 @@ fun TrendReportView(uiState: ReportUiState) {
                         horizontalArrangement = Arrangement.Center
                     ) {
                         Text(
-                            text = "BEST",
+                            "BEST",
                             color = SnoffeePrimaryDark,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = "${uiState.bestMonthLabel} (${uiState.bestMonthScore}점)",
+                            "${uiState.bestMonthLabel} (${uiState.bestMonthScore}점)",
                             color = SnoffeeTextMain,
                             fontSize = 13.sp
                         )
                     }
 
-                    // WORST 월 매핑
                     Row(
                         modifier = Modifier
                             .weight(1f)
@@ -238,14 +173,14 @@ fun TrendReportView(uiState: ReportUiState) {
                         horizontalArrangement = Arrangement.Center
                     ) {
                         Text(
-                            text = "WORST",
+                            "WORST",
                             color = SnoffeeError,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = "${uiState.worstMonthLabel} (${uiState.worstMonthScore}점)",
+                            "${uiState.worstMonthLabel} (${uiState.worstMonthScore}점)",
                             color = SnoffeeTextMain,
                             fontSize = 13.sp
                         )
