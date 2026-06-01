@@ -22,5 +22,5 @@ data class SleepEntity(
     val deepSleepRatio: Int,
 
     @ColumnInfo(name = "source")
-    val source: String = "manual"
+    val source: String = "MANUAL"
 )
