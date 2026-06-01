@@ -1,6 +1,7 @@
 package com.snoffee.app.data.datasource.health
 
 import android.content.Context
+import android.util.Log
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.records.SleepSessionRecord
@@ -28,6 +29,21 @@ class SamsungHealthDataSourceImpl @Inject constructor(
             SleepSessionRecord::class
         )
     )
+    private fun calculateSleepScore(
+        sleepStart: Long,
+        sleepEnd: Long
+    ): Int {
+        val sleepHours =
+            (sleepEnd - sleepStart) / (1000.0 * 60.0 * 60.0)
+
+        return when {
+            sleepHours >= 7.0 && sleepHours <= 9.0 -> 80
+            sleepHours >= 6.0 && sleepHours < 7.0 -> 65
+            sleepHours > 9.0 && sleepHours <= 10.0 -> 70
+            sleepHours >= 5.0 && sleepHours < 6.0 -> 50
+            else -> 40
+        }
+    }
     override suspend fun saveSleepData(
         sleepData: SleepDataDto
     ) {
@@ -63,12 +79,29 @@ class SamsungHealthDataSourceImpl @Inject constructor(
             )
         )
 
+        Log.d(
+            "HealthConnect",
+            "sleep records size = ${response.records.size}"
+        )
+
+        response.records.forEach { record ->
+            Log.d(
+                "HealthConnect",
+                "start=${record.startTime}, end=${record.endTime}"
+            )
+        }
         return response.records.map { record ->
+            val sleepStart = record.startTime.toEpochMilli()
+            val sleepEnd = record.endTime.toEpochMilli()
+
             SleepDataDto(
-                date = LocalDateTime.ofInstant(record.startTime, ZoneId.systemDefault()),
-                sleepStart = record.startTime.toEpochMilli(),
-                sleepEnd = record.endTime.toEpochMilli(),
-                deepSleepRatio = 0
+                date = LocalDateTime.ofInstant(record.endTime, ZoneId.systemDefault()),
+                sleepStart = sleepStart,
+                sleepEnd = sleepEnd,
+                deepSleepRatio = calculateSleepScore(
+                    sleepStart = sleepStart,
+                    sleepEnd = sleepEnd
+                )
             )
         }
     }
