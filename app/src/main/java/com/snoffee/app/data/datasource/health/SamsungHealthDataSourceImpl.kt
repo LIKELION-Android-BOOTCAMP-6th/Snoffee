@@ -69,27 +69,24 @@ class SamsungHealthDataSourceImpl @Inject constructor(
             return emptyList()
         }
 
+        val bufferedStartTimeMillis =
+            startTimeMillis - 12L * 60L * 60L * 1000L
+
+        val bufferedEndTimeMillis =
+            endTimeMillis + 12L * 60L * 60L * 1000L
+
         val response = healthConnectClient.readRecords(
             ReadRecordsRequest(
                 recordType = SleepSessionRecord::class,
                 timeRangeFilter = TimeRangeFilter.between(
-                    Instant.ofEpochMilli(startTimeMillis),
-                    Instant.ofEpochMilli(endTimeMillis)
+                    Instant.ofEpochMilli(bufferedStartTimeMillis),
+                    Instant.ofEpochMilli(bufferedEndTimeMillis)
                 )
             )
         )
 
-        Log.d(
-            "HealthConnect",
-            "sleep records size = ${response.records.size}"
-        )
+        Log.d("HealthConnect", "sleep records size = ${response.records.size}")
 
-        response.records.forEach { record ->
-            Log.d(
-                "HealthConnect",
-                "start=${record.startTime}, end=${record.endTime}"
-            )
-        }
         return response.records.map { record ->
             val sleepStart = record.startTime.toEpochMilli()
             val sleepEnd = record.endTime.toEpochMilli()
@@ -98,10 +95,7 @@ class SamsungHealthDataSourceImpl @Inject constructor(
                 date = LocalDateTime.ofInstant(record.endTime, ZoneId.systemDefault()),
                 sleepStart = sleepStart,
                 sleepEnd = sleepEnd,
-                deepSleepRatio = calculateSleepScore(
-                    sleepStart = sleepStart,
-                    sleepEnd = sleepEnd
-                )
+                deepSleepRatio = calculateSleepScore(sleepStart, sleepEnd)
             )
         }
     }
