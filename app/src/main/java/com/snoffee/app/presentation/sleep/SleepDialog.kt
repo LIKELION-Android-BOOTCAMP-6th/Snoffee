@@ -52,6 +52,7 @@ import com.snoffee.app.core.ui.theme.SnoffeeTextHint
 import com.snoffee.app.core.ui.theme.SnoffeeTextMain
 import com.snoffee.app.core.ui.theme.SnoffeeTextMuted
 import com.snoffee.app.domain.model.SleepData
+import com.snoffee.app.domain.model.SleepSource
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -313,7 +314,7 @@ fun SleepDialog(
                                 sleepStart = startTimestamp,
                                 sleepEnd = endTimestamp,
                                 deepSleepRatio = convertedScore,
-                                source = "manual"
+                                source = SleepSource.MANUAL
                             )
                             showConfirmDialog = true
                         },

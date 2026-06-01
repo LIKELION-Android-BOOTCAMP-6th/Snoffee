@@ -4,22 +4,28 @@ import com.snoffee.app.data.datasource.health.SamsungHealthDataSource
 import com.snoffee.app.data.datasource.local.SleepLocalDataSource
 import com.snoffee.app.data.mapper.SleepMapper
 import com.snoffee.app.domain.model.SleepData
+import com.snoffee.app.domain.model.SleepSource
 import com.snoffee.app.domain.repository.SleepRepository
+import java.time.Instant
+import java.time.ZoneId
 import javax.inject.Inject
 
-//SleepRepository 인터페이스 구현체
-// SamsungHealthDataSource를 통해 삼성헬스 SDK에 접근
-// SleepMapper를 통해 DTO ↔ Domain Model 변환
 class SleepRepositoryImpl @Inject constructor(
-    private val healthDataSource: SamsungHealthDataSource, // Hilt가 자동 주입
-    private val mapper: SleepMapper,                        // Hilt가 자동 주입
+    private val healthDataSource: SamsungHealthDataSource,
+    private val mapper: SleepMapper,
     private val localDataSource: SleepLocalDataSource,
 ) : SleepRepository {
+
     override suspend fun saveSleepData(
         sleepData: SleepData
     ): Result<Unit> {
         return runCatching {
-            val entity = mapper.toEntity(sleepData)
+            val entity = mapper.toEntity(
+                sleepData.copy(
+                    source = SleepSource.MANUAL
+                )
+            )
+
             localDataSource.insertSleepData(entity)
         }
     }
@@ -28,65 +34,95 @@ class SleepRepositoryImpl @Inject constructor(
         sleepData: SleepData
     ): Result<Unit> {
         return runCatching {
-            // 1. 도메인 모델(SleepData)을 mapper를 통해 DB 엔티티(SleepEntity)로 변환합니다.
             val entity = mapper.toEntity(sleepData)
-
-            // 2. LocalDataSource의 완전 삭제 메서드를 호출합니다.
             localDataSource.deleteSleepData(entity)
         }
     }
 
     override suspend fun getLatestSleepData(): SleepData? {
-        val healthSleepData = runCatching {
-            healthDataSource.getLatestSleepData()
-        }.getOrNull()
-        if (healthSleepData != null) {
-            val domain = mapper.toDomain(healthSleepData)
-            localDataSource.insertSleepData(
-                mapper.toEntity(domain)
-            )
-            return domain
+        val endTimeMillis = System.currentTimeMillis()
+        val startTimeMillis = endTimeMillis - DAYS_30_MILLIS
+
+        return getSleepDataByDateRange(
+            startTimeMillis = startTimeMillis,
+            endTimeMillis = endTimeMillis
+        ).maxByOrNull { sleepData ->
+            sleepData.sleepEnd
         }
-        return localDataSource
-            .getLatestSleepData()
-            ?.let { entity ->
-                mapper.toDomain(entity)
-            }
     }
+
     override suspend fun getSleepDataByDateRange(
         startTimeMillis: Long,
         endTimeMillis: Long
     ): List<SleepData> {
-        val healthSleepDataList = runCatching {
-            healthDataSource.getSleepDataByDateRange(
-                startTimeMillis = startTimeMillis,
-                endTimeMillis = endTimeMillis
-            )
-        }.getOrDefault(emptyList())
-        if (healthSleepDataList.isNotEmpty()) {
-            val domainList = healthSleepDataList.map { dto ->
-                mapper.toDomain(dto)
-            }
-            domainList.forEach { sleepData ->
-                localDataSource.insertSleepData(
-                    mapper.toEntity(sleepData)
+        val localSleepDataList =
+            localDataSource
+                .getSleepDataByDateRange(
+                    startTimeMillis = startTimeMillis,
+                    endTimeMillis = endTimeMillis
                 )
-            }
-            return domainList
-        }
-        return localDataSource
-            .getSleepDataByDateRange(
-                startTimeMillis = startTimeMillis,
-                endTimeMillis = endTimeMillis
+                .map { entity ->
+                    mapper.toDomain(entity)
+                }
+
+        val healthSleepDataList =
+            runCatching {
+                healthDataSource.getSleepDataByDateRange(
+                    startTimeMillis = startTimeMillis,
+                    endTimeMillis = endTimeMillis
+                ).map { dto ->
+                    mapper.toDomain(dto)
+                }
+            }.getOrDefault(emptyList())
+
+        healthSleepDataList.forEach { sleepData ->
+            localDataSource.insertSleepData(
+                mapper.toEntity(sleepData)
             )
-            .map { entity ->
-                mapper.toDomain(entity)
-            }
+        }
+
+        val mergedSleepDataList =
+            localSleepDataList + healthSleepDataList
+
+        return deduplicateByDate(
+            sleepDataList = mergedSleepDataList
+        )
     }
 
     override suspend fun hasHealthPermission(): Boolean {
         return runCatching {
             healthDataSource.hasPermissions()
         }.getOrDefault(false)
+    }
+
+    private fun deduplicateByDate(
+        sleepDataList: List<SleepData>
+    ): List<SleepData> {
+        return sleepDataList
+            .groupBy { sleepData ->
+                Instant.ofEpochMilli(sleepData.sleepEnd)
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDate()
+            }
+            .map { (_, records) ->
+                records.maxWith(
+                    compareBy<SleepData> { sleepData ->
+                        when (sleepData.source) {
+                            SleepSource.MANUAL -> 2
+                            SleepSource.SAMSUNG_HEALTH -> 1
+                        }
+                    }.thenBy { sleepData ->
+                        sleepData.sleepEnd
+                    }
+                )
+            }
+            .sortedByDescending { sleepData ->
+                sleepData.sleepEnd
+            }
+    }
+
+    companion object {
+        private const val DAYS_30_MILLIS =
+            30L * 24L * 60L * 60L * 1000L
     }
 }

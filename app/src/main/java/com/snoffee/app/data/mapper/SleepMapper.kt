@@ -3,12 +3,11 @@ package com.snoffee.app.data.mapper
 import com.snoffee.app.data.local.entity.SleepEntity
 import com.snoffee.app.data.model.SleepDataDto
 import com.snoffee.app.domain.model.SleepData
+import com.snoffee.app.domain.model.SleepSource
 import java.time.LocalDateTime
 import java.time.ZoneId
 import javax.inject.Inject
 
-
-// SleepDataDto ↔ SleepData 변환
 class SleepMapper @Inject constructor() {
     fun toEntity(domain: SleepData): SleepEntity {
         return SleepEntity(
@@ -17,7 +16,7 @@ class SleepMapper @Inject constructor() {
             sleepStart = domain.sleepStart,
             sleepEnd = domain.sleepEnd,
             deepSleepRatio = domain.deepSleepRatio,
-            source = domain.source
+            source = domain.source.name
         )
     }
 
@@ -28,7 +27,7 @@ class SleepMapper @Inject constructor() {
             sleepStart = entity.sleepStart,
             sleepEnd = entity.sleepEnd,
             deepSleepRatio = entity.deepSleepRatio,
-            source = entity.source
+            source = parseSleepSource(entity.source)
         )
     }
 
@@ -47,8 +46,18 @@ class SleepMapper @Inject constructor() {
             sleepStart = dto.sleepStart,
             sleepEnd = dto.sleepEnd,
             deepSleepRatio = dto.deepSleepRatio,
-            source = "health"
+            source = SleepSource.SAMSUNG_HEALTH
         )
+    }
+
+    private fun parseSleepSource(value: String): SleepSource {
+        return when (value.uppercase()) {
+            "MANUAL" -> SleepSource.MANUAL
+            "SAMSUNG_HEALTH" -> SleepSource.SAMSUNG_HEALTH
+            "HEALTH" -> SleepSource.SAMSUNG_HEALTH
+            "MANUAL_INPUT" -> SleepSource.MANUAL
+            else -> SleepSource.MANUAL
+        }
     }
 
     private fun convertMillisToLocalDateTime(timeMillis: Long): LocalDateTime {
