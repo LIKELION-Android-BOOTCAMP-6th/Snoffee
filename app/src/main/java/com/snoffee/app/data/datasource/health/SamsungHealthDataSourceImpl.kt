@@ -68,22 +68,22 @@ class SamsungHealthDataSourceImpl @Inject constructor(
         startTimeMillis: Long,
         endTimeMillis: Long
     ): List<SleepDataDto> {
-
         if (!hasPermissions()) {
             return emptyList()
         }
 
-        val now = System.currentTimeMillis()
+        val bufferedStartTimeMillis =
+            startTimeMillis - 12L * 60L * 60L * 1000L
 
-        val threeMonthsAgo =
-            now - (90L * 24L * 60L * 60L * 1000L)
+        val bufferedEndTimeMillis =
+            endTimeMillis + 12L * 60L * 60L * 1000L
 
         val response = healthConnectClient.readRecords(
             ReadRecordsRequest(
                 recordType = SleepSessionRecord::class,
                 timeRangeFilter = TimeRangeFilter.between(
-                    Instant.ofEpochMilli(threeMonthsAgo),
-                    Instant.ofEpochMilli(now)
+                    Instant.ofEpochMilli(bufferedStartTimeMillis),
+                    Instant.ofEpochMilli(bufferedEndTimeMillis)
                 )
             )
         )
