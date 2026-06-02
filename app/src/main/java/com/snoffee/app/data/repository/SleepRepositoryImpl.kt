@@ -84,7 +84,7 @@ class SleepRepositoryImpl @Inject constructor(
         val mergedSleepDataList =
             localSleepDataList + healthSleepDataList
 
-        return deduplicateByDate(
+        return resolveSourceConflictByDate(
             sleepDataList = mergedSleepDataList
         )
     }
@@ -95,7 +95,7 @@ class SleepRepositoryImpl @Inject constructor(
         }.getOrDefault(false)
     }
 
-    private fun deduplicateByDate(
+    private fun resolveSourceConflictByDate(
         sleepDataList: List<SleepData>
     ): List<SleepData> {
         return sleepDataList
@@ -104,17 +104,21 @@ class SleepRepositoryImpl @Inject constructor(
                     .atZone(ZoneId.systemDefault())
                     .toLocalDate()
             }
-            .map { (_, records) ->
-                records.maxWith(
-                    compareBy<SleepData> { sleepData ->
-                        when (sleepData.source) {
-                            SleepSource.MANUAL -> 2
-                            SleepSource.SAMSUNG_HEALTH -> 1
-                        }
-                    }.thenBy { sleepData ->
-                        sleepData.sleepEnd
+            .flatMap { (_, records) ->
+                val manualRecords =
+                    records.filter { sleepData ->
+                        sleepData.source == SleepSource.MANUAL
                     }
-                )
+
+                val healthRecords =
+                    records.filter { sleepData ->
+                        sleepData.source == SleepSource.SAMSUNG_HEALTH
+                    }
+                if (manualRecords.isNotEmpty()) {
+                    manualRecords
+                } else {
+                    healthRecords
+                }
             }
             .sortedByDescending { sleepData ->
                 sleepData.sleepEnd
