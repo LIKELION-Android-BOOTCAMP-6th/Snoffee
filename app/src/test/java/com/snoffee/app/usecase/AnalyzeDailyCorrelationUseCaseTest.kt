@@ -217,7 +217,7 @@ class AnalyzeDailyCorrelationUseCaseTest {
     fun `fallback 멘트 - 데이터 부족 시 안내 문구`() {
         val empty = analyzeDaily.execute(emptyList(), emptyList(), zone)
         val msg = fallback.execute(empty)
-        assertTrue(msg.contains("충분하지 않"))
+        assertTrue(msg.contains("충분하지 않음"))
     }
 
     @Test
