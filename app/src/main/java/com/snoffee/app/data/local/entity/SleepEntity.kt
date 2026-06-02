@@ -2,9 +2,18 @@ package com.snoffee.app.data.local.entity
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
-@Entity(tableName = "sleep_data")
+@Entity(
+    tableName = "sleep_data",
+    indices = [
+        Index(
+            value = ["sleep_start", "sleep_end", "source"],
+            unique = true
+        )
+    ]
+)
 data class SleepEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,

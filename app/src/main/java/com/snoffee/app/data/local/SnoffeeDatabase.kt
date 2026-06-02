@@ -17,7 +17,7 @@ import com.snoffee.app.data.local.entity.UserProfileEntity
         CaffeineEntity::class,
         DrinkEntity::class,
         SleepEntity::class,
-        UserProfileEntity::class], version = 3
+        UserProfileEntity::class], version = 4
 )
 abstract class SnoffeeDatabase : RoomDatabase() {
     abstract fun caffeineDao(): CaffeineDao
