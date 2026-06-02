@@ -70,8 +70,11 @@ class SleepViewModel @Inject constructor(
 
             // 날짜별 리스트 그룹화
             val groupedData = sleepList
-                .filter { it.deepSleepRatio > 0 }
-                .groupBy { Instant.ofEpochMilli(it.date).atZone(zoneId).toLocalDate() }
+                .groupBy {
+                    Instant.ofEpochMilli(it.date)
+                        .atZone(zoneId)
+                        .toLocalDate()
+                }
 
             currentMonthRawData = groupedData
 
@@ -83,7 +86,17 @@ class SleepViewModel @Inject constructor(
 
             groupedData.forEach { (localDate, records) ->
                 // 하루에 기록이 여러 개일 경우, 캘린더 셀에 평균 점수
-                val dayAvgScore = records.map { it.deepSleepRatio }.average().toInt()
+                val validScores = records
+                    .map { it.deepSleepRatio }
+                    .filter { it > 0 }
+
+                val dayAvgScore =
+                    if (validScores.isNotEmpty()) {
+                        validScores.average().toInt()
+                    } else {
+                        0
+                    }
+
                 scoresMap[localDate] = dayAvgScore
 
                 val dayTotalSleepMillis = records.sumOf { it.sleepEnd - it.sleepStart }
