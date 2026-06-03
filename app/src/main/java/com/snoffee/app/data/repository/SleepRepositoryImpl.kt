@@ -123,7 +123,7 @@ class SleepRepositoryImpl @Inject constructor(
                     healthRecords
                 }
             }
-            .sortedByDescending { sleepData ->
+            .sortedBy { sleepData ->
                 sleepData.sleepEnd
             }
     }
