@@ -62,14 +62,19 @@ class SleepViewModel @Inject constructor(
             val currentMonth = _uiState.value.currentYearMonth
             val startMillis = currentMonth.atDay(1).atStartOfDay(zoneId).toInstant().toEpochMilli()
             val endMillis =
-                currentMonth.atEndOfMonth().atTime(23, 59, 59).atZone(zoneId).toInstant()
-                    .toEpochMilli()
+                currentMonth.atEndOfMonth().atTime(23, 59, 59, 999_000_000).atZone(zoneId)
+                    .toInstant().toEpochMilli()
 
             // DB(Room + 삼성헬스 통합)에서 이번 달 데이터 리스트 가져오기
             val sleepList = sleepRepository.getSleepDataByDateRange(startMillis, endMillis)
 
+            val strictFilteredList = sleepList.filter {
+                val recordDate = Instant.ofEpochMilli(it.date).atZone(zoneId).toLocalDate()
+                YearMonth.from(recordDate) == currentMonth
+            }
+
             // 날짜별 리스트 그룹화
-            val groupedData = sleepList
+            val groupedData = strictFilteredList
                 .groupBy {
                     Instant.ofEpochMilli(it.date)
                         .atZone(zoneId)
@@ -79,12 +84,11 @@ class SleepViewModel @Inject constructor(
             currentMonthRawData = groupedData
 
             // 캘린더 UI에 맞게 Map 데이터 형태로 가공하기
-            val scoresMap = mutableMapOf<LocalDate, Int>()
             var totalMonthlyScore = 0
             var totalMonthlySleepMillis = 0L
             val activeDaysCount = groupedData.size
 
-            groupedData.forEach { (localDate, records) ->
+            groupedData.forEach { (_, records) ->
                 // 하루에 기록이 여러 개일 경우, 캘린더 셀에 평균 점수
                 val validScores = records
                     .map { it.deepSleepRatio }
@@ -96,8 +100,6 @@ class SleepViewModel @Inject constructor(
                     } else {
                         0
                     }
-
-                scoresMap[localDate] = dayAvgScore
 
                 val dayTotalSleepMillis = records.sumOf { it.sleepEnd - it.sleepStart }
 
@@ -118,7 +120,11 @@ class SleepViewModel @Inject constructor(
             }
             _uiState.update {
                 it.copy(
-                    dailyScores = scoresMap,
+                    dailyScores = groupedData.mapValues { (_, records) ->
+                        val validScores =
+                            records.map { r -> r.deepSleepRatio }.filter { s -> s > 0 }
+                        if (validScores.isNotEmpty()) validScores.average().toInt() else 0
+                    },
                     selectedDateRecords = groupedData[it.selectedDate] ?: emptyList(),
                     averageScore = avgScore,
                     averageSleepTime = avgTimeLabel
