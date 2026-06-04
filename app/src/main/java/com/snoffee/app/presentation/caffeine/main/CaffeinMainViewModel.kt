@@ -62,7 +62,7 @@ class CaffeineMainViewModel @Inject constructor(
         val filter = IntentFilter(Intent.ACTION_DATE_CHANGED)
         application.registerReceiver(dateChangedReceiver, filter)
     }
-
+    
     override fun onCleared() {
         super.onCleared()
         try {
