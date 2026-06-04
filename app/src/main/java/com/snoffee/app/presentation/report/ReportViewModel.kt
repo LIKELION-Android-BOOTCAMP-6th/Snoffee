@@ -15,6 +15,7 @@ import kotlinx.coroutines.launch
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
+import java.time.YearMonth
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -166,7 +167,7 @@ class ReportViewModel @Inject constructor(
                         weeklyResult.sleepData.sumOf { it.sleepEnd - it.sleepStart }
 
                     val avgDuration =
-                        Duration.ofMillis(totalWeeklySleepMillis / weeklySleepByDate.size)
+                        Duration.ofMillis(totalWeeklySleepMillis / 7)
                     String.format(
                         Locale.KOREA,
                         "%dh %02dm",
@@ -176,8 +177,10 @@ class ReportViewModel @Inject constructor(
                 } else "0h 00m"
 
                 //월간 데이터
+                val currentLocalDate = Instant.ofEpochMilli(nowMillis).atZone(zoneId).toLocalDate()
+                val daysInCurrentMonth = YearMonth.from(currentLocalDate).lengthOfMonth()
                 val monthlyAvgCaffeine = if (monthlyResult.caffeineRecords.isNotEmpty()) {
-                    (monthlyResult.caffeineRecords.sumOf { it.intakeCaffeine } / 30).toInt()
+                    (monthlyResult.caffeineRecords.sumOf { it.intakeCaffeine } / daysInCurrentMonth).toInt()
                 } else 0
                 val monthlyAvgSleepStr = if (monthlyResult.sleepData.isNotEmpty()) {
                     val monthlySleepByDate = monthlyResult.sleepData.groupBy {
@@ -187,7 +190,7 @@ class ReportViewModel @Inject constructor(
                         monthlyResult.sleepData.sumOf { it.sleepEnd - it.sleepStart }
 
                     val avgDuration =
-                        Duration.ofMillis(totalMonthlySleepMillis / monthlySleepByDate.size)
+                        Duration.ofMillis(totalMonthlySleepMillis / daysInCurrentMonth)
                     String.format(
                         Locale.KOREA,
                         "%dh %02dm",
@@ -272,11 +275,7 @@ class ReportViewModel @Inject constructor(
                     Duration.ofMillis(periodTotalSleepMillis).toMinutes() % 60
                 )
 
-                val periodSleepDaysCount = filteredSleep.groupBy {
-                    Instant.ofEpochMilli(it.sleepEnd).atZone(zoneId).toLocalDate()
-                }.size
-                val periodAvgSleepMillis =
-                    if (periodSleepDaysCount > 0) periodTotalSleepMillis / periodSleepDaysCount else 0L
+                val periodAvgSleepMillis = periodTotalSleepMillis / daysBetween
                 val periodAvgSleepStr = String.format(
                     Locale.KOREA, "%dh %02dm",
                     Duration.ofMillis(periodAvgSleepMillis).toHours(),
@@ -443,12 +442,8 @@ class ReportViewModel @Inject constructor(
                 Duration.ofMillis(totalSleepMillis).toHours(),
                 Duration.ofMillis(totalSleepMillis).toMinutes() % 60
             )
-            val sleepDaysCount = filteredSleep.groupBy {
-                Instant.ofEpochMilli(it.sleepEnd).atZone(zoneId).toLocalDate()
-            }.size
 
-            val avgSleepMillis =
-                if (sleepDaysCount > 0) totalSleepMillis / sleepDaysCount else 0L
+            val avgSleepMillis = totalSleepMillis / daysBetween
             val avgSleepStr = String.format(
                 Locale.KOREA,
                 "%dh %02dm",

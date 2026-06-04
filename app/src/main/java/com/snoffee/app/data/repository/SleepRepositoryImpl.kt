@@ -82,7 +82,10 @@ class SleepRepositoryImpl @Inject constructor(
         }
 
         val mergedSleepDataList =
-            localSleepDataList + healthSleepDataList
+            (localSleepDataList + healthSleepDataList).distinctBy { sleepData ->
+                // 고유 식별자인 시작 시간, 종료 시간, 데이터 출처 조합으로 유니크 키 생성
+                "${sleepData.sleepStart}_${sleepData.sleepEnd}_${sleepData.source}"
+            }
 
         return resolveSourceConflictByDate(
             sleepDataList = mergedSleepDataList
@@ -120,7 +123,7 @@ class SleepRepositoryImpl @Inject constructor(
                     healthRecords
                 }
             }
-            .sortedByDescending { sleepData ->
+            .sortedBy { sleepData ->
                 sleepData.sleepEnd
             }
     }

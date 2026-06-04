@@ -65,6 +65,7 @@ import com.snoffee.app.core.ui.theme.SnoffeeTextHint
 import com.snoffee.app.core.ui.theme.SnoffeeTextMain
 import com.snoffee.app.core.ui.theme.SnoffeeTextMuted
 import com.snoffee.app.domain.model.SleepData
+import com.snoffee.app.domain.model.SleepSource
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
@@ -205,11 +206,14 @@ fun SleepScreen(viewModel: SleepViewModel = hiltViewModel()) {
                         val minutes = (durationMillis / (1000 * 60)) % 60
                         val timeLabel = "${hours}h ${minutes}m"
 
+                        val isManualInput = record.source == SleepSource.MANUAL
+                        val sourceLabel = if (isManualInput) "수동 입력" else "삼성 헬스"
+
                         Column {
                             Text(
-                                text = "기록 #${index + 1}",
+                                text = "기록 #${index + 1} ($sourceLabel)",
                                 fontSize = 12.sp,
-                                color = SnoffeePrimary,
+                                color = if (isManualInput) SnoffeePrimary else SnoffeeTextMuted,
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
                             )
@@ -221,48 +225,56 @@ fun SleepScreen(viewModel: SleepViewModel = hiltViewModel()) {
                                 labelPrefix = "수면"
                             )
 
-                            // 개별 수정 / 삭제 버튼
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(top = 6.dp, bottom = 12.dp),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                TextButton(
-                                    onClick = {
-                                        editTargetData = record
-                                        showSleepDialog = true
-                                    },
+                            //수동 입력(MANUAL) 데이터일 때만 수정/삭제 버튼을 화면에 렌더링
+                            if (isManualInput) {
+                                Row(
                                     modifier = Modifier
-                                        .weight(1f)
-                                        .height(38.dp)
-                                        .border(1.dp, SnoffeePrimary, RoundedCornerShape(8.dp)),
-                                    shape = RoundedCornerShape(8.dp)
+                                        .fillMaxWidth()
+                                        .padding(top = 6.dp, bottom = 12.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                                 ) {
-                                    Text(
-                                        "수정",
-                                        color = SnoffeePrimary,
-                                        fontSize = 13.sp,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
-                                }
+                                    TextButton(
+                                        onClick = {
+                                            editTargetData = record
+                                            showSleepDialog = true
+                                        },
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .height(38.dp)
+                                            .border(1.dp, SnoffeePrimary, RoundedCornerShape(8.dp)),
+                                        shape = RoundedCornerShape(8.dp)
+                                    ) {
+                                        Text(
+                                            "수정",
+                                            color = SnoffeePrimary,
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                    }
 
-                                Button(
-                                    onClick = {
-                                        deleteTargetData = record
-                                        showDeleteConfirmDialog = true
-                                    },
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .height(38.dp),
-                                    shape = RoundedCornerShape(8.dp),
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = Color(0xFFFFEBEE),
-                                        contentColor = Color(0xFFC62828)
-                                    )
-                                ) {
-                                    Text("삭제", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                                    Button(
+                                        onClick = {
+                                            deleteTargetData = record
+                                            showDeleteConfirmDialog = true
+                                        },
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .height(38.dp),
+                                        shape = RoundedCornerShape(8.dp),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = Color(0xFFFFEBEE),
+                                            contentColor = Color(0xFFC62828)
+                                        )
+                                    ) {
+                                        Text(
+                                            "삭제",
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                    }
                                 }
+                            } else {
+                                Spacer(modifier = Modifier.height(16.dp))
                             }
                         }
                     }
