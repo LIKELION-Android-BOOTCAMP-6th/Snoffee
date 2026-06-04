@@ -1,8 +1,11 @@
 package com.snoffee.app
 
+import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.CompositionLocalProvider
@@ -28,6 +31,15 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var onboardingPreferenceDataSource: OnboardingPreferenceDataSource
     override fun onCreate(savedInstanceState: Bundle?) {
+
+        // Status bar 영역 잘 안보여서 추가 (앱 배경이 밝아서 status bar 정보 안보임)
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.light(
+                Color.TRANSPARENT,
+                Color.TRANSPARENT
+            )
+        )
+
         super.onCreate(savedInstanceState)
         setContent {
             // text 크기 최소 값, 최대 값 설정 (text 사이즈에 의해 ui가 깨지지 않게 위해서)
