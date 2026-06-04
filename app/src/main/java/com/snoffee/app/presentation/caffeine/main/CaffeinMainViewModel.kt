@@ -1,5 +1,10 @@
 package com.snoffee.app.presentation.caffeine.main
 
+import android.app.Application
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.snoffee.app.domain.model.CaffeineRecord
@@ -22,6 +27,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class CaffeineMainViewModel @Inject constructor(
+    private val application: Application,
     private val getTodayCaffeineUseCase: GetTodayCaffeineUseCase,
     private val deleteCaffeineUseCase: DeleteCaffeineUseCase,
     private val editCaffeineUseCase: EditCaffeineUseCase
@@ -31,10 +37,39 @@ class CaffeineMainViewModel @Inject constructor(
     val uiState: StateFlow<CaffeineMainUiState> = _uiState.asStateFlow()
     private var recordsJob: Job? = null
 
+    //자정(날짜 변경) 감지 리시버 정의
+    private val dateChangedReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action == Intent.ACTION_DATE_CHANGED) {
+                val newToday = LocalDate.now()
+                // 자정이 지나면 선택된 날짜와 캘린더 기준일을 '오늘'로 강제 업데이트
+                _uiState.update { state ->
+                    state.copy(
+                        selectedDate = newToday,
+                        currentYearMonth = YearMonth.from(newToday)
+                    )
+                }
+                observeMonthRecords(YearMonth.from(newToday))
+                observeRecordsByDate(newToday)
+            }
+        }
+    }
     init {
         val today = LocalDate.now()
         observeMonthRecords(YearMonth.from(today)) // 이번 달 dot 초기화
         observeRecordsByDate(today)                // 오늘 기록 초기화
+
+        val filter = IntentFilter(Intent.ACTION_DATE_CHANGED)
+        application.registerReceiver(dateChangedReceiver, filter)
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        try {
+            application.unregisterReceiver(dateChangedReceiver)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     // 이번 달 전체 dot 표시용
