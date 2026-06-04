@@ -1,6 +1,5 @@
 package com.snoffee.app.core.ui.theme
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
@@ -126,7 +125,7 @@ val LocalSnoffeeColorScheme = staticCompositionLocalOf { SnoffeeLightColorScheme
 
 @Composable
 fun SnoffeeTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    darkTheme: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     val colorScheme = if (darkTheme) SnoffeeDarkColorScheme else SnoffeeLightColorScheme
