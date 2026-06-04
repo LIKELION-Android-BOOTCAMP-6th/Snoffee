@@ -84,6 +84,11 @@ class CaffeineMainViewModel @Inject constructor(
                     )
                 }
             }
+            .catch { throwable ->
+                _uiState.update {
+                    it.copy(error = throwable.message ?: "월별 기록을 불러오지 못했어요")
+                }
+            }
             .launchIn(viewModelScope)
     }
 
