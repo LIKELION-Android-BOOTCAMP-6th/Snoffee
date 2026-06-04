@@ -8,10 +8,12 @@ import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -144,25 +146,9 @@ fun OnboardingPermissionScreen(
             .navigationBarsPadding()
             .padding(horizontal = 20.dp, vertical = 20.dp)
     ) {
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = "Snoffee",
-                color = SnoffeePrimary,
-                fontSize = 40.sp,
-                fontWeight = FontWeight.Bold
-            )
+        ProgressSection()
 
-            Text(
-                text = "정밀한 카페인 관리로 시작하는 스마트한 일상",
-                color = SnoffeeTextMuted,
-                fontSize = 15.sp
-            )
-        }
-
-        Spacer(modifier = Modifier.height(52.dp))
+        Spacer(modifier = Modifier.height(32.dp))
 
         Text(
             text = "권한 동의",
@@ -297,6 +283,40 @@ private fun openHealthConnectStore(
                 Uri.parse("https://play.google.com/store/apps/details?id=com.google.android.apps.healthdata")
             )
         )
+    }
+}
+
+@Composable
+private fun ProgressSection() {
+    Column {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.Bottom
+        ) {
+            Text(
+                text = "단계 1 / 3",
+                color = SnoffeePrimary,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold
+            )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(8.dp)
+                .background(SnoffeeSurfaceOverlay, RoundedCornerShape(50))
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(0.33f)
+                    .fillMaxHeight()
+                    .background(SnoffeePrimary, RoundedCornerShape(50))
+            )
+        }
     }
 }
 
