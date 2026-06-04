@@ -59,6 +59,7 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -75,9 +76,15 @@ fun SleepDialog(
     val zoneId = ZoneId.systemDefault()
 
     // 상태 관리 (사용자 선택 값)
-    var selectedDate by remember {
+    var bedDate by remember {
         mutableStateOf(
-            initialData?.let { Instant.ofEpochMilli(it.date).atZone(zoneId).toLocalDate() }
+            initialData?.let { Instant.ofEpochMilli(it.sleepStart).atZone(zoneId).toLocalDate() }
+                ?: defaultDate.minusDays(1)
+        )
+    }
+    var wakeUpDate by remember {
+        mutableStateOf(
+            initialData?.let { Instant.ofEpochMilli(it.sleepEnd).atZone(zoneId).toLocalDate() }
                 ?: defaultDate
         )
     }
@@ -110,11 +117,13 @@ fun SleepDialog(
     var showFutureTimeError by remember { mutableStateOf(false) }
 
     // Picker 노출 여부
-    var showDatePicker by remember { mutableStateOf(false) }
+    var showBedDatePicker by remember { mutableStateOf(false) }
+    var showWakeUpDatePicker by remember { mutableStateOf(false) }
     var showBedTimePicker by remember { mutableStateOf(false) }
     var showWakeUpTimePicker by remember { mutableStateOf(false) }
 
     val dateFormatter = DateTimeFormatter.ofPattern("yyyy년 MM월 dd일 E요일")
+    val inputDisplayFormatter = DateTimeFormatter.ofPattern("M/d")
     val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
     // 최종 확인창 노출 여부, 데이터 임시 저장 상태
@@ -122,7 +131,6 @@ fun SleepDialog(
     var tempRecord by remember { mutableStateOf<SleepData?>(null) }
 
     var showTimeValidationError by remember { mutableStateOf(false) }
-    var showLimitBoundsError by remember { mutableStateOf(false) }
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
@@ -171,45 +179,44 @@ fun SleepDialog(
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    // 날짜 선택 필드
                     SleepInputField(
-                        label = "날짜",
-                        value = selectedDate.format(dateFormatter),
+                        label = "취침 날짜",
+                        value = bedDate.format(dateFormatter),
                         iconId = R.drawable.ic_calendar,
-                        modifier = Modifier.clickable { showDatePicker = true }
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { showBedDatePicker = true }
+                    )
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    SleepInputField(
+                        label = "취침 시간",
+                        value = bedTime.format(timeFormatter),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { showBedTimePicker = true }
                     )
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(14.dp))
 
-                    // 취침 시간 > 기상시간인지 체크
-                    val isOvernight = bedTime.isAfter(wakeUpTime)
-                    val bedDateFormatter = DateTimeFormatter.ofPattern("M/d")
+                    SleepInputField(
+                        label = "기상 날짜",
+                        value = wakeUpDate.format(dateFormatter),
+                        iconId = R.drawable.ic_calendar,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { showWakeUpDatePicker = true }
+                    )
 
-                    // 시간 선택 필드 (취침 / 기상)
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        SleepInputField(
-                            label = "취침 시간",
-                            value = if (isOvernight) {
-                                "${selectedDate.minusDays(1).format(bedDateFormatter)} ${
-                                    bedTime.format(
-                                        timeFormatter
-                                    )
-                                }"
-                            } else {
-                                bedTime.format(timeFormatter)
-                            },
-                            modifier = Modifier
-                                .weight(1f)
-                                .clickable { showBedTimePicker = true }
-                        )
-                        SleepInputField(
-                            label = "기상 시간",
-                            value = wakeUpTime.format(timeFormatter),
-                            modifier = Modifier
-                                .weight(1f)
-                                .clickable { showWakeUpTimePicker = true }
-                        )
-                    }
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    SleepInputField(
+                        label = "기상 시간",
+                        value = wakeUpTime.format(timeFormatter),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { showWakeUpTimePicker = true }
+                    )
 
                     Spacer(modifier = Modifier.height(24.dp))
 
@@ -232,70 +239,56 @@ fun SleepDialog(
                         onClick = {
                             val now = LocalDateTime.now(zoneId)
                             // 취침 시간이 기상 시간보다 늦으면 '전날'로 계산하는 로직
-                            val adjustedBedDate = if (bedTime.isAfter(wakeUpTime)) {
-                                selectedDate.minusDays(1)
-                            } else {
-                                selectedDate
-                            }
-                            val bedLocalDateTime = LocalDateTime.of(adjustedBedDate, bedTime)
-                            val wakeUpLocalDateTime = LocalDateTime.of(selectedDate, wakeUpTime)
+                            val bedLocalDateTime = LocalDateTime.of(bedDate, bedTime)
+                            val wakeUpLocalDateTime = LocalDateTime.of(wakeUpDate, wakeUpTime)
 
                             if (bedLocalDateTime.isAfter(now) || wakeUpLocalDateTime.isAfter(now)) {
                                 showFutureTimeError = true
                                 return@Button
                             }
-
-                            val startTimestamp = LocalDateTime.of(adjustedBedDate, bedTime)
-                                .atZone(zoneId).toInstant().toEpochMilli()
-                            val endTimestamp = LocalDateTime.of(selectedDate, wakeUpTime)
-                                .atZone(zoneId).toInstant().toEpochMilli()
-                            val dateTimestamp =
-                                selectedDate.atStartOfDay(zoneId).toInstant().toEpochMilli()
-
-                            val minAllowStart =
-                                selectedDate.minusDays(1).atTime(20, 0).atZone(zoneId).toInstant()
-                                    .toEpochMilli() // 전날 오후 8시
-                            val maxAllowEnd = selectedDate.atTime(14, 0).atZone(zoneId).toInstant()
-                                .toEpochMilli() // 당일 오후 2시
-
-                            if (startTimestamp < minAllowStart || endTimestamp > maxAllowEnd) {
-                                showLimitBoundsError = true // 에러 팝업 활성화
-                                return@Button
-                            }
-
-                            val otherRecords =
-                                existingRecords.filter { it.id != (initialData?.id ?: 0) }
-
-                            val isOverlapped = otherRecords.any { existing ->
-                                // 새 취침시간이 기존 수면 종료보다 이전이면서, 새 기상시간이 기존 수면 시작보다 이후인 경우 (겹침 발생)
-                                startTimestamp < existing.sleepEnd && endTimestamp > existing.sleepStart
-                            }
-                            if (isOverlapped) {
-                                // 시간 중복 에러 상태
+                            //역전 현상 검증 (기상 시간이 취침 시간보다 빨라지는 논리적 오류 차단)
+                            if (wakeUpLocalDateTime.isBefore(bedLocalDateTime)) {
+                                lastWakeUpTimeLabel = ""
                                 showTimeOrderError = true
                                 return@Button
                             }
 
-                            if (otherRecords.isNotEmpty()) {
-                                // 기존 기록 중 가장 늦은 기상 시간
-                                val maxExistingEnd = otherRecords.maxOf { it.sleepEnd }
+                            val startTimestamp =
+                                bedLocalDateTime.atZone(zoneId).toInstant().toEpochMilli()
+                            val endTimestamp =
+                                wakeUpLocalDateTime.atZone(zoneId).toInstant().toEpochMilli()
+                            val dateTimestamp =
+                                wakeUpDate.atStartOfDay(zoneId).toInstant().toEpochMilli()
 
-                                // 새로운 취침 시간이 기존의 가장 늦은 기상 시간보다 이전이라면 차단
-                                if (startTimestamp < maxExistingEnd) {
-                                    val lastWakeDateTime = LocalDateTime.ofInstant(
-                                        Instant.ofEpochMilli(maxExistingEnd),
-                                        zoneId
-                                    )
-                                    lastWakeUpTimeLabel =
-                                        lastWakeDateTime.format(DateTimeFormatter.ofPattern("HH:mm"))
-                                    showTimeOrderError = true
-                                    return@Button
-                                }
+                            val otherRecords =
+                                existingRecords.filter { it.id != (initialData?.id ?: 0) }
+
+                            val overlappingRecord = otherRecords.find { existing ->
+                                startTimestamp < existing.sleepEnd && endTimestamp > existing.sleepStart
                             }
 
-                            val totalSleepMillis = endTimestamp - startTimestamp
-                            val totalHours = totalSleepMillis / (1000L * 60 * 60)
-                            if (totalHours >= 16) {
+                            if (overlappingRecord != null) {
+                                val startFormatter = DateTimeFormatter.ofPattern("M/d HH:mm")
+                                val endFormatter = DateTimeFormatter.ofPattern("HH:mm")
+
+                                val exStart = LocalDateTime.ofInstant(
+                                    Instant.ofEpochMilli(overlappingRecord.sleepStart),
+                                    zoneId
+                                )
+                                val exEnd = LocalDateTime.ofInstant(
+                                    Instant.ofEpochMilli(overlappingRecord.sleepEnd),
+                                    zoneId
+                                )
+
+                                lastWakeUpTimeLabel =
+                                    "${exStart.format(startFormatter)} ~ ${exEnd.format(endFormatter)}"
+                                showTimeOrderError = true
+                                return@Button
+                            }
+
+                            val totalHours =
+                                ChronoUnit.HOURS.between(bedLocalDateTime, wakeUpLocalDateTime)
+                            if (totalHours >= 21) {
                                 showTimeValidationError = true
                                 return@Button
                             }
@@ -307,9 +300,9 @@ fun SleepDialog(
                                 1 -> 50  // 🙁
                                 else -> 30 // 😫 (0번 인덱스)
                             }
-
+                            val finalId: Long = initialData?.id ?: 0L
                             tempRecord = SleepData(
-                                id = initialData?.id ?: 0,
+                                id = finalId,
                                 date = dateTimestamp,
                                 sleepStart = startTimestamp,
                                 sleepEnd = endTimestamp,
@@ -352,7 +345,13 @@ fun SleepDialog(
                         AlertDialog(
                             onDismissRequest = { showTimeOrderError = false },
                             title = { Text("시간 설정 오류", fontWeight = FontWeight.Bold) },
-                            text = { Text("이미 등록된 수면 기록 시간대와 겹칩니다.\n기존 기록 전/후의 겹치지 않는 시간으로 입력해 주세요.") },
+                            text = {
+                                if (lastWakeUpTimeLabel.isNotEmpty()) {
+                                    Text("이미 등록된 수면 기록 [ $lastWakeUpTimeLabel ] 시간대와 겹칩니다.\n겹치지 않는 다른 시간으로 입력해 주세요.")
+                                } else {
+                                    Text("입력하신 수면 시간대가 올바르지 않거나 순서가 잘못되었습니다.\n취침/기상 날짜 설정을 다시 확인해 주세요.")
+                                }
+                            },
                             confirmButton = {
                                 TextButton(onClick = { showTimeOrderError = false }) {
                                     Text("확인", color = SnoffeePrimary)
@@ -368,7 +367,7 @@ fun SleepDialog(
                         AlertDialog(
                             onDismissRequest = { showTimeValidationError = false },
                             title = { Text("시간 설정 확인", fontWeight = FontWeight.Bold) },
-                            text = { Text("입력된 총 수면 시간이 16시간 이상입니다.\n오전/오후(AM/PM) 설정을 다시 확인해 주세요.") },
+                            text = { Text("연속 수면 기록은 최대 21시간 미만까지만 입력할 수 있습니다.\n설정하신 취침/기상 시간을 다시 확인해 주세요.") },
                             confirmButton = {
                                 TextButton(onClick = { showTimeValidationError = false }) {
                                     Text("확인", color = SnoffeePrimary)
@@ -386,9 +385,15 @@ fun SleepDialog(
                             title = { Text(text = if (initialData != null) "수정 내용 확인" else "입력 내용 확인") },
                             text = {
                                 Column {
-                                    Text("날짜: ${selectedDate.format(dateFormatter)}")
                                     Text(
-                                        "시간: ${bedTime.format(timeFormatter)} ~ ${
+                                        "취침: ${bedDate.format(inputDisplayFormatter)} ${
+                                            bedTime.format(
+                                                timeFormatter
+                                            )
+                                        }"
+                                    )
+                                    Text(
+                                        "기상: ${wakeUpDate.format(inputDisplayFormatter)} ${
                                             wakeUpTime.format(
                                                 timeFormatter
                                             )
@@ -427,22 +432,40 @@ fun SleepDialog(
     }
 
     // --- Picker ---
-    if (showDatePicker) {
+    if (showBedDatePicker) {
         val datePickerState = rememberDatePickerState(
-            initialSelectedDateMillis = selectedDate.atStartOfDay(zoneId).toInstant().toEpochMilli()
+            initialSelectedDateMillis = bedDate.atStartOfDay(zoneId).toInstant().toEpochMilli()
         )
         DatePickerDialog(
-            onDismissRequest = { showDatePicker = false },
+            onDismissRequest = { showBedDatePicker = false },
             confirmButton = {
                 TextButton(onClick = {
                     datePickerState.selectedDateMillis?.let {
-                        selectedDate = Instant.ofEpochMilli(it).atZone(zoneId).toLocalDate()
+                        bedDate = Instant.ofEpochMilli(it).atZone(zoneId).toLocalDate()
                     }
-                    showDatePicker = false
+                    showBedDatePicker = false
                 }) { Text("확인") }
             }
         ) { DatePicker(state = datePickerState) }
     }
+
+    if (showWakeUpDatePicker) {
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = wakeUpDate.atStartOfDay(zoneId).toInstant().toEpochMilli()
+        )
+        DatePickerDialog(
+            onDismissRequest = { showWakeUpDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let {
+                        wakeUpDate = Instant.ofEpochMilli(it).atZone(zoneId).toLocalDate()
+                    }
+                    showWakeUpDatePicker = false
+                }) { Text("확인") }
+            }
+        ) { DatePicker(state = datePickerState) }
+    }
+
 
     if (showBedTimePicker) {
         SnoffeeTimePicker(
@@ -456,21 +479,6 @@ fun SleepDialog(
             initialTime = wakeUpTime,
             onTimeSelected = { wakeUpTime = it; showWakeUpTimePicker = false },
             onDismiss = { showWakeUpTimePicker = false })
-    }
-
-    if (showLimitBoundsError) {
-        AlertDialog(
-            onDismissRequest = { showLimitBoundsError = false },
-            title = { Text("수면 시간 범위 초과", fontWeight = FontWeight.Bold) },
-            text = { Text("수면 기록은 취침 오후 8시(20:00)부터 다음날 기상 오후 2시(14:00) 까지만 기입할 수 있습니다.\n설정된 시간을 다시 확인해 주세요.") },
-            confirmButton = {
-                TextButton(onClick = { showLimitBoundsError = false }) {
-                    Text("확인", color = SnoffeePrimary)
-                }
-            },
-            shape = RoundedCornerShape(16.dp),
-            containerColor = SnoffeePrimaryLight
-        )
     }
 }
 

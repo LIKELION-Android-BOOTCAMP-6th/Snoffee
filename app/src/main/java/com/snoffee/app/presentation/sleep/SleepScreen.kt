@@ -636,12 +636,8 @@ private fun SleepDayCell(
                     modifier = Modifier
                         .size(5.dp)
                         .background(
-                            if (day.isSelected) {
-                                Color.White
-                            } else {
-                                SnoffeePrimary
-                            },
-                            CircleShape
+                            color = SnoffeePrimary,
+                            shape = CircleShape
                         )
                 )
             }
