@@ -28,7 +28,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ReportViewModel @Inject constructor(
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
     private val getReportUseCase: GetReportUseCase,
     private val saveSleepRecordUseCase: SaveSleepDataUseCase,
     private val sleepRepository: SleepRepository
