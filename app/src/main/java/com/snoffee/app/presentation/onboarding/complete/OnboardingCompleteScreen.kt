@@ -87,7 +87,7 @@ fun OnboardingCompleteScreen(
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier
                     .padding(innerPadding)
-                    .padding(start = 24.dp, top = 48.dp)
+                    .padding(start = 20.dp, top = 20.dp)
             )
 
             Column(
