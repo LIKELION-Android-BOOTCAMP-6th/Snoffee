@@ -6,8 +6,6 @@ import com.snoffee.app.data.mapper.SleepMapper
 import com.snoffee.app.domain.model.SleepData
 import com.snoffee.app.domain.model.SleepSource
 import com.snoffee.app.domain.repository.SleepRepository
-import java.time.Instant
-import java.time.ZoneId
 import javax.inject.Inject
 
 class SleepRepositoryImpl @Inject constructor(
@@ -101,31 +99,17 @@ class SleepRepositoryImpl @Inject constructor(
     private fun resolveSourceConflictByDate(
         sleepDataList: List<SleepData>
     ): List<SleepData> {
-        return sleepDataList
-            .groupBy { sleepData ->
-                Instant.ofEpochMilli(sleepData.sleepEnd)
-                    .atZone(ZoneId.systemDefault())
-                    .toLocalDate()
-            }
-            .flatMap { (_, records) ->
-                val manualRecords =
-                    records.filter { sleepData ->
-                        sleepData.source == SleepSource.MANUAL
-                    }
+        val manualRecords = sleepDataList.filter { it.source == SleepSource.MANUAL }
+        val healthRecords = sleepDataList.filter { it.source == SleepSource.SAMSUNG_HEALTH }
 
-                val healthRecords =
-                    records.filter { sleepData ->
-                        sleepData.source == SleepSource.SAMSUNG_HEALTH
-                    }
-                if (manualRecords.isNotEmpty()) {
-                    manualRecords
-                } else {
-                    healthRecords
-                }
+        val filteredHealthRecords = healthRecords.filter { health ->
+            manualRecords.none { manual ->
+                // 시간 매칭 중복 검증 (서로의 영역을 침범하는지 체크)
+                health.sleepStart < manual.sleepEnd && health.sleepEnd > manual.sleepStart
             }
-            .sortedBy { sleepData ->
-                sleepData.sleepEnd
-            }
+        }
+
+        return (manualRecords + filteredHealthRecords).sortedBy { it.sleepStart }
     }
 
     companion object {

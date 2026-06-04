@@ -118,14 +118,18 @@ class SleepViewModel @Inject constructor(
             } else {
                 "0h 00m"
             }
-            _uiState.update {
-                it.copy(
+            _uiState.update { currentState ->
+                val freshSortedRecords = groupedData[currentState.selectedDate]
+                    ?.sortedBy { it.sleepStart }
+                    ?.toList() ?: emptyList()
+
+                currentState.copy(
                     dailyScores = groupedData.mapValues { (_, records) ->
                         val validScores =
                             records.map { r -> r.deepSleepRatio }.filter { s -> s > 0 }
                         if (validScores.isNotEmpty()) validScores.average().toInt() else 0
                     },
-                    selectedDateRecords = groupedData[it.selectedDate] ?: emptyList(),
+                    selectedDateRecords = freshSortedRecords,
                     averageScore = avgScore,
                     averageSleepTime = avgTimeLabel
                 )
@@ -169,10 +173,11 @@ class SleepViewModel @Inject constructor(
 
 
     fun onDateSelected(date: LocalDate) {
-        _uiState.update {
-            it.copy(
+        _uiState.update { currentState ->
+            val sortedRecords = currentMonthRawData[date]?.sortedBy { it.sleepStart } ?: emptyList()
+            currentState.copy(
                 selectedDate = date,
-                selectedDateRecords = currentMonthRawData[date] ?: emptyList()
+                selectedDateRecords = sortedRecords
             )
         }
     }
