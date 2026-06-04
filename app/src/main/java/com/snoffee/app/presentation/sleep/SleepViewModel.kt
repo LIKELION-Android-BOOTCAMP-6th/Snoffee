@@ -1,11 +1,16 @@
 package com.snoffee.app.presentation.sleep
 
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.snoffee.app.domain.model.SleepData
 import com.snoffee.app.domain.usecase.sleep.DeleteSleepDataUseCase
 import com.snoffee.app.domain.usecase.sleep.SaveSleepDataUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -35,6 +40,7 @@ data class SleepUiState(
 
 @HiltViewModel
 class SleepViewModel @Inject constructor(
+    @param:ApplicationContext private val context: Context,
     private val saveSleepRecordUseCase: SaveSleepDataUseCase,
     private val deleteSleepDataUseCase: DeleteSleepDataUseCase,
     private val sleepRepository: com.snoffee.app.domain.repository.SleepRepository
@@ -48,10 +54,36 @@ class SleepViewModel @Inject constructor(
     //이번 달 데이터 원본 객체 저장 보관함
     private var currentMonthRawData = mapOf<LocalDate, List<SleepData>>()
 
+    // 자정 감지 브로드캐스트 리시버
+    private val dateChangedReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action == Intent.ACTION_DATE_CHANGED) {
+                _uiState.update { currentState ->
+                    // 자정이 지나면 오늘 날짜 상태를 갱신
+                    currentState.copy(selectedDate = LocalDate.now())
+                }
+                // 달력 데이터 실시간 동기화 및 갱신 호출
+                refreshSleepData()
+            }
+        }
+    }
+
     init {
         //데이터 로드
         refreshSleepData()
         checkHealthPermission()
+
+        val filter = IntentFilter(Intent.ACTION_DATE_CHANGED)
+        context.registerReceiver(dateChangedReceiver, filter)
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        try {
+            context.unregisterReceiver(dateChangedReceiver)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     private fun refreshSleepData() {
@@ -118,14 +150,18 @@ class SleepViewModel @Inject constructor(
             } else {
                 "0h 00m"
             }
-            _uiState.update {
-                it.copy(
+            _uiState.update { currentState ->
+                val freshSortedRecords = groupedData[currentState.selectedDate]
+                    ?.sortedBy { it.sleepStart }
+                    ?.toList() ?: emptyList()
+
+                currentState.copy(
                     dailyScores = groupedData.mapValues { (_, records) ->
                         val validScores =
                             records.map { r -> r.deepSleepRatio }.filter { s -> s > 0 }
                         if (validScores.isNotEmpty()) validScores.average().toInt() else 0
                     },
-                    selectedDateRecords = groupedData[it.selectedDate] ?: emptyList(),
+                    selectedDateRecords = freshSortedRecords,
                     averageScore = avgScore,
                     averageSleepTime = avgTimeLabel
                 )
@@ -169,10 +205,11 @@ class SleepViewModel @Inject constructor(
 
 
     fun onDateSelected(date: LocalDate) {
-        _uiState.update {
-            it.copy(
+        _uiState.update { currentState ->
+            val sortedRecords = currentMonthRawData[date]?.sortedBy { it.sleepStart } ?: emptyList()
+            currentState.copy(
                 selectedDate = date,
-                selectedDateRecords = currentMonthRawData[date] ?: emptyList()
+                selectedDateRecords = sortedRecords
             )
         }
     }
