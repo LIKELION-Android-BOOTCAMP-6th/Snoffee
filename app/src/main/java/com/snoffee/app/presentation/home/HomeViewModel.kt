@@ -2,6 +2,7 @@ package com.snoffee.app.presentation.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.snoffee.app.data.wear.PhoneDataClient
 import com.snoffee.app.domain.usecase.caffeine.CalculateResidualUseCase
 import com.snoffee.app.domain.usecase.caffeine.GetTodayCaffeineUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -21,7 +22,8 @@ import javax.inject.Inject
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val calculateResidualUseCase: CalculateResidualUseCase,
-    private val getTodayCaffeineUseCase: GetTodayCaffeineUseCase
+    private val getTodayCaffeineUseCase: GetTodayCaffeineUseCase,
+    private val phoneDataClient: PhoneDataClient
 ) : ViewModel() {
     private val _uiState =
         MutableStateFlow(HomeUiState(isLoading = true))
@@ -69,6 +71,22 @@ class HomeViewModel @Inject constructor(
                         Locale.KOREAN
                     ).format(Date(analysis.cutoffTime))
                 }
+
+                //워치
+                val currentRiskLevel = getRiskLevel(residualDouble)
+                val currentConcentrationLevel = when {
+                    residualDouble >= 150.0 -> "높음"
+                    residualDouble >= 50.0 -> "보통"
+                    residualDouble > targetMinCaffeine -> "낮음"
+                    else -> "-"
+                }
+                phoneDataClient.sendCaffeineStateToWatch(
+                    residualMg = residualDouble,
+                    riskLevel = currentRiskLevel.name, // "SAFE", "CAUTION", "DANGER"
+                    metabolismTime = formattedTime,
+                    concentrationLevel = currentConcentrationLevel
+                )
+
 
                 _uiState.update { state ->
                     state.copy(
