@@ -8,6 +8,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.snoffee.app.presentation.onboarding.complete.OnboardingCompleteScreen
 import com.snoffee.app.presentation.onboarding.health.PersonalInfoSetupScreen
 import com.snoffee.app.presentation.onboarding.intro.OnboardingIntroScreen
+import com.snoffee.app.presentation.onboarding.permission.OnboardingHealthConnInfoScreen
 import com.snoffee.app.presentation.onboarding.permission.OnboardingPermissionScreen
 
 @Composable
@@ -32,6 +33,13 @@ fun OnboardingScreen(
 
         OnboardingStep.PERMISSION -> {
             OnboardingPermissionScreen(
+                onNextClick = viewModel::moveToNextStep,
+                onBackClick = viewModel::moveToPreviousStep
+            )
+        }
+
+        OnboardingStep.HEALTH_CONNECT_INFO -> {
+            OnboardingHealthConnInfoScreen(
                 onNextClick = viewModel::moveToNextStep,
                 onBackClick = viewModel::moveToPreviousStep
             )

@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
@@ -45,6 +44,7 @@ import com.snoffee.app.core.ui.theme.SnoffeeSurfaceOverlay
 import com.snoffee.app.core.ui.theme.SnoffeeTextMain
 import com.snoffee.app.core.ui.theme.SnoffeeTextMuted
 import com.snoffee.app.presentation.onboarding.CaffeineSensitivityOption
+import com.snoffee.app.presentation.onboarding.component.ProgressSection
 
 @Composable
 fun PersonalInfoSetupScreen(
@@ -68,7 +68,7 @@ fun PersonalInfoSetupScreen(
             .navigationBarsPadding()
             .padding(horizontal = 20.dp, vertical = 20.dp)
     ) {
-        ProgressSection()
+        ProgressSection("단계 3 / 4", 0.66f)
 
         Spacer(modifier = Modifier.height(32.dp))
 
@@ -143,46 +143,6 @@ fun PersonalInfoSetupScreen(
                 text = "다음 단계로 이동  →",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold
-            )
-        }
-    }
-}
-
-@Composable
-private fun ProgressSection() {
-    Column {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.Bottom
-        ) {
-            Text(
-                text = "단계 2 / 3",
-                color = SnoffeePrimary,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold
-            )
-
-            Text(
-                text = "거의 다 왔어요!",
-                color = SnoffeeTextMuted,
-                fontSize = 14.sp
-            )
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(8.dp)
-                .background(SnoffeeSurfaceOverlay, RoundedCornerShape(50))
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(0.66f)
-                    .fillMaxHeight()
-                    .background(SnoffeePrimary, RoundedCornerShape(50))
             )
         }
     }

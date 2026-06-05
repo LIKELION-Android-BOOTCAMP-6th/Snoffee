@@ -8,12 +8,10 @@ import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -58,6 +56,7 @@ import com.snoffee.app.core.ui.theme.SnoffeeSurface
 import com.snoffee.app.core.ui.theme.SnoffeeSurfaceOverlay
 import com.snoffee.app.core.ui.theme.SnoffeeTextMain
 import com.snoffee.app.core.ui.theme.SnoffeeTextMuted
+import com.snoffee.app.presentation.onboarding.component.ProgressSection
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -146,7 +145,7 @@ fun OnboardingPermissionScreen(
             .navigationBarsPadding()
             .padding(horizontal = 20.dp, vertical = 20.dp)
     ) {
-        ProgressSection()
+        ProgressSection("단계 1 / 4", 0.22f)
 
         Spacer(modifier = Modifier.height(32.dp))
 
@@ -283,40 +282,6 @@ private fun openHealthConnectStore(
                 Uri.parse("https://play.google.com/store/apps/details?id=com.google.android.apps.healthdata")
             )
         )
-    }
-}
-
-@Composable
-private fun ProgressSection() {
-    Column {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.Bottom
-        ) {
-            Text(
-                text = "단계 1 / 3",
-                color = SnoffeePrimary,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold
-            )
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(8.dp)
-                .background(SnoffeeSurfaceOverlay, RoundedCornerShape(50))
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(0.33f)
-                    .fillMaxHeight()
-                    .background(SnoffeePrimary, RoundedCornerShape(50))
-            )
-        }
     }
 }
 
