@@ -28,6 +28,7 @@ import androidx.compose.material.icons.outlined.Watch
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -40,6 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -50,6 +52,7 @@ import androidx.health.connect.client.records.SleepSessionRecord
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.snoffee.app.R
 import com.snoffee.app.core.ui.theme.SnoffeeBgBase
 import com.snoffee.app.core.ui.theme.SnoffeePrimary
 import com.snoffee.app.core.ui.theme.SnoffeeSurface
@@ -143,111 +146,132 @@ fun OnboardingPermissionScreen(
             .background(SnoffeeBgBase)
             .statusBarsPadding()
             .navigationBarsPadding()
-            .padding(horizontal = 20.dp, vertical = 20.dp)
     ) {
-        ProgressSection("단계 1 / 4", 0.22f)
+        Spacer(modifier = Modifier.height(10.dp))
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            IconButton(
+                onClick = onBackClick
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_arrow_left),
+                    contentDescription = "뒤로가기",
+                    tint = SnoffeeTextMain
+                )
+            }
 
-        Text(
-            text = "권한 동의",
-            color = SnoffeeTextMain,
-            fontSize = 32.sp,
-            fontWeight = FontWeight.Bold
-        )
+            Spacer(modifier = Modifier.height(10.dp))
 
-        Spacer(modifier = Modifier.height(12.dp))
-
-        Text(
-            text = "Snoffee의 개인화된 건강 분석 서비스를 제공받기 위해 아래의 권한이 필요합니다.",
-            color = SnoffeeTextMuted,
-            fontSize = 14.sp,
-            lineHeight = 20.sp
-        )
-
-        Spacer(modifier = Modifier.height(28.dp))
-
-        PermissionCard(
-            icon = Icons.Outlined.Notifications,
-            title = "알림 권한",
-            description = "수면 유도 시간 및 최적의 기상 알림 제공"
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        PermissionCard(
-            icon = Icons.Outlined.Watch,
-            title = "기기 연결",
-            description = "워치 등 웨어러블 기기의 데이터 실시간 동기화"
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        PermissionCard(
-            icon = Icons.Outlined.FavoriteBorder,
-            title = "건강 데이터",
-            description = "심박수 및 활동량을 바탕으로 한 카페인 반감기 계산"
-        )
-
-        Spacer(modifier = Modifier.weight(1f))
-
-        if (showPermissionDeniedMessage) {
-            Text(
-                text = "수면 데이터 권한이 거부되었어요.\n아래 버튼을 눌러 Health Connect에서 권한을 허용해주세요.",
-                color = SnoffeeTextMuted,
-                fontSize = 13.sp,
-                lineHeight = 18.sp
-            )
-            Spacer(modifier = Modifier.height(12.dp))
+            ProgressSection("단계 1 / 4", 0.22f)
         }
-        Button(
-            onClick = {
-                if (showPermissionDeniedMessage) {
-                    openHealthConnectSettingsOrStore(context)
-                    return@Button
-                }
 
-                when (HealthConnectClient.getSdkStatus(context)) {
-                    HealthConnectClient.SDK_AVAILABLE -> {
-                        healthPermissionLauncher.launch(healthPermissions)
-                    }
-
-                    HealthConnectClient.SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED -> {
-                        openHealthConnectStore(context)
-                    }
-
-                    else -> {
-                        openHealthConnectStore(context)
-                    }
-                }
-            },
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(58.dp),
-            shape = RoundedCornerShape(14.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = SnoffeePrimary
-            )
+                .fillMaxSize()
+                .padding(horizontal = 20.dp, vertical = 20.dp)
         ) {
             Text(
-                text = if (showPermissionDeniedMessage) {
-                    "Health Connect 설정 열기  →"
-                } else {
-                    "권한 허용하고 다음으로  →"
-                },
-                fontSize = 20.sp,
+                text = "권한 동의",
+                color = SnoffeeTextMain,
+                fontSize = 32.sp,
                 fontWeight = FontWeight.Bold
             )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Text(
+                text = "Snoffee의 개인화된 건강 분석 서비스를 제공받기 위해 아래의 권한이 필요합니다.",
+                color = SnoffeeTextMuted,
+                fontSize = 14.sp,
+                lineHeight = 20.sp
+            )
+
+            Spacer(modifier = Modifier.height(28.dp))
+
+            PermissionCard(
+                icon = Icons.Outlined.Notifications,
+                title = "알림 권한",
+                description = "수면 유도 시간 및 최적의 기상 알림 제공"
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            PermissionCard(
+                icon = Icons.Outlined.Watch,
+                title = "기기 연결",
+                description = "워치 등 웨어러블 기기의 데이터 실시간 동기화"
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            PermissionCard(
+                icon = Icons.Outlined.FavoriteBorder,
+                title = "건강 데이터",
+                description = "심박수 및 활동량을 바탕으로 한 카페인 반감기 계산"
+            )
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            if (showPermissionDeniedMessage) {
+                Text(
+                    text = "수면 데이터 권한이 거부되었어요.\n아래 버튼을 눌러 Health Connect에서 권한을 허용해주세요.",
+                    color = SnoffeeTextMuted,
+                    fontSize = 13.sp,
+                    lineHeight = 18.sp
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+            Button(
+                onClick = {
+                    if (showPermissionDeniedMessage) {
+                        openHealthConnectSettingsOrStore(context)
+                        return@Button
+                    }
+
+                    when (HealthConnectClient.getSdkStatus(context)) {
+                        HealthConnectClient.SDK_AVAILABLE -> {
+                            healthPermissionLauncher.launch(healthPermissions)
+                        }
+
+                        HealthConnectClient.SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED -> {
+                            openHealthConnectStore(context)
+                        }
+
+                        else -> {
+                            openHealthConnectStore(context)
+                        }
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(58.dp),
+                shape = RoundedCornerShape(14.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = SnoffeePrimary
+                )
+            ) {
+                Text(
+                    text = if (showPermissionDeniedMessage) {
+                        "Health Connect 설정 열기  →"
+                    } else {
+                        "권한 허용하고 다음으로  →"
+                    },
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            Text(
+                text = "권한은 설정에서 언제든지 변경할 수 있습니다.",
+                modifier = Modifier.fillMaxWidth(),
+                color = SnoffeeTextMuted,
+                fontSize = 12.sp
+            )
         }
-
-        Spacer(modifier = Modifier.height(14.dp))
-
-        Text(
-            text = "권한은 설정에서 언제든지 변경할 수 있습니다.",
-            modifier = Modifier.fillMaxWidth(),
-            color = SnoffeeTextMuted,
-            fontSize = 12.sp
-        )
     }
 }
 
