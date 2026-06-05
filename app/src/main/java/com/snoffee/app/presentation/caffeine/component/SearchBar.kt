@@ -21,6 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
@@ -40,6 +41,13 @@ fun SearchBar(
 ) {
     val colorScheme = SnoffeeTheme.colorScheme
     val extColors = SnoffeeTheme.colors
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    // 검색 후 키보드 내리기
+    val handleSearch = {
+        keyboardController?.hide()
+        onSearch()
+    }
 
     Surface(
         modifier = modifier
@@ -60,7 +68,7 @@ fun SearchBar(
                 tint = extColors.textHint,
                 modifier = Modifier
                     .size(25.dp)
-                    .clickable { onSearch() }
+                    .clickable { handleSearch() }
             )
 
             Spacer(modifier = Modifier.width(8.dp))
@@ -78,7 +86,7 @@ fun SearchBar(
                 maxLines = 1,
                 cursorBrush = SolidColor(colorScheme.primary),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                keyboardActions = KeyboardActions(onSearch = { onSearch() }),
+                keyboardActions = KeyboardActions(onSearch = { handleSearch() }),
                 decorationBox = { innerTextField ->
                     if (query.isEmpty()) {
                         Text(
