@@ -105,8 +105,22 @@ fun AppNavHost(
         }
 
         //설정 화면
+//        composable(Screen.Setting.route) {
+//            SettingScreen() // presentation.mySetting.SettingScreen
+//        }
+
+        // 온보딩 테스트를 위한 처리
+        /*
+        * todo :: 온보딩 작업이 정말 다 했다면 이 코드 지우고 위에 주석 해제할 것
+        *  온보딩 추가 작업(헬스커넥트 연결방법 안내)이 끝나면 그때 제가 이 부분 코드 정리하겠습니다.
+        *   - 제이 -
+        */
         composable(Screen.Setting.route) {
-            SettingScreen() // presentation.mySetting.SettingScreen
+            SettingScreen(
+                onNavigateToOnboarding = {
+                    navController.navigate(Screen.Onboarding.route)
+                }
+            )
         }
     }
 }
