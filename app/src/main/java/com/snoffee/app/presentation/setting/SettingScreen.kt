@@ -54,6 +54,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.snoffee.app.R
+import com.snoffee.app.core.config.DebugConfig
 import com.snoffee.app.core.ui.theme.SnoffeeBgBase
 import com.snoffee.app.core.ui.theme.SnoffeeBgMuted
 import com.snoffee.app.core.ui.theme.SnoffeeError
@@ -72,6 +73,7 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingScreen(
+    onNavigateToOnboarding: () -> Unit = {},    // todo :: 온보딩 화면 테스트를 위해서 만들어 놓은 곳
     modifier: Modifier = Modifier,
     onNotificationSettingClick: () -> Unit = {},
     onLanguageSettingClick: () -> Unit = {},
@@ -214,25 +216,19 @@ fun SettingScreen(
                             onClick = onNotificationSettingClick
                         )
 
-                        MenuRowItemWithSwitch(
-                            title = "다크 모드",
-                            iconRes = R.drawable.ic_main_bottombar_sleep,
-                            checked = isDarkMode,
-                            onCheckedChange = { isDarkMode = it }
-                        )
-
-                        MenuRowItem(
-                            title = "언어 설정",
-                            value = "한국어",
-                            iconRes = R.drawable.ic_setting_language,
-                            onClick = onLanguageSettingClick
-                        )
-
                         MenuRowItem(
                             title = "도움말",
                             iconRes = R.drawable.ic_setting_question,
                             onClick = onHelpClick
                         )
+
+                        if (DebugConfig.SHOW_ONBOARDING_ENTRY) {
+                            MenuRowItem(
+                                title = "[DEBUG] 온보딩 보기",
+                                iconRes = R.drawable.ic_setting_question, // 아무 아이콘이나, 기존 것 재사용
+                                onClick = onNavigateToOnboarding
+                            )
+                        }
                     }
                 }
             }
