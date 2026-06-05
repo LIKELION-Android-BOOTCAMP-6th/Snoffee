@@ -41,8 +41,7 @@ android {
 dependencies {
     implementation(libs.play.services.wearable)
 
-    implementation("androidx.activity:activity-compose:1.9.0")
-
+    implementation(libs.androidx.activity.compose)
     //워치 코루틴
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.0")
     // Wear OS Compose Core
