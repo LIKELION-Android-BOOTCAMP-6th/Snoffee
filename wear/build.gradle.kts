@@ -5,11 +5,7 @@ plugins {
 
 android {
     namespace = "com.snoffee.wear"
-    compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
-        }
-    }
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.snoffee.app"
@@ -39,17 +35,20 @@ android {
 }
 
 dependencies {
+    implementation(libs.androidx.material3)
     implementation(libs.play.services.wearable)
 
     implementation(libs.androidx.activity.compose)
+
+    implementation(platform(libs.androidx.compose.bom))
+
     //워치 코루틴
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.11.0")
     // Wear OS Compose Core
-    implementation("androidx.wear.compose:compose-material:1.3.1")
-    implementation("androidx.wear.compose:compose-foundation:1.3.1")
+    implementation("androidx.wear.compose:compose-material:1.6.2")
+    implementation("androidx.wear.compose:compose-foundation:1.6.2")
 
     // UI & Tooling
-    implementation("androidx.compose.ui:ui:1.6.8")
-    implementation("androidx.compose.ui:ui-tooling-preview:1.6.8")
-    implementation("androidx.compose.runtime:runtime:1.6.8")
+    implementation(libs.androidx.compose.ui)
+    implementation(libs.androidx.compose.ui.tooling.preview)
 }
