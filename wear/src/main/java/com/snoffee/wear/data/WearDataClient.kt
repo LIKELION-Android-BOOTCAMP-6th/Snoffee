@@ -8,6 +8,9 @@ import com.google.android.gms.wearable.DataEvent
 import com.google.android.gms.wearable.DataEventBuffer
 import com.google.android.gms.wearable.DataMapItem
 import com.google.android.gms.wearable.Wearable
+import dagger.hilt.android.qualifiers.ApplicationContext
+import jakarta.inject.Inject
+import jakarta.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,7 +20,10 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.util.logging.Logger
 
-class WearDataClient(private val context: Context) : DataClient.OnDataChangedListener {
+@Singleton
+class WearDataClient @Inject constructor(
+    @param:ApplicationContext private val context: Context
+) : DataClient.OnDataChangedListener {
 
     private val logger = Logger.getLogger("WearDataClient")
     private val scope = CoroutineScope(Dispatchers.IO)
@@ -25,20 +31,21 @@ class WearDataClient(private val context: Context) : DataClient.OnDataChangedLis
     companion object {
         private const val CAPABILITY_PHONE_APP = "verify_snoffee_phone_app"
         private const val PATH_RESIDUAL_STATE = "/caffeine/residual_state"
+        const val PATH_RECENT_DRINKS = "/caffeine/recent_drinks"
     }
 
     private val capabilityClient = Wearable.getCapabilityClient(context)
     private val dataClient = Wearable.getDataClient(context)
 
-    // [AC-1] 실시간 핸드폰 연결 상태 흐름
+    //실시간 핸드폰 연결 상태 흐름
     private val _isPhoneConnected = MutableStateFlow(false)
     val isPhoneConnected: StateFlow<Boolean> = _isPhoneConnected.asStateFlow()
 
-    // [AC-3] 에러 팝업 제어용 메시지 흐름
+    //에러 팝업 제어용 메시지 흐름
     private val _connectionError = MutableStateFlow<String?>(null)
     val connectionError: StateFlow<String?> = _connectionError.asStateFlow()
 
-    // [AC-4] 모바일 단독 알림Fallback 활성화 검증 플래그
+    //모바일 단독 알림Fallback 활성화 검증 플래그
     private val _isFallbackActive = MutableStateFlow(false)
     val isFallbackActive: StateFlow<Boolean> = _isFallbackActive.asStateFlow()
 
@@ -52,13 +59,10 @@ class WearDataClient(private val context: Context) : DataClient.OnDataChangedLis
         setupCapabilityListener()
     }
 
-    /**
-     * [AC-1] 워치 앱 실행 시 최초 폰 가용성 확인 (Handshake)
-     */
+    //워치 앱 실행 시 최초 폰 가용성 확인 (Handshake)
     fun checkPhoneCapability() {
         scope.launch {
             try {
-                // tasks.await() 에러가 여기서 발생했던 부분입니다.
                 val capabilityInfo: CapabilityInfo = capabilityClient
                     .getCapability(CAPABILITY_PHONE_APP, CapabilityClient.FILTER_REACHABLE)
                     .await()
@@ -81,7 +85,7 @@ class WearDataClient(private val context: Context) : DataClient.OnDataChangedLis
             _isPhoneConnected.value = true
             _connectionError.value = null
             _isFallbackActive.value = false
-            logger.info("🟢 [AC-2] 폰 통신 노드가 정상 가역 노드에 위치함.")
+            logger.info("폰 통신 노드가 정상 가역 노드에 위치함.")
         } else {
             handleDisconnect()
         }
@@ -94,30 +98,27 @@ class WearDataClient(private val context: Context) : DataClient.OnDataChangedLis
         logger.warning("⚠️ [Edge Case] 기기 단절 감지. Fallback 모바일 단독 알림 제어 플래그를 가동합니다.")
     }
 
-    /**
-     * [AC-2] 데이터 레이어 패킷 변동 리스너 수신 파싱 로그 기록
-     */
+
+    // 최근 음료 리스트 상태
+    private val _recentDrinks = MutableStateFlow<List<Pair<String, Double>>>(emptyList())
+    val recentDrinks: StateFlow<List<Pair<String, Double>>> = _recentDrinks.asStateFlow()
+
+    //데이터 레이어 패킷 변동 리스너 수신 파싱 로그 기록
     override fun onDataChanged(dataEvents: DataEventBuffer) {
         for (event in dataEvents) {
-            if (event.type == DataEvent.TYPE_CHANGED && event.dataItem.uri.path == PATH_RESIDUAL_STATE) {
+            val uri = event.dataItem.uri.path
+            if (event.type == DataEvent.TYPE_CHANGED) {
                 val dataMap = DataMapItem.fromDataItem(event.dataItem).dataMap
 
-                val residual = dataMap.getDouble("residualCaffeineMg", 0.0)
-                val risk = dataMap.getString("riskLevel", "SAFE")
-                val time = dataMap.getString("metabolismTime", "--:--")
-                val level = dataMap.getString("concentrationLevel", "-")
+                // 기존 잔량 상태 처리 외에 리스트 수신 경로 추가
+                if (uri == "/caffeine/recent_drinks") {
+                    val drinkStrings = dataMap.getStringArrayList("recentDrinksList")
+                    val parsedList = drinkStrings?.map {
+                        val parts = it.split("|")
+                        Pair(parts[0], parts[1].toDouble())
+                    } ?: emptyList()
 
-                logger.info(" 워치 수신 로그 완료. 잔량: ${residual}mg, 위험도: $risk")
-
-                scope.launch {
-                    _receivedCaffeineData.emit(
-                        mapOf(
-                            "residualCaffeineMg" to residual,
-                            "riskLevel" to risk,
-                            "metabolismTime" to time,
-                            "concentrationLevel" to level
-                        )
-                    )
+                    scope.launch { _recentDrinks.emit(parsedList) }
                 }
             }
         }

@@ -1,6 +1,9 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+
+    alias(libs.plugins.hilt)
+    alias(libs.plugins.ksp)
 }
 
 android {
@@ -37,10 +40,16 @@ android {
 dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.play.services.wearable)
-
     implementation(libs.androidx.activity.compose)
-
     implementation(platform(libs.androidx.compose.bom))
+
+    //Hilt 의존성
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
+    implementation(libs.hilt.navigation.compose)
+
+    // Lifecycle & ViewModel
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
 
     //워치 코루틴
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.11.0")

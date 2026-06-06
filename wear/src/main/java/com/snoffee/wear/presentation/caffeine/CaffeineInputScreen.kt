@@ -41,7 +41,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun CaffeineInputScreen(
     modifier: Modifier = Modifier,
-    drinkList: List<String> = emptyList(),
+    drinkList: List<Pair<String, Double>>,
     onDrinkSelected: (String, Float) -> Unit,
     onBack: () -> Unit
 ) {
@@ -96,7 +96,12 @@ fun CaffeineInputScreen(
                                 if (!isProcessing && currentTime - lastClickTime > 3000L) {
                                     lastClickTime = currentTime
                                     isProcessing = true
-                                    scope.launch { delay(1000L); onDrinkSelected(drink, 100f) }
+                                    scope.launch {
+                                        delay(1000L); onDrinkSelected(
+                                        drink.first,
+                                        drink.second.toFloat()
+                                    )
+                                    }
                                 }
                             },
                             modifier = Modifier
@@ -111,7 +116,7 @@ fun CaffeineInputScreen(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    drink,
+                                    text = "${drink.first} (${drink.second.toInt()}mg)",
                                     style = MaterialTheme.typography.caption3,
                                     maxLines = 1,
                                     textAlign = TextAlign.Center

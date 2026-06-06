@@ -16,13 +16,14 @@ class PhoneDataClient(context: Context) {
     private val dataClient = Wearable.getDataClient(context)
 
     companion object {
-        // 요구사항 명세에 정의된 타겟 공통 경로(Path)
+        //타겟 공통 경로(Path)
         const val PATH_RESIDUAL_STATE = "/caffeine/residual_state"
+
+        //워치 카페인 데이터 전달 경로
+        const val PATH_RECENT_DRINKS = "/caffeine/recent_drinks"
     }
 
-    /**
-     * 워치 디바이스로 최신 잔류 카페인 데이터 동기화 패킷 전송
-     */
+    //워치 디바이스로 최신 잔류 카페인 데이터 동기화 패킷 전송
     fun sendCaffeineStateToWatch(
         residualMg: Double,
         riskLevel: String,
@@ -45,6 +46,25 @@ class PhoneDataClient(context: Context) {
                 logger.info("📱 [Phone ➔ Watch] 데이터 동기화 패킷 전송 성공: ${result.uri.path}")
             } catch (e: Exception) {
                 logger.severe("❌ [Phone ➔ Watch] 패킷 전송 실패 (Data Layer 가용 불가): ${e.message}")
+            }
+        }
+    }
+
+    //최근 섭취 음료 4개 리스트 전송
+    fun sendRecentDrinksToWatch(drinks: List<Pair<String, Double>>) {
+        scope.launch {
+            try {
+                val formattedDrinks = drinks.map { "${it.first}|${it.second}" }
+
+                val putDataReq = PutDataMapRequest.create(PATH_RECENT_DRINKS).apply {
+                    dataMap.putStringArrayList("recentDrinksList", ArrayList(formattedDrinks))
+                    dataMap.putLong("timestamp", System.currentTimeMillis())
+                }.asPutDataRequest().setUrgent()
+
+                dataClient.putDataItem(putDataReq).await()
+                logger.info("📱 [Phone ➔ Watch] 최근 음료 리스트 전송 성공: $formattedDrinks")
+            } catch (e: Exception) {
+                logger.severe("❌ [Phone ➔ Watch] 음료 리스트 전송 실패: ${e.message}")
             }
         }
     }

@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.tools.com/android/tools">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-feature android:name="android.hardware.type.watch" />
 
@@ -9,13 +8,13 @@
     </queries>
 
     <application
+        android:name=".WearApp"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@android:style/Theme.DeviceDefault">
 
-        <!-- 워치 단독 실행 여부 -->
         <meta-data
             android:name="com.google.android.wearable.standalone"
             android:value="true" />
@@ -31,15 +30,14 @@
         </activity>
 
         <service
-            android:name="com.google.android.gms.wearable.WearableListenerService"
-            android:enabled="true"
+            android:name=".service.WearDataListenerService"
             android:exported="true"
-            tools:ignore="ExportedService">
+            android:permission="com.google.android.gms.wearable.BIND_LISTENER">
             <intent-filter>
                 <action android:name="com.google.android.gms.wearable.DATA_CHANGED" />
                 <data
                     android:host="*"
-                    android:pathPrefix="/caffeine/residual_state"
+                    android:pathPrefix="/caffeine"
                     android:scheme="wear" />
             </intent-filter>
         </service>

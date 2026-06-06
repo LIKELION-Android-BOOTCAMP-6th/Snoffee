@@ -7,6 +7,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.snoffee.app.data.wear.PhoneDataClient
 import com.snoffee.app.domain.model.CaffeineRecord
 import com.snoffee.app.domain.usecase.caffeine.DeleteCaffeineUseCase
 import com.snoffee.app.domain.usecase.caffeine.EditCaffeineUseCase
@@ -30,7 +31,8 @@ class CaffeineMainViewModel @Inject constructor(
     private val application: Application,
     private val getTodayCaffeineUseCase: GetTodayCaffeineUseCase,
     private val deleteCaffeineUseCase: DeleteCaffeineUseCase,
-    private val editCaffeineUseCase: EditCaffeineUseCase
+    private val editCaffeineUseCase: EditCaffeineUseCase,
+    private val phoneDataClient: PhoneDataClient
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CaffeineMainUiState())
@@ -54,6 +56,18 @@ class CaffeineMainViewModel @Inject constructor(
             }
         }
     }
+
+    // 워치 - 최신 4개 데이터 동기화
+    private fun syncRecentDrinks() {
+        val currentRecords = _uiState.value.todayRecords
+        val recentDrinks = currentRecords
+            .distinctBy { it.drinkName } // 중복 제거
+            .takeLast(4)                // 최근 4개
+            .map { Pair(it.drinkName, it.intakeCaffeine) }
+
+        phoneDataClient.sendRecentDrinksToWatch(recentDrinks)
+    }
+
     init {
         val today = LocalDate.now()
         observeMonthRecords(YearMonth.from(today)) // 이번 달 dot 초기화
@@ -103,6 +117,7 @@ class CaffeineMainViewModel @Inject constructor(
                         todayRecords = records
                     )
                 }
+                syncRecentDrinks()
             }
             .catch { throwable ->
                 _uiState.update {
@@ -147,7 +162,8 @@ class CaffeineMainViewModel @Inject constructor(
         viewModelScope.launch {
             runCatching {
                 deleteCaffeineUseCase(id)
-            }.onFailure { throwable ->
+            }.onSuccess { syncRecentDrinks() }
+                .onFailure { throwable ->
                 _uiState.update {
                     it.copy(error = throwable.message ?: "삭제 중 오류가 발생했습니다.")
                 }
@@ -160,7 +176,8 @@ class CaffeineMainViewModel @Inject constructor(
         viewModelScope.launch {
             runCatching {
                 editCaffeineUseCase(record)
-            }.onFailure { throwable ->
+            }.onSuccess { syncRecentDrinks() }
+                .onFailure { throwable ->
                 _uiState.update {
                     it.copy(error = throwable.message ?: "수정 중 오류가 발생했습니다.")
                 }
