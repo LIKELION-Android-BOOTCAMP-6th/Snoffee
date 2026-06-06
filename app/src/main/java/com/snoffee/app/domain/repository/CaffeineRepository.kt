@@ -25,4 +25,8 @@ interface CaffeineRepository {
 
     // 카페인 섭취 기록 수정
     suspend fun editCaffeineRecord(record: CaffeineRecord)
+
+
+    //워치 수신용 중복 체크 및 저장
+    suspend fun processAndInsertCaffeine(name: String, amount: Int, timestamp: Long)
 }

@@ -1,12 +1,14 @@
 package com.snoffee.wear.data
 
 import android.content.Context
+import android.util.Log
 import com.google.android.gms.wearable.CapabilityClient
 import com.google.android.gms.wearable.CapabilityInfo
 import com.google.android.gms.wearable.DataClient
 import com.google.android.gms.wearable.DataEvent
 import com.google.android.gms.wearable.DataEventBuffer
 import com.google.android.gms.wearable.DataMapItem
+import com.google.android.gms.wearable.PutDataMapRequest
 import com.google.android.gms.wearable.Wearable
 import dagger.hilt.android.qualifiers.ApplicationContext
 import jakarta.inject.Inject
@@ -19,6 +21,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.util.logging.Logger
+
 
 @Singleton
 class WearDataClient @Inject constructor(
@@ -122,6 +125,17 @@ class WearDataClient @Inject constructor(
                 }
             }
         }
+    }
+    fun sendCaffeineData(name: String, amount: Int) {
+        val request = PutDataMapRequest.create(PATH_RESIDUAL_STATE).apply {
+            dataMap.putString("name", name)
+            dataMap.putInt("amount", amount)
+            dataMap.putLong("timestamp", System.currentTimeMillis())
+            dataMap.putLong("update_time", System.currentTimeMillis())
+        }.asPutDataRequest().setUrgent()
+
+        dataClient.putDataItem(request)
+            .addOnFailureListener { e -> Log.e("WearDataClient", "전송 실패: ${e.message}") }
     }
 
     fun release() {
