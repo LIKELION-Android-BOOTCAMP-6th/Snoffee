@@ -2,7 +2,6 @@ package com.snoffee.wear.presentation.caffeine
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -37,12 +36,11 @@ import kotlinx.coroutines.launch
 fun CaffeineInputScreen(
     modifier: Modifier = Modifier,
     drinkList: List<Pair<String, Double>>,
-    onDrinkSelected: (String, Float) -> Unit,
+    onDrinkSelected: (String, Double) -> Unit,
     onBack: () -> Unit
 ) {
     var mode by remember { mutableIntStateOf(0) }
     val scope = rememberCoroutineScope()
-
     val colors = MaterialTheme.colors
     val typography = MaterialTheme.typography
 
@@ -51,6 +49,7 @@ fun CaffeineInputScreen(
     Box(modifier = modifier
         .fillMaxSize()
         .background(colors.background)) {
+
         Text(
             text = if (mode == 0) "음료 선택" else "직접 입력",
             textAlign = TextAlign.Center,
@@ -61,84 +60,64 @@ fun CaffeineInputScreen(
         )
 
         if (mode == 0) {
-            if (drinkList.isEmpty()) {
-                Column(
-                    modifier = Modifier.align(Alignment.Center),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "최근에 마신 음료가\n없습니다.",
-                        textAlign = TextAlign.Center,
-                        fontSize = 15.sp,
-                        style = typography.body1.copy(color = colors.onBackground)
-                    )
-                    Spacer(modifier = Modifier.height(10.dp))
-                    Button(
-                        onClick = { mode = 1 },
-                        modifier = Modifier
-                            .fillMaxWidth(0.8f)
-                            .height(44.dp),
-                        colors = ButtonDefaults.primaryButtonColors(backgroundColor = colors.primary)
-                    ) {
-                        Text("직접 추가하기", style = typography.caption1.copy(color = colors.onPrimary))
-                    }
-                }
-            } else {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(top = 45.dp)
-                        .verticalScroll(rememberScrollState()),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = 45.dp) // [수정] padding 중첩 방지
+                    .padding(bottom = 10.dp)
+                    .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                if (drinkList.isEmpty()) {
+                    Text("최근에 마신 음료가\n없습니다.", textAlign = TextAlign.Center, fontSize = 15.sp)
+                } else {
                     drinkList.forEach { drink ->
                         Card(
-                            onClick = { onDrinkSelected(drink.first, drink.second.toFloat()) },
+                            onClick = { onDrinkSelected(drink.first, drink.second) },
                             modifier = Modifier
                                 .fillMaxWidth(0.75f)
                                 .height(40.dp)
                                 .padding(vertical = 2.dp)
-                                .background(colors.surface, shape = MaterialTheme.shapes.medium)
                         ) {
-                            Box(
-                                Modifier
-                                    .fillMaxSize()
-                                    .padding(horizontal = 4.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = "${drink.first} (${drink.second.toInt()}mg)",
-                                    style = typography.caption3.copy(color = colors.onSurface),
-                                    maxLines = 1, textAlign = TextAlign.Center
-                                )
-                            }
+                            Text(
+                                text = "${drink.first} (${drink.second.toInt()}mg)",
+                                style = typography.caption3,
+                                textAlign = TextAlign.Center
+                            )
                         }
                     }
-                    Spacer(modifier = Modifier.height(100.dp))
                 }
+
+                Spacer(modifier = Modifier.height(12.dp))
+                Button(
+                    onClick = { mode = 1 },
+                    modifier = Modifier
+                        .fillMaxWidth(0.75f)
+                        .height(40.dp),
+                    colors = ButtonDefaults.secondaryButtonColors()
+                ) {
+                    Text("직접 추가 +", style = typography.caption1)
+                }
+                Spacer(modifier = Modifier.height(60.dp))
             }
         } else {
             var amount by remember { mutableFloatStateOf(100f) }
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 8.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+                    .padding(horizontal = 8.dp)
+                    .padding(top = 40.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(
-                    "${amount.toInt()} mg",
-                    style = typography.body1.copy(color = colors.onBackground)
-                )
+                Text("${amount.toInt()} mg", style = typography.body1)
 
+                // [수정: Stepper 파라미터 및 아이콘 구현]
                 Stepper(
                     value = amount,
                     onValueChange = { amount = it },
                     valueRange = 0f..500f,
                     steps = 10,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp),
+                    modifier = Modifier.fillMaxWidth(),
                     decreaseIcon = { Text("-") },
                     increaseIcon = { Text("+") }
                 ) {
@@ -149,15 +128,14 @@ fun CaffeineInputScreen(
                     onClick = {
                         scope.launch {
                             delay(200L)
-                            onDrinkSelected("직접입력", amount)
+                            onDrinkSelected("직접입력", amount.toDouble())
                         }
                     },
                     modifier = Modifier
                         .fillMaxWidth(0.85f)
-                        .height(32.dp),
-                    colors = ButtonDefaults.primaryButtonColors(backgroundColor = colors.primary)
+                        .height(32.dp)
                 ) {
-                    Text("추가 완료", style = typography.caption1.copy(color = colors.onPrimary))
+                    Text("추가 완료", style = typography.caption1)
                 }
             }
         }
