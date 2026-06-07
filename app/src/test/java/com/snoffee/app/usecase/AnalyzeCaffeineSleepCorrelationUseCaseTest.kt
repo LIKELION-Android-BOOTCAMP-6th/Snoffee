@@ -1,8 +1,8 @@
 package com.snoffee.app.usecase
 
+import com.snoffee.app.core.caffeine.CaffeineCalculator
 import com.snoffee.app.domain.model.CaffeineRecord
 import com.snoffee.app.domain.usecase.report.AnalyzeCaffeineSleepCorrelationUseCase
-import com.snoffee.app.domain.util.CaffeineCalculator
 import junit.framework.TestCase.assertEquals
 import org.junit.Before
 import org.junit.Test
