@@ -25,11 +25,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
 import com.snoffee.wear.data.WearDataClient
 import com.snoffee.wear.presentation.caffeine.CaffeineInputScreen
 import com.snoffee.wear.presentation.caffeine.CaffeineViewModel
+import com.snoffee.wear.presentation.home.HomeScreen
+import com.snoffee.wear.presentation.setting.SettingScreen
+import com.snoffee.wear.presentation.setting.SettingViewModel
 import com.snoffee.wear.presentation.theme.WearSnoffeeTheme
 import dagger.hilt.android.AndroidEntryPoint
 import jakarta.inject.Inject
@@ -53,8 +57,9 @@ class WearMainActivity : ComponentActivity() {
 @Composable
 fun MainPagerScreen(
     wearDataClient: WearDataClient,
-    homeViewModel: com.snoffee.wear.presentation.home.HomeViewModel = androidx.hilt.navigation.compose.hiltViewModel(),
-    caffeineViewModel: CaffeineViewModel = androidx.hilt.navigation.compose.hiltViewModel()
+    homeViewModel: com.snoffee.wear.presentation.home.HomeViewModel = hiltViewModel(),
+    caffeineViewModel: CaffeineViewModel = hiltViewModel(),
+    settingViewModel: SettingViewModel = hiltViewModel()
 ) {
     var currentScreenIndex by remember { mutableIntStateOf(1) }
 
@@ -120,25 +125,21 @@ fun MainPagerScreen(
                 0 -> CaffeineInputScreen(
                     drinkList = drinkListForUI,
                     onDrinkSelected = { name, amount ->
-                        caffeineViewModel.addCaffeineRecord(name, amount.toDouble())
+                        caffeineViewModel.addCaffeineRecord(name, amount)
                         currentScreenIndex = 1
                     },
-                    onBack = {
-                        currentScreenIndex = 1
-                    },
-                    modifier = Modifier.fillMaxSize()
+                    onBack = { currentScreenIndex = 1 }
                 )
 
-                1 -> com.snoffee.wear.presentation.home.HomeScreen(
+                1 -> HomeScreen(
                     uiState = homeUiState,
                     isPhoneConnected = if (isEmulatorTestMode) true else isPhoneConnected,
                     connectionError = if (isEmulatorTestMode) false else !connectionError.isNullOrEmpty(),
                     onAddCaffeineClick = { currentScreenIndex = 0 },
-                    onRetryClick = { if (!isEmulatorTestMode) wearDataClient.checkPhoneCapability() },
-                    modifier = Modifier.fillMaxSize()
+                    onRetryClick = { if (!isEmulatorTestMode) wearDataClient.checkPhoneCapability() }
                 )
 
-                2 -> DummyScreen(title = "설정창 화면")
+                2 -> SettingScreen(viewModel = settingViewModel) // 설정 화면 연결
             }
         }
     }

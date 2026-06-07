@@ -77,6 +77,14 @@ class WearDataClient @Inject constructor(
         }
     }
 
+    fun sendMessage(path: String, data: ByteArray) {
+        scope.launch {
+            val nodes = Wearable.getNodeClient(context).connectedNodes.await()
+            nodes.forEach { node ->
+                Wearable.getMessageClient(context).sendMessage(node.id, path, data).await()
+            }
+        }
+    }
     private fun setupCapabilityListener() {
         capabilityClient.addListener({ capabilityInfo ->
             updateConnectionState(capabilityInfo)

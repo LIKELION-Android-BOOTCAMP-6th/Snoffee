@@ -44,66 +44,91 @@ fun HomeScreen(
     val colors = MaterialTheme.colors
     val typography = MaterialTheme.typography
 
+    val maxCaffeine = 400f
+    val rawProgress = uiState.residualCaffeineMg.toFloat() / maxCaffeine
+    val progress = rawProgress.coerceIn(0f, 1f)
+
+    // 400mg 초과 여부 확인
+    val isOverLimit = uiState.residualCaffeineMg > maxCaffeine
+
+
     Box(
         modifier = modifier
             .fillMaxSize()
             .background(colors.background),
         contentAlignment = Alignment.Center
     ) {
-        if (uiState.isLoading) {
-            CircularProgressIndicator(indicatorColor = colors.primary)
-        } else if (connectionError || !isPhoneConnected) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-                modifier = Modifier.padding(16.dp)
-            ) {
-                Text(
-                    "⚠️ 폰 연결 확인 필요",
-                    style = typography.caption1.copy(color = colors.onBackground),
-                    textAlign = TextAlign.Center
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Button(onClick = onRetryClick) {
-                    Text(text = "재시도", color = colors.onPrimary)
-                }
+        // 원형 프로그레스 인디케이터
+        if (!uiState.isLoading && isPhoneConnected && !connectionError) {
+            CircularProgressIndicator(
+                progress = progress,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(4.dp),
+                indicatorColor = if (isOverLimit) colors.error else colors.primary,
+                trackColor = colors.onSurface.copy(alpha = 0.1f),
+                strokeWidth = 8.dp
+            )
+        }
+        // 예외처리
+        when {
+            uiState.isLoading -> {
+                CircularProgressIndicator(indicatorColor = colors.primary)
             }
-        } else {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-                modifier = Modifier.padding(12.dp)
-            ) {
-                Text(
-                    text = "잔류 카페인",
-                    style = MaterialTheme.typography.caption2.copy(color = colors.onSurface)
-                )
-                Text(
-                    text = "${uiState.residualCaffeineMg.toInt()} mg",
-                    style = typography.title1.copy(
-                        color = when (uiState.riskLevel) {
-                            CaffeineRiskLevel.CAUTION, CaffeineRiskLevel.DANGER -> colors.error
-                            else -> colors.primary
-                        }
-                    )
-                )
-                Text(
-                    text = "대사 완료까지: ${uiState.metabolismTime}",
-                    style = MaterialTheme.typography.caption1.copy(color = colors.onBackground)
-                )
-                Spacer(modifier = Modifier.height(10.dp))
 
-                Button(
-                    onClick = onAddCaffeineClick,
-                    modifier = Modifier
-                        .fillMaxWidth(0.8f)
-                        .height(35.dp),
-                    colors = ButtonDefaults.primaryButtonColors(backgroundColor = colors.primary)
+            connectionError || !isPhoneConnected -> {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                    modifier = Modifier.padding(16.dp)
                 ) {
                     Text(
-                        text = "+ 카페인 추가",
-                        style = typography.button.copy(color = colors.onPrimary)
+                        "⚠️ 폰 연결 확인 필요",
+                        style = typography.caption1.copy(color = colors.onBackground),
+                        textAlign = TextAlign.Center
                     )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Button(onClick = onRetryClick) {
+                        Text(text = "재시도", color = colors.onPrimary)
+                    }
+                }
+            }
+
+            else -> {
+                // 정상
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                    modifier = Modifier.padding(12.dp)
+                ) {
+                    Text(
+                        text = "잔류 카페인",
+                        style = typography.caption2.copy(color = colors.onSurface)
+                    )
+                    Text(
+                        text = "${uiState.residualCaffeineMg.toInt()} mg",
+                        style = typography.title1.copy(
+                            color = if (isOverLimit) colors.error else colors.primary
+                        )
+                    )
+                    Text(
+                        text = "대사 완료까지: ${uiState.metabolismTime}",
+                        style = typography.caption1.copy(color = colors.onBackground)
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Button(
+                        onClick = onAddCaffeineClick,
+                        modifier = Modifier
+                            .fillMaxWidth(0.8f)
+                            .height(35.dp),
+                        colors = ButtonDefaults.primaryButtonColors(backgroundColor = colors.primary)
+                    ) {
+                        Text(
+                            text = "+ 카페인 추가",
+                            style = typography.button.copy(color = colors.onPrimary)
+                        )
+                    }
                 }
             }
         }
