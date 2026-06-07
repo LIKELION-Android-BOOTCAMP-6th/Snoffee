@@ -113,15 +113,34 @@ class WearDataClient @Inject constructor(
             if (event.type == DataEvent.TYPE_CHANGED) {
                 val dataMap = DataMapItem.fromDataItem(event.dataItem).dataMap
 
-                // 기존 잔량 상태 처리 외에 리스트 수신 경로 추가
-                if (uri == "/caffeine/recent_drinks") {
-                    val drinkStrings = dataMap.getStringArrayList("recentDrinksList")
-                    val parsedList = drinkStrings?.map {
-                        val parts = it.split("|")
-                        Pair(parts[0], parts[1].toDouble())
-                    } ?: emptyList()
+                try {
+                    // 리스트 수신 로직 (예외 처리: getStringArrayList가 null일 경우 대비)
+                    if (uri == PATH_RECENT_DRINKS) {
+                        val drinkStrings = dataMap.getStringArrayList("recentDrinksList")
+                        val parsedList = drinkStrings?.mapNotNull { item ->
+                            try {
+                                val parts = item.split("|")
+                                if (parts.size == 2) Pair(parts[0], parts[1].toDouble()) else null
+                            } catch (e: Exception) {
+                                null // 리스트 항목 파싱 실패 시 무시
+                            }
+                        } ?: emptyList()
+                        scope.launch { _recentDrinks.emit(parsedList) }
+                    }
 
-                    scope.launch { _recentDrinks.emit(parsedList) }
+                    // 카페인 잔류 상태 수신 로직 (예외 처리: 데이터 누락/타입 불일치 대비)
+                    if (uri == PATH_RESIDUAL_STATE) {
+                        // mapOf 대신 안전한 Map 구조 생성
+                        val residualMap = mapOf(
+                            "residualMg" to (dataMap.getDouble("residualMg", 0.0)),
+                            "riskLevel" to (dataMap.getString("riskLevel") ?: "SAFE"),
+                            "metabolismTime" to (dataMap.getString("metabolismTime") ?: "--:--"),
+                            "concentrationLevel" to (dataMap.getString("concentrationLevel") ?: "-")
+                        )
+                        scope.launch { _receivedCaffeineData.emit(residualMap) }
+                    }
+                } catch (e: Exception) {
+                    logger.severe("⚠️ 데이터 레이어 파싱 중 오류 발생: ${e.message}")
                 }
             }
         }
