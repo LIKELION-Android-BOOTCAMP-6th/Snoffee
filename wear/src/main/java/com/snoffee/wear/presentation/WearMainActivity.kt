@@ -25,13 +25,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
 import com.snoffee.wear.data.WearDataClient
 import com.snoffee.wear.presentation.caffeine.CaffeineInputScreen
 import com.snoffee.wear.presentation.caffeine.CaffeineViewModel
-import com.snoffee.wear.presentation.theme.WearBackground
 import com.snoffee.wear.presentation.theme.WearSnoffeeTheme
-import com.snoffee.wear.presentation.theme.WearTextMain
 import dagger.hilt.android.AndroidEntryPoint
 import jakarta.inject.Inject
 
@@ -54,16 +53,21 @@ class WearMainActivity : ComponentActivity() {
 @Composable
 fun MainPagerScreen(
     wearDataClient: WearDataClient,
-    viewModel: CaffeineViewModel = androidx.hilt.navigation.compose.hiltViewModel()
+    homeViewModel: com.snoffee.wear.presentation.home.HomeViewModel = androidx.hilt.navigation.compose.hiltViewModel(),
+    caffeineViewModel: CaffeineViewModel = androidx.hilt.navigation.compose.hiltViewModel()
 ) {
     var currentScreenIndex by remember { mutableIntStateOf(1) }
+
+    val colors = MaterialTheme.colors
 
     BackHandler(enabled = currentScreenIndex != 1) {
         currentScreenIndex = 1
     }
-    val recentDrinks by viewModel.drinkList.collectAsState()
-    val isPhoneConnected by wearDataClient.isPhoneConnected.collectAsState()
+    val homeUiState by homeViewModel.uiState.collectAsState()
+    val isPhoneConnected by homeViewModel.isPhoneConnected.collectAsState()
     val connectionError by wearDataClient.connectionError.collectAsState()
+    val recentDrinks by caffeineViewModel.drinkList.collectAsState()
+    val drinkListForUI = recentDrinks.map { it.name to it.amount }
     val isEmulatorTestMode = true
 
     //전환 모션
@@ -97,14 +101,16 @@ fun MainPagerScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(WearBackground)
+                .background(colors.background)
                 .pointerInput(Unit) {
                     detectHorizontalDragGestures { change, dragAmount ->
                         change.consume()
-                        if (dragAmount < -50f && currentScreenIndex == 1) {
-                            currentScreenIndex = 2
-                        } else if (dragAmount > 50f && currentScreenIndex != 1) {
-                            currentScreenIndex = 1
+                        if (dragAmount < -50f) { // 왼쪽으로 드래그
+                            if (currentScreenIndex == 1) currentScreenIndex = 2
+                            else if (currentScreenIndex == 0) currentScreenIndex = 1
+                        } else if (dragAmount > 50f) { // 오른쪽으로 드래그
+                            if (currentScreenIndex == 1) currentScreenIndex = 0
+                            else if (currentScreenIndex == 2) currentScreenIndex = 1
                         }
                     }
                 },
@@ -112,9 +118,9 @@ fun MainPagerScreen(
         ) {
             when (targetIndex) {
                 0 -> CaffeineInputScreen(
-                    drinkList = recentDrinks,
+                    drinkList = drinkListForUI,
                     onDrinkSelected = { name, amount ->
-                        println("음료: $name, 함량: $amount mg 추가")
+                        caffeineViewModel.addCaffeineRecord(name, amount.toDouble())
                         currentScreenIndex = 1
                     },
                     onBack = {
@@ -124,10 +130,7 @@ fun MainPagerScreen(
                 )
 
                 1 -> com.snoffee.wear.presentation.home.HomeScreen(
-                    uiState = com.snoffee.wear.presentation.home.WatchHomeUiState(
-                        residualCaffeineMg = 55.0,
-                        riskLevel = com.snoffee.wear.presentation.home.CaffeineRiskLevel.CAUTION
-                    ),
+                    uiState = homeUiState,
                     isPhoneConnected = if (isEmulatorTestMode) true else isPhoneConnected,
                     connectionError = if (isEmulatorTestMode) false else !connectionError.isNullOrEmpty(),
                     onAddCaffeineClick = { currentScreenIndex = 0 },
@@ -143,7 +146,12 @@ fun MainPagerScreen(
 
 @Composable
 fun DummyScreen(title: String) {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text(text = title, color = WearTextMain)
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colors.background),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(text = title, color = MaterialTheme.colors.onBackground)
     }
 }

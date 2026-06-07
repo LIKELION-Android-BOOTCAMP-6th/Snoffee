@@ -43,6 +43,14 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
 
+    // WorkManager
+    val work_version = "2.9.0"
+    implementation("androidx.work:work-runtime-ktx:$work_version")
+
+    // Hilt - WorkManager 연동 라이브러리
+    implementation("androidx.hilt:hilt-work:1.2.0")
+    ksp("androidx.hilt:hilt-compiler:1.2.0")
+    
     //Hilt 의존성
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
