@@ -85,6 +85,7 @@ class MainActivity : ComponentActivity() {
                     val fullScreenRoutes = setOf(
                         Screen.Onboarding.route,
                         Screen.CaffeineSearch.route,
+                        Screen.SettingHelp.route,
                     )
 
                     //앱 전체 레이아웃
