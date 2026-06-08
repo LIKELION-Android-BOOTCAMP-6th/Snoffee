@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -90,6 +89,7 @@ fun CaffeineSearchScreen(
     val listState = rememberLazyListState()
     val context = LocalContext.current
     var isTimeError by remember { mutableStateOf(false) }
+    var showDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(uiState.isSaved) {
         if (uiState.isSaved) onConfirmSuccess()
@@ -109,6 +109,7 @@ fun CaffeineSearchScreen(
 
     Scaffold(
         containerColor = colorScheme.background,
+        modifier = Modifier.navigationBarsPadding(),
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             CenterAlignedTopAppBar(
@@ -129,6 +130,15 @@ fun CaffeineSearchScreen(
                         )
                     }
                 },
+                actions = {
+                    IconButton(onClick = { showDialog = true }) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_add),
+                            contentDescription = stringResource(R.string.caffeine_drink_input_self),
+                            tint = colorScheme.onBackground
+                        )
+                    }
+                },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                     containerColor = colorScheme.background
                 )
@@ -137,7 +147,6 @@ fun CaffeineSearchScreen(
         bottomBar = {
             Surface(
                 color = colorScheme.background,
-                modifier = Modifier.navigationBarsPadding(),
             ) {
                 Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
 
@@ -147,7 +156,7 @@ fun CaffeineSearchScreen(
                         onErrorChange = { hasError -> isTimeError = hasError }
                     )
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
 
                     Button(
                         onClick = {
@@ -198,7 +207,6 @@ fun CaffeineSearchScreen(
                 color = colorScheme.surface,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 8.dp)
             ) {
                 SearchBar(
                     query = uiState.searchQuery,
@@ -214,7 +222,7 @@ fun CaffeineSearchScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             if (!hasQuery) {
                 EmptySearchState(viewModel, selectedTime, selectedDate, onConfirmSuccess)
@@ -236,23 +244,14 @@ fun CaffeineSearchScreen(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // 직접 등록하기 배너
-                DirectRegisterBanner(
-                    viewModel = viewModel,
-                    selectedTime = selectedTime,
-                    selectedDate = selectedDate,
-                    onConfirmSuccess = onConfirmSuccess,
-                    onClick = onNavigateToDirectInput
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
                 // 음료 리스트 영역
                 LazyColumn(
                     state = listState, // 상태 연결
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
-                    contentPadding = PaddingValues(bottom = 16.dp)
+                    contentPadding = PaddingValues(
+                        bottom = innerPadding.calculateBottomPadding() + 16.dp
+                    )
                 ) {
                     items(uiState.searchResults) { drink ->
                         DrinkListItem(
@@ -294,6 +293,45 @@ fun CaffeineSearchScreen(
             }
         }
     }
+
+    // 상태가 true일 때만 다이얼로그를 화면에 배치
+    if (showDialog) {
+        Dialog(
+            onDismissRequest = { showDialog = false },
+            properties = DialogProperties(
+                usePlatformDefaultWidth = false
+            )
+        ) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth(0.9f)
+                    .wrapContentHeight(),
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = SnoffeeTheme.colors.surfaceElevated)
+            ) {
+                CaffeineInputDialog(
+                    onDismiss = { showDialog = false },
+                    onConfirm = { record ->
+                        // 다이얼로그 직접 입력
+                        viewModel.saveCaffeineRecord(
+                            CaffeineRecord(
+                                id = 0,
+                                drinkId = "DIRECT_${System.currentTimeMillis()}",
+                                drinkName = record.drinkName,
+                                brandName = "직접 입력",
+                                intakeSize = record.intakeSize,
+                                intakeCaffeine = record.intakeCaffeine,
+                                consumedAt = record.consumedAt
+                            )
+                        )
+                        showDialog = false
+                        onConfirmSuccess()
+                    },
+                    selectedDate = selectedDate
+                )
+            }
+        }
+    }
 }
 
 // Empty 상태 UI
@@ -313,7 +351,6 @@ private fun EmptySearchState(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp), // 조금 더 둥글게
         color = colorScheme.surface,
-        shadowElevation = 3.dp,
         border = BorderStroke(0.5.dp, colorScheme.outlineVariant.copy(alpha = 0.5f))
     ) {
         Column(
@@ -326,76 +363,12 @@ private fun EmptySearchState(
                 color = extColors.textHint
             )
 
+            Spacer(modifier = Modifier.height(20.dp))
             Text(
                 text = stringResource(R.string.caffeine_drink_input_self),
                 fontSize = 17.sp,
                 color = colorScheme.primary,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier
-                    .padding(top = 4.dp)
-            )
-
-            Spacer(modifier = Modifier.height(30.dp))
-            Surface(
-                shape = CircleShape,
-                color = colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                modifier = Modifier.size(60.dp),
-                onClick = { showDialog = true }
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_add),
-                        contentDescription = "추가하기",
-                        tint = colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(30.dp),
-                    )
-                }
-            }
-
-            // 상태가 true일 때만 다이얼로그를 화면에 배치
-            if (showDialog) {
-                Dialog(
-                    onDismissRequest = { showDialog = false },
-                    properties = DialogProperties(
-                        usePlatformDefaultWidth = false
-                    )
-                ) {
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth(0.9f)
-                            .wrapContentHeight(),
-                        shape = RoundedCornerShape(24.dp),
-                        colors = CardDefaults.cardColors(containerColor = SnoffeeTheme.colors.surfaceElevated)
-                    ) {
-                        CaffeineInputDialog(
-                            onDismiss = { showDialog = false },
-                            onConfirm = { record ->
-                                // 다이얼로그 직접 입력
-                                viewModel.saveCaffeineRecord(
-                                    CaffeineRecord(
-                                        id = 0,
-                                        drinkId = "DIRECT_${System.currentTimeMillis()}",
-                                        drinkName = record.drinkName,
-                                        brandName = "직접 입력",
-                                        intakeSize = record.intakeSize,
-                                        intakeCaffeine = record.intakeCaffeine,
-                                        consumedAt = record.consumedAt
-                                    )
-                                )
-                                showDialog = false
-                                onConfirmSuccess()
-                            },
-                            selectedDate = selectedDate
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(20.dp))
-            Text(
-                text = stringResource(R.string.caffeine_search_drink_info),
-                fontSize = 17.sp,
-                color = extColors.textDisabled
             )
         }
     }
