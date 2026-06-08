@@ -58,6 +58,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.snoffee.app.R
+import com.snoffee.app.core.ui.theme.SnoffeeSurface
 import com.snoffee.app.core.ui.theme.SnoffeeTheme
 import com.snoffee.app.domain.model.CaffeineRecord
 import com.snoffee.app.presentation.caffeine.input.dialog.CaffeineInputDialog
@@ -352,7 +353,7 @@ private fun MonthlyCalendarCard(
 ) {
     Surface(
         shape = RoundedCornerShape(24.dp),
-        color = MaterialTheme.colorScheme.surface
+        color = SnoffeeSurface
     ) {
         Column(
             modifier = Modifier
@@ -477,17 +478,21 @@ private fun CalendarDayCell(
                 textAlign = TextAlign.Center,
             )
             // 섭취 기록 점
-            if (day.hasDot && day.isCurrentMonth) {
-                Spacer(modifier = Modifier.height(2.dp))
-                Box(
-                    modifier = Modifier
-                        .size(4.dp)
-                        .background(
-                            if (day.isSelected) primary else primary.copy(alpha = 0.5f),
-                            CircleShape,
-                        )
-                )
-            }
+            val showDot = day.hasDot && day.isCurrentMonth
+            Spacer(modifier = Modifier.height(2.dp))
+            Box(
+                modifier = Modifier
+                    .size(4.dp)
+                    .background(
+                        // 기록이 추가되면 dot 영역 때문에 날짜가 들쑥 날쑥이 되어서 코드 수정
+                        color = if (showDot) {
+                            if (day.isSelected) primary else primary.copy(alpha = 0.5f)
+                        } else {
+                            androidx.compose.ui.graphics.Color.Transparent
+                        },
+                        shape = CircleShape,
+                    )
+            )
         }
     }
 }
