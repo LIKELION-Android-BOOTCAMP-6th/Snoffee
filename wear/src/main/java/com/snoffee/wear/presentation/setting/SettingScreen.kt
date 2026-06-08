@@ -5,7 +5,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
@@ -16,7 +18,12 @@ import androidx.wear.compose.material.ToggleChip
 
 @Composable
 fun SettingScreen(viewModel: SettingViewModel) {
+    val context = LocalContext.current
     val listState = rememberScalingLazyListState()
+
+    LaunchedEffect(Unit) {
+        viewModel.checkSystemNotificationPermission(context)
+    }
 
     ScalingLazyColumn(
         state = listState,
@@ -36,6 +43,17 @@ fun SettingScreen(viewModel: SettingViewModel) {
                     Switch(checked = viewModel.isNotificationEnabled.value)
                 }
             )
+        }
+        if (!viewModel.isSystemNotificationPermissionGranted.value) {
+            item {
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = "⚠️ 워치 시스템 설정에서 알림 권한이 차단되어 있어 알림을 받을 수 없습니다.",
+                    style = MaterialTheme.typography.caption3,
+                    color = MaterialTheme.colors.error
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+            }
         }
         item {
             ToggleChip(
