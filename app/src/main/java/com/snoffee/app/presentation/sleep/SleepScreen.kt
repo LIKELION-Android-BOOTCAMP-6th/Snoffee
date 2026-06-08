@@ -135,11 +135,7 @@ fun SleepScreen(viewModel: SleepViewModel = hiltViewModel()) {
         }
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(SnoffeeBgBase)
-    ) {
+    Box(modifier = Modifier.fillMaxSize()) {
         if (!uiState.hasHealthPermission) {
             SleepPermissionEmptyView(
                 modifier = Modifier
@@ -167,8 +163,9 @@ fun SleepScreen(viewModel: SleepViewModel = hiltViewModel()) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 16.dp, vertical = 16.dp)
-                    .verticalScroll(rememberScrollState()),
+                    .background(SnoffeeBgBase)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp, vertical = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(20.dp),
             ) {
                 SleepCalendarCard(
@@ -324,8 +321,7 @@ fun SleepScreen(viewModel: SleepViewModel = hiltViewModel()) {
                 ) {
                     Text(
                         text = if (uiState.selectedDateRecords.size >= 3) "수면 추가 완료 (최대 3개)" else "수면 추가하기",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold
+                        fontSize = 20.sp
                     )
                 }
             }
