@@ -54,7 +54,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.snoffee.app.R
-import com.snoffee.app.core.config.DebugConfig
 import com.snoffee.app.core.ui.theme.SnoffeeBgBase
 import com.snoffee.app.core.ui.theme.SnoffeeBgMuted
 import com.snoffee.app.core.ui.theme.SnoffeeError
@@ -73,10 +72,8 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingScreen(
-    onNavigateToOnboarding: () -> Unit = {},    // todo :: 온보딩 화면 테스트를 위해서 만들어 놓은 곳
     modifier: Modifier = Modifier,
     onNotificationSettingClick: () -> Unit = {},
-    onLanguageSettingClick: () -> Unit = {},
     onHelpClick: () -> Unit = {},
     viewModel: SettingViewModel = hiltViewModel()
 ) {
@@ -217,18 +214,10 @@ fun SettingScreen(
                         )
 
                         MenuRowItem(
-                            title = "도움말",
+                            title = "건강데이터 및 기기연동",
                             iconRes = R.drawable.ic_setting_question,
                             onClick = onHelpClick
                         )
-
-                        if (DebugConfig.SHOW_ONBOARDING_ENTRY) {
-                            MenuRowItem(
-                                title = "[DEBUG] 온보딩 보기",
-                                iconRes = R.drawable.ic_setting_question, // 아무 아이콘이나, 기존 것 재사용
-                                onClick = onNavigateToOnboarding
-                            )
-                        }
                     }
                 }
             }
@@ -274,20 +263,21 @@ fun SettingScreen(
                 )
             },
             confirmButton = {
-                TextButton(onClick = {
-                    inputHeight.toDoubleOrNull()?.let { heightValue ->
-                        //실패 시 팝업 유지 및 스낵바 전송
-                        viewModel.updateHeight(heightValue) { success ->
-                            if (success) {
-                                showHeightDialog = false
-                            } else {
-                                scope.launch {
-                                    snackbarHostState.showSnackbar("신장 정보 저장에 실패했습니다. 다시 시도해 주세요.")
+                TextButton(
+                    onClick = {
+                        inputHeight.toDoubleOrNull()?.let { heightValue ->
+                            //실패 시 팝업 유지 및 스낵바 전송
+                            viewModel.updateHeight(heightValue) { success ->
+                                if (success) {
+                                    showHeightDialog = false
+                                } else {
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar("신장 정보 저장에 실패했습니다. 다시 시도해 주세요.")
+                                    }
                                 }
                             }
                         }
-                    }
-                },
+                    },
                     enabled = isHeightValid
                 ) { Text("저장", color = SnoffeePrimary) }
             },
@@ -340,20 +330,21 @@ fun SettingScreen(
                 )
             },
             confirmButton = {
-                TextButton(onClick = {
-                    inputWeight.toDoubleOrNull()?.let { weightValue ->
-                        //실패 시 팝업 유지 및 스낵바 전송
-                        viewModel.updateWeight(weightValue) { success ->
-                            if (success) {
-                                showWeightDialog = false
-                            } else {
-                                scope.launch {
-                                    snackbarHostState.showSnackbar("체중 정보 저장에 실패했습니다. 다시 시도해 주세요.")
+                TextButton(
+                    onClick = {
+                        inputWeight.toDoubleOrNull()?.let { weightValue ->
+                            //실패 시 팝업 유지 및 스낵바 전송
+                            viewModel.updateWeight(weightValue) { success ->
+                                if (success) {
+                                    showWeightDialog = false
+                                } else {
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar("체중 정보 저장에 실패했습니다. 다시 시도해 주세요.")
+                                    }
                                 }
                             }
                         }
-                    }
-                },
+                    },
                     enabled = isWeightValid
                 ) { Text("저장", color = SnoffeePrimary) }
             },
