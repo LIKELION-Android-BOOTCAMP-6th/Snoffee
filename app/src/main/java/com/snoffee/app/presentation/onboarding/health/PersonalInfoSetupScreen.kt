@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
@@ -24,6 +23,7 @@ import androidx.compose.material.icons.outlined.Bolt
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -32,10 +32,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.snoffee.app.R
 import com.snoffee.app.core.ui.theme.SnoffeeBgBase
 import com.snoffee.app.core.ui.theme.SnoffeeError
 import com.snoffee.app.core.ui.theme.SnoffeePrimary
@@ -45,6 +47,7 @@ import com.snoffee.app.core.ui.theme.SnoffeeSurfaceOverlay
 import com.snoffee.app.core.ui.theme.SnoffeeTextMain
 import com.snoffee.app.core.ui.theme.SnoffeeTextMuted
 import com.snoffee.app.presentation.onboarding.CaffeineSensitivityOption
+import com.snoffee.app.presentation.onboarding.component.ProgressSection
 
 @Composable
 fun PersonalInfoSetupScreen(
@@ -66,124 +69,105 @@ fun PersonalInfoSetupScreen(
             .background(SnoffeeBgBase)
             .statusBarsPadding()
             .navigationBarsPadding()
-            .padding(horizontal = 20.dp, vertical = 20.dp)
     ) {
-        ProgressSection()
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        Text(
-            text = "당신에 대해 알려주세요",
-            color = SnoffeeTextMain,
-            fontSize = 32.sp,
-            fontWeight = FontWeight.Bold
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            text = "정확한 카페인 분해 속도 계산을 위해 필요합니다.",
-            color = SnoffeeTextMuted,
-            fontSize = 16.sp
-        )
-
-        Spacer(modifier = Modifier.height(28.dp))
+        Spacer(modifier = Modifier.height(10.dp))
 
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(IntrinsicSize.Max),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.Top
+            modifier = Modifier.fillMaxWidth()
         ) {
-            val isHeightError = height.isNotBlank() && !isHeightValid
-            InfoInputCard(
-                title = "신장",
-                value = height,
-                unit = "cm",
-                onValueChange = onHeightChange,
-                isError = isHeightError,
-                errorMessage = "100~300cm 입력 가능",
-                modifier = Modifier.weight(1f)
-            )
+            IconButton(
+                onClick = onBackClick
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_arrow_left),
+                    contentDescription = "뒤로가기",
+                    tint = SnoffeeTextMain
+                )
+            }
 
-            val isWeightError = weight.isNotBlank() && !isWeightValid
-            InfoInputCard(
-                title = "체중",
-                value = weight,
-                unit = "kg",
-                onValueChange = onWeightChange,
-                isError = isWeightError,
-                errorMessage = "1~400kg 입력 가능",
-                modifier = Modifier.weight(1f)
-            )
+            Spacer(modifier = Modifier.height(10.dp))
+
+            ProgressSection("단계 3 / 4", 0.66f)
         }
 
-        Spacer(modifier = Modifier.height(18.dp))
-
-        CaffeineSensitivityCard(
-            selectedSensitivity = selectedSensitivity,
-            onSensitivityClick = onSensitivityClick
-        )
-
-        Spacer(modifier = Modifier.weight(1f))
-
-        Button(
-            onClick = onNextClick,
-            enabled = isNextEnabled,
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(58.dp),
-            shape = RoundedCornerShape(14.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = SnoffeePrimary
-            )
+                .fillMaxSize()
+                .padding(horizontal = 20.dp, vertical = 20.dp)
         ) {
             Text(
-                text = "다음 단계로 이동  →",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold
-            )
-        }
-    }
-}
-
-@Composable
-private fun ProgressSection() {
-    Column {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.Bottom
-        ) {
-            Text(
-                text = "단계 2 / 3",
-                color = SnoffeePrimary,
-                fontSize = 12.sp,
+                text = "당신에 대해 알려주세요",
+                color = SnoffeeTextMain,
+                fontSize = 32.sp,
                 fontWeight = FontWeight.Bold
             )
 
+            Spacer(modifier = Modifier.height(8.dp))
+
             Text(
-                text = "거의 다 왔어요!",
+                text = "정확한 카페인 분해 속도 계산을 위해 필요합니다.",
                 color = SnoffeeTextMuted,
-                fontSize = 14.sp
+                fontSize = 16.sp
             )
-        }
 
-        Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(28.dp))
 
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(8.dp)
-                .background(SnoffeeSurfaceOverlay, RoundedCornerShape(50))
-        ) {
-            Box(
+            Row(
                 modifier = Modifier
-                    .fillMaxWidth(0.66f)
-                    .fillMaxHeight()
-                    .background(SnoffeePrimary, RoundedCornerShape(50))
+                    .fillMaxWidth()
+                    .height(IntrinsicSize.Max),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.Top
+            ) {
+                val isHeightError = height.isNotBlank() && !isHeightValid
+                InfoInputCard(
+                    title = "신장",
+                    value = height,
+                    unit = "cm",
+                    onValueChange = onHeightChange,
+                    isError = isHeightError,
+                    errorMessage = "100~300cm 입력 가능",
+                    modifier = Modifier.weight(1f)
+                )
+
+                val isWeightError = weight.isNotBlank() && !isWeightValid
+                InfoInputCard(
+                    title = "체중",
+                    value = weight,
+                    unit = "kg",
+                    onValueChange = onWeightChange,
+                    isError = isWeightError,
+                    errorMessage = "1~400kg 입력 가능",
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(18.dp))
+
+            CaffeineSensitivityCard(
+                selectedSensitivity = selectedSensitivity,
+                onSensitivityClick = onSensitivityClick
             )
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            Button(
+                onClick = onNextClick,
+                enabled = isNextEnabled,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(58.dp),
+                shape = RoundedCornerShape(14.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = SnoffeePrimary
+                )
+            ) {
+                Text(
+                    text = "다음 단계로 이동  →",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
     }
 }

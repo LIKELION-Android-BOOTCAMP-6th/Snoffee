@@ -13,6 +13,7 @@ import com.snoffee.app.presentation.home.HomeScreen
 import com.snoffee.app.presentation.onboarding.OnboardingScreen
 import com.snoffee.app.presentation.report.ReportScreen
 import com.snoffee.app.presentation.setting.SettingScreen
+import com.snoffee.app.presentation.setting.help.HelpScreen
 import com.snoffee.app.presentation.sleep.SleepScreen
 import java.time.LocalDate
 
@@ -104,22 +105,20 @@ fun AppNavHost(
             )
         }
 
-        //설정 화면
-//        composable(Screen.Setting.route) {
-//            SettingScreen() // presentation.mySetting.SettingScreen
-//        }
-
-        // 온보딩 테스트를 위한 처리
-        /*
-        * todo :: 온보딩 작업이 정말 다 했다면 이 코드 지우고 위에 주석 해제할 것
-        *  온보딩 추가 작업(헬스커넥트 연결방법 안내)이 끝나면 그때 제가 이 부분 코드 정리하겠습니다.
-        *   - 제이 -
-        */
+        // 설정 화면
         composable(Screen.Setting.route) {
             SettingScreen(
-                onNavigateToOnboarding = {
-                    navController.navigate(Screen.Onboarding.route)
+                onHelpClick = {
+                    // 도움말 화면으로 이동
+                    navController.navigate(Screen.SettingHelp.route)
                 }
+            )
+        }
+
+        // 설정 도움말
+        composable(Screen.SettingHelp.route) {
+            HelpScreen(
+                onCancelClick = { navController.popBackStack() }
             )
         }
     }

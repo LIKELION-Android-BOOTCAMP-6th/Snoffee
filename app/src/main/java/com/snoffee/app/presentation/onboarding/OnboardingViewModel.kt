@@ -19,6 +19,7 @@ import javax.inject.Inject
 enum class OnboardingStep {
     INTRO,
     PERMISSION,
+    HEALTH_CONNECT_INFO,
     PERSONAL_INFO,
     COMPLETE
 }
@@ -42,6 +43,7 @@ data class OnboardingUiState(
     val isPersonalInfoValid: Boolean = false,
     val isCompleted: Boolean = false
 )
+
 @HiltViewModel
 class OnboardingViewModel @Inject constructor(
     private val onboardingPreferenceDataSource: OnboardingPreferenceDataSource,
@@ -57,7 +59,8 @@ class OnboardingViewModel @Inject constructor(
             it.copy(
                 currentStep = when (it.currentStep) {
                     OnboardingStep.INTRO -> OnboardingStep.PERMISSION
-                    OnboardingStep.PERMISSION -> OnboardingStep.PERSONAL_INFO
+                    OnboardingStep.PERMISSION -> OnboardingStep.HEALTH_CONNECT_INFO
+                    OnboardingStep.HEALTH_CONNECT_INFO -> OnboardingStep.PERSONAL_INFO
                     OnboardingStep.PERSONAL_INFO -> OnboardingStep.COMPLETE
                     OnboardingStep.COMPLETE -> OnboardingStep.COMPLETE
                 }
@@ -71,7 +74,8 @@ class OnboardingViewModel @Inject constructor(
                 currentStep = when (it.currentStep) {
                     OnboardingStep.INTRO -> OnboardingStep.INTRO
                     OnboardingStep.PERMISSION -> OnboardingStep.INTRO
-                    OnboardingStep.PERSONAL_INFO -> OnboardingStep.PERMISSION
+                    OnboardingStep.HEALTH_CONNECT_INFO -> OnboardingStep.PERMISSION
+                    OnboardingStep.PERSONAL_INFO -> OnboardingStep.HEALTH_CONNECT_INFO
                     OnboardingStep.COMPLETE -> OnboardingStep.PERSONAL_INFO
                 }
             )
