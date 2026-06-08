@@ -1,8 +1,8 @@
 package com.snoffee.app.domain.usecase.report
 
+import com.snoffee.app.core.caffeine.CaffeineCalculator
 import com.snoffee.app.domain.model.CaffeineRecord
 import com.snoffee.app.domain.model.CaffeineSleepCorrelation
-import com.snoffee.app.domain.util.CaffeineCalculator
 import java.util.Calendar
 import javax.inject.Inject
 

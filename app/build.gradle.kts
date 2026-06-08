@@ -40,7 +40,7 @@ android {
 }
 
 dependencies {
-    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
+    //implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -84,4 +84,8 @@ dependencies {
 
     // Desugaring 를 통해서 min SDK 24 에서도 일부 코드 안정하게 동작 도와주는 패키지
     coreLibraryDesugaring(libs.android.desugar)
+
+    //wearOS
+    implementation(libs.play.services.wearable)
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.0")
 }

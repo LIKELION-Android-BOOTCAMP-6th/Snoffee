@@ -1,10 +1,10 @@
 package com.snoffee.app.domain.usecase.caffeine
 
+import com.snoffee.app.core.caffeine.CaffeineCalculator
 import com.snoffee.app.domain.model.CaffeineAnalysis
 import com.snoffee.app.domain.model.CaffeineSensitivity
 import com.snoffee.app.domain.repository.CaffeineRepository
 import com.snoffee.app.domain.repository.UserProfileRepository
-import com.snoffee.app.domain.util.CaffeineCalculator
 import javax.inject.Inject
 import kotlin.math.log2
 
