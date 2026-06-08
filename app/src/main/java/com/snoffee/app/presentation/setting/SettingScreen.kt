@@ -26,7 +26,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
@@ -115,15 +114,14 @@ fun SettingScreen(
         else -> 0.5f
     }
 
-    Scaffold(
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
-        containerColor = Color.Transparent
-    ) { innerPadding ->
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(SnoffeeBgBase)
+    ) {
         Column(
             modifier = modifier
                 .fillMaxSize()
-                .padding(innerPadding)
-                .background(SnoffeeBgBase)
                 .verticalScroll(scrollState)
                 .padding(horizontal = 16.dp, vertical = 20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -136,18 +134,16 @@ fun SettingScreen(
             ) {
                 Text(
                     text = "내 신체 및 설정 정보",
-                    fontSize = 15.sp,
+                    fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = SnoffeeTextMain
                 )
                 Text(
                     text = "체내 남은 카페인 계산 및 알림 기준이 됩니다.",
-                    fontSize = 13.sp,
+                    fontSize = 14.sp,
                     color = SnoffeeTextMuted
                 )
             }
-
-            Spacer(modifier = Modifier.height(4.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -222,6 +218,12 @@ fun SettingScreen(
                 }
             }
         }
+
+        // 스낵바 오버레이 (기존 Scaffold snackbarHost 대체)
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter)
+        )
     }
 
     if (showHeightDialog) {
@@ -539,7 +541,7 @@ fun InfoCard(title: String, value: String, modifier: Modifier = Modifier) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            Text(text = title, fontSize = 13.sp, color = SnoffeeTextHint)
+            Text(text = title, fontSize = 14.sp, color = SnoffeeTextHint)
             Text(
                 text = value,
                 fontSize = 22.sp,
@@ -605,9 +607,9 @@ fun CaffeineSensitivityCard(statusText: String, progressFill: Float) {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(text = "둔감함", fontSize = 11.sp, color = SnoffeeTextHint)
-                Text(text = "보통", fontSize = 11.sp, color = SnoffeeTextHint)
-                Text(text = "민감함", fontSize = 11.sp, color = SnoffeeTextHint)
+                Text(text = "둔감함", fontSize = 13.sp, color = SnoffeeTextHint)
+                Text(text = "보통", fontSize = 13.sp, color = SnoffeeTextHint)
+                Text(text = "민감함", fontSize = 13.sp, color = SnoffeeTextHint)
             }
         }
     }
@@ -650,7 +652,7 @@ fun TimeSettingCard(title: String, time: String, iconRes: Int, onClick: () -> Un
                     Text(text = title, fontSize = 12.sp, color = SnoffeeTextHint)
                     Text(
                         text = time,
-                        fontSize = 20.sp,
+                        fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
                         color = SnoffeeTextMain
                     )

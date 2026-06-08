@@ -5,7 +5,9 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.time.YearMonth
 import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 object Utils {
     // Long(Epoch Milli) -> LocalDateTime 변환 함수
@@ -37,4 +39,17 @@ object Utils {
             .atZone(ZoneId.systemDefault())
             .toLocalTime()
     }
+
+    // 날짜 포맷
+    // "yyyy년 M월" (예: 2026년 6월)
+    private val MONTH_LABEL_FORMATTER = DateTimeFormatter.ofPattern("yyyy년 M월")
+
+    // "M월 d일" (예: 6월 8일)
+    private val DAY_LABEL_FORMATTER = DateTimeFormatter.ofPattern("M월 d일")
+
+    // YearMonth -> "yyyy년 M월" 형식의 라벨 변환
+    fun YearMonth.toMonthLabel(): String = this.format(MONTH_LABEL_FORMATTER)
+
+    // LocalDate -> "M월 d일" 형식의 라벨 변환
+    fun LocalDate.toDayLabel(): String = this.format(DAY_LABEL_FORMATTER)
 }

@@ -101,10 +101,7 @@ class MainActivity : ComponentActivity() {
                         Scaffold(
                             topBar = {
                                 SnoffeeAppBar(
-                                    title = topBarTitle,
-                                    onNotificationClick = {
-                                        // 알림 아이콘 클릭 시 로직
-                                    }
+                                    title = topBarTitle
                                 )
                             },
                             bottomBar = {
