@@ -204,7 +204,7 @@ fun InteractiveDoubleBarChart(
                     )
 
                     Text(
-                        text = "카페인 ${item.caffeineValue.toInt()}mg",
+                        text = "카페인 ${item.caffeineValue.roundToInt()}mg",
                         color = Color.White,
                         fontSize = 11.sp
                     )

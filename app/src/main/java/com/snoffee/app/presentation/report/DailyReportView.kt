@@ -36,6 +36,7 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import kotlin.math.roundToInt
 
 @Composable
 fun DailyReportView(uiState: ReportUiState) {
@@ -159,7 +160,7 @@ fun DailyReportView(uiState: ReportUiState) {
                         DailyRecordItem(
                             time = formattedTime,
                             title = if (record.brandName.isNotEmpty()) "[${record.brandName}] ${record.drinkName}" else record.drinkName,
-                            value = "${record.intakeCaffeine.toInt()} mg",
+                            value = "${record.intakeCaffeine.roundToInt()} mg",
                             typeColor = if (isHighCaffeine) SnoffeeWarning else SnoffeePrimary
                         )
                     }

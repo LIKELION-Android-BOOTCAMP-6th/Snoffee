@@ -37,6 +37,7 @@ import com.snoffee.app.core.ui.theme.SnoffeeTextHint
 import com.snoffee.app.core.ui.theme.SnoffeeTextMain
 import com.snoffee.app.core.ui.theme.SnoffeeTextMuted
 import com.snoffee.app.presentation.home.component.CaffeineGauge
+import kotlin.math.roundToInt
 
 @Composable
 fun HomeScreen(
@@ -152,7 +153,7 @@ fun HomeScreen(
                             )
                         }
                         Text(
-                            text = "${log.intakeCaffeine.toInt()} mg",
+                            text = "${log.intakeCaffeine.roundToInt()} mg",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = SnoffeePrimary

@@ -25,6 +25,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import javax.inject.Inject
+import kotlin.math.roundToInt
 
 @HiltViewModel
 class ReportViewModel @Inject constructor(
@@ -113,6 +114,7 @@ class ReportViewModel @Inject constructor(
         _uiState.update { it.copy(startDate = start, endDate = end) }
         calculatePeriodData(start, end)
     }
+
     fun loadReportData() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, isError = false, errorMessage = null) }
@@ -151,7 +153,7 @@ class ReportViewModel @Inject constructor(
 
                 //일간 데이터
                 val todayTotalCaffeine =
-                    dailyResult.caffeineRecords.sumOf { it.intakeCaffeine }.toInt()
+                    dailyResult.caffeineRecords.sumOf { it.intakeCaffeine }.roundToInt()
                 val todayLocalDate = dailyResult.caffeineRecords.firstOrNull()?.let {
                     Instant.ofEpochMilli(it.consumedAt).atZone(zoneId).toLocalDate()
                 } ?: Instant.ofEpochMilli(nowMillis).atZone(zoneId).toLocalDate()
@@ -298,7 +300,7 @@ class ReportViewModel @Inject constructor(
                     defaultEnd
                 ) + 1).coerceAtLeast(1)
 
-                val periodTotalCaffeine = filteredCaffeine.sumOf { it.intakeCaffeine }.toInt()
+                val periodTotalCaffeine = filteredCaffeine.sumOf { it.intakeCaffeine }.roundToInt()
                 val periodAvgCaffeine = (periodTotalCaffeine / daysBetween).toInt()
 
                 val periodTotalSleepMillis = filteredSleep.sumOf { it.sleepEnd - it.sleepStart }
@@ -465,7 +467,7 @@ class ReportViewModel @Inject constructor(
             val daysBetween =
                 (java.time.temporal.ChronoUnit.DAYS.between(start, end) + 1).coerceAtLeast(1)
 
-            val totalCaffeine = filteredCaffeine.sumOf { it.intakeCaffeine }.toInt()
+            val totalCaffeine = filteredCaffeine.sumOf { it.intakeCaffeine }.roundToInt()
             val avgCaffeine = (totalCaffeine / daysBetween).toInt()
 
             val totalSleepMillis = filteredSleep.sumOf { it.sleepEnd - it.sleepStart }
@@ -495,6 +497,7 @@ class ReportViewModel @Inject constructor(
             }
         }
     }
+
     fun onTabChanged() {
         _uiState.update { it.copy(isLoading = true) }
     }

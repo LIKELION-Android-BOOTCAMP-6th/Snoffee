@@ -19,6 +19,7 @@ import androidx.wear.compose.material.ButtonDefaults
 import androidx.wear.compose.material.CircularProgressIndicator
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
+import kotlin.math.roundToInt
 
 enum class CaffeineRiskLevel {
     SAFE, CAUTION, DANGER
@@ -106,7 +107,7 @@ fun HomeScreen(
                         style = typography.caption2.copy(color = colors.onSurface)
                     )
                     Text(
-                        text = "${uiState.residualCaffeineMg.toInt()} mg",
+                        text = "${uiState.residualCaffeineMg.roundToInt()} mg",
                         style = typography.title1.copy(
                             color = if (isOverLimit) colors.error else colors.primary
                         )

@@ -31,6 +31,7 @@ import androidx.wear.compose.material.Stepper
 import androidx.wear.compose.material.Text
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 @Composable
 fun CaffeineInputScreen(
@@ -80,7 +81,7 @@ fun CaffeineInputScreen(
                                 .padding(vertical = 2.dp)
                         ) {
                             Text(
-                                text = "${drink.first} (${drink.second.toInt()}mg)",
+                                text = "${drink.first} (${drink.second.roundToInt()}mg)",
                                 style = typography.caption3,
                                 textAlign = TextAlign.Center
                             )
@@ -109,7 +110,7 @@ fun CaffeineInputScreen(
                     .padding(top = 40.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("${amount.toInt()} mg", style = typography.body1)
+                Text("${amount.roundToInt()} mg", style = typography.body1)
 
                 // [수정: Stepper 파라미터 및 아이콘 구현]
                 Stepper(
@@ -121,7 +122,7 @@ fun CaffeineInputScreen(
                     decreaseIcon = { Text("-") },
                     increaseIcon = { Text("+") }
                 ) {
-                    Text("${amount.toInt()} mg")
+                    Text("${amount.roundToInt()} mg")
                 }
 
                 Button(
