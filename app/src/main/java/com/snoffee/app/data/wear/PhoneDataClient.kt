@@ -51,21 +51,21 @@ class PhoneDataClient(context: Context) {
     }
 
     //최근 섭취 음료 4개 리스트 전송
-    fun sendRecentDrinksToWatch(drinks: List<Pair<String, Double>>) {
-        scope.launch {
-            try {
-                val formattedDrinks = drinks.map { "${it.first}|${it.second}" }
-
-                val putDataReq = PutDataMapRequest.create(PATH_RECENT_DRINKS).apply {
-                    dataMap.putStringArrayList("recentDrinksList", ArrayList(formattedDrinks))
-                    dataMap.putLong("timestamp", System.currentTimeMillis())
-                }.asPutDataRequest().setUrgent()
-
-                dataClient.putDataItem(putDataReq).await()
-                logger.info("📱 [Phone ➔ Watch] 최근 음료 리스트 전송 성공: $formattedDrinks")
-            } catch (e: Exception) {
-                logger.severe("❌ [Phone ➔ Watch] 음료 리스트 전송 실패: ${e.message}")
-            }
-        }
-    }
+//    fun sendRecentDrinksToWatch(drinks: List<Pair<String, Double>>) {
+//        scope.launch {
+//            try {
+//                val formattedDrinks = drinks.map { "${it.first}|${it.second}" }
+//
+//                val putDataReq = PutDataMapRequest.create(PATH_RECENT_DRINKS).apply {
+//                    dataMap.putStringArrayList("recentDrinksList", ArrayList(formattedDrinks))
+//                    dataMap.putLong("timestamp", System.currentTimeMillis())
+//                }.asPutDataRequest().setUrgent()
+//
+//                dataClient.putDataItem(putDataReq).await()
+//                logger.info("📱 [Phone ➔ Watch] 최근 음료 리스트 전송 성공: $formattedDrinks")
+//            } catch (e: Exception) {
+//                logger.severe("❌ [Phone ➔ Watch] 음료 리스트 전송 실패: ${e.message}")
+//            }
+//        }
+//    }
 }

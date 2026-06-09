@@ -24,6 +24,10 @@ class HomeViewModel @Inject constructor(
 
     init {
         observePhoneData()
+        viewModelScope.launch {
+            // 연결 확인 후 요청
+            wearDataClient.requestSyncFromPhone()
+        }
     }
 
     private fun observePhoneData() {
@@ -31,10 +35,7 @@ class HomeViewModel @Inject constructor(
             wearDataClient.receivedCaffeineData.collectLatest { dataMap ->
                 if (dataMap.isNotEmpty()) {
                     val rawCaffeine = dataMap["residualMg"]
-                    val caffeineMg = when (rawCaffeine) {
-                        is Number -> rawCaffeine.toDouble()
-                        else -> null
-                    }
+                    val caffeineMg = (rawCaffeine as? Number)?.toDouble()
 
                     _uiState.update { currentState ->
                         currentState.copy(

@@ -157,8 +157,8 @@ fun MainPagerScreen(
             when (targetIndex) {
                 0 -> CaffeineInputScreen(
                     drinkList = drinkListForUI,
-                    onDrinkSelected = { name, amount ->
-                        caffeineViewModel.addCaffeineRecord(name, amount)
+                    onDrinkSelected = { name, amount, consumedAt ->
+                        caffeineViewModel.addCaffeineRecord(name, amount, consumedAt)
                         currentScreenIndex = 1
                     },
                     onBack = { currentScreenIndex = 1 }

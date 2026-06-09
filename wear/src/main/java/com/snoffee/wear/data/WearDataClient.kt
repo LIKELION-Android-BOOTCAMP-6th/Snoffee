@@ -35,6 +35,7 @@ class WearDataClient @Inject constructor(
         private const val CAPABILITY_PHONE_APP = "verify_snoffee_phone_app"
         private const val PATH_RESIDUAL_STATE = "/caffeine/residual_state"
         const val PATH_RECENT_DRINKS = "/caffeine/recent_drinks"
+        private const val PATH_ADD_RECORD = "/caffeine/add_record"
     }
 
     private val capabilityClient = Wearable.getCapabilityClient(context)
@@ -153,16 +154,35 @@ class WearDataClient @Inject constructor(
             }
         }
     }
-    fun sendCaffeineData(name: String, amount: Int) {
-        val request = PutDataMapRequest.create(PATH_RESIDUAL_STATE).apply {
-            dataMap.putString("name", name)
-            dataMap.putInt("amount", amount)
-            dataMap.putLong("timestamp", System.currentTimeMillis())
-            dataMap.putLong("update_time", System.currentTimeMillis())
-        }.asPutDataRequest().setUrgent()
+    suspend fun sendCustomCaffeineRecord(name: String, amount: Int, consumedAt: Long): Boolean {
+        return try {
+            val request = PutDataMapRequest.create("/caffeine/add_record").apply {
+                dataMap.putString("name", name)
+                dataMap.putInt("amount", amount)
+                dataMap.putLong("timestamp", consumedAt)
+                dataMap.putLong("update_time", System.currentTimeMillis())
+            }.asPutDataRequest().setUrgent()
 
-        dataClient.putDataItem(request)
-            .addOnFailureListener { e -> Log.e("WearDataClient", "전송 실패: ${e.message}") }
+            com.google.android.gms.tasks.Tasks.await(dataClient.putDataItem(request))
+            logger.info("✅ 폰 DB 저장용 패킷 전송 성공: $name ($amount mg)")
+            true
+        } catch (e: Exception) {
+            logger.severe("❌ 패킷 전송 실패: ${e.message}")
+            false
+        }
+    }
+
+    suspend fun requestSyncFromPhone() {
+        try {
+            val nodes = Wearable.getNodeClient(context).connectedNodes.await()
+            nodes.forEach { node ->
+                Wearable.getMessageClient(context)
+                    .sendMessage(node.id, "/caffeine/request_sync", null).await()
+            }
+            Log.d("WearDataClient", "🚀 폰으로 데이터 동기화 요청을 보냈습니다.")
+        } catch (e: Exception) {
+            Log.e("WearDataClient", "❌ 동기화 요청 실패: ${e.message}")
+        }
     }
 
     fun release() {
