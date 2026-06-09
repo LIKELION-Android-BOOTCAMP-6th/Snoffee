@@ -66,7 +66,6 @@ import com.snoffee.app.core.ui.theme.SnoffeePrimary
 import com.snoffee.app.core.ui.theme.SnoffeePrimaryLight
 import com.snoffee.app.core.ui.theme.SnoffeePrimarySubtle
 import com.snoffee.app.core.ui.theme.SnoffeeSurface
-import com.snoffee.app.core.ui.theme.SnoffeeTextHint
 import com.snoffee.app.core.ui.theme.SnoffeeTextMain
 import com.snoffee.app.core.ui.theme.SnoffeeTextMuted
 import com.snoffee.app.core.util.Utils.toMonthLabel
@@ -392,19 +391,19 @@ fun SleepScreen(viewModel: SleepViewModel = hiltViewModel()) {
         AlertDialog(
             onDismissRequest = {
                 showDeleteConfirmDialog = false
+                deleteTargetData = null
             },
             title = {
                 Text(
                     text = "수면 기록 삭제",
                     fontWeight = FontWeight.Bold,
-                    color = SnoffeeTextMain
+                    fontSize = 18.sp
                 )
             },
             text = {
                 Text(
-                    text = "선택하신 수면 기록을 삭제하시겠습니까?\n" +
-                            "삭제된 데이터는 복구할 수 없습니다.",
-                    color = SnoffeeTextMain
+                    text = "선택하신 수면 기록을 삭제하시겠습니까?\n삭제된 데이터는 복구할 수 없습니다.",
+                    fontSize = 15.sp
                 )
             },
             confirmButton = {
@@ -417,27 +416,23 @@ fun SleepScreen(viewModel: SleepViewModel = hiltViewModel()) {
                 ) {
                     Text(
                         text = "삭제",
-                        color = Color.Red,
-                        fontWeight = FontWeight.Bold
+                        color = MaterialTheme.colorScheme.error,
+                        fontWeight = FontWeight.SemiBold
                     )
                 }
             },
             dismissButton = {
                 TextButton(
                     onClick = {
-                        showDeleteConfirmDialog = false;
+                        showDeleteConfirmDialog = false
                         deleteTargetData = null
-                    }
-                )
-                {
-                    Text(
-                        text = "취소",
-                        color = SnoffeeTextHint
-                    )
+                    },
+                ) {
+                    Text(text = "취소", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             },
             shape = RoundedCornerShape(16.dp),
-            containerColor = SnoffeePrimaryLight
+            containerColor = SnoffeeSurface
         )
     }
 }
