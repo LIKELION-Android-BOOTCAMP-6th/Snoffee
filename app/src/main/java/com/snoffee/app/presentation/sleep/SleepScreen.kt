@@ -64,6 +64,7 @@ import com.snoffee.app.core.ui.theme.SnoffeeBgBase
 import com.snoffee.app.core.ui.theme.SnoffeeDivider
 import com.snoffee.app.core.ui.theme.SnoffeePrimary
 import com.snoffee.app.core.ui.theme.SnoffeePrimaryLight
+import com.snoffee.app.core.ui.theme.SnoffeePrimarySubtle
 import com.snoffee.app.core.ui.theme.SnoffeeSurface
 import com.snoffee.app.core.ui.theme.SnoffeeTextHint
 import com.snoffee.app.core.ui.theme.SnoffeeTextMain
@@ -277,9 +278,33 @@ fun SleepScreen(viewModel: SleepViewModel = hiltViewModel()) {
                                         )
                                     }
                                 }
-                            } else {
-                                Spacer(modifier = Modifier.height(16.dp))
                             }
+                        }
+                    }
+
+                    if (uiState.selectedDateRecords.any { it.source != SleepSource.MANUAL }) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    SnoffeePrimarySubtle.copy(alpha = 0.45f),
+                                    RoundedCornerShape(10.dp)
+                                )
+                                .padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "ⓘ",
+                                color = SnoffeePrimary
+                            )
+
+                            Spacer(modifier = Modifier.width(8.dp))
+
+                            Text(
+                                text = "삼성 헬스 수면 점수와 다른 자체 기준 점수 입니다.",
+                                color = SnoffeeTextMuted,
+                                fontSize = 12.sp
+                            )
                         }
                     }
                 }
