@@ -645,7 +645,7 @@ private fun SleepDayCell(
     onClick: () -> Unit
 ) {
     val statusColor = when {
-        day.score != null && day.score >= 85 -> GoodSleep
+        day.score != null && day.score >= 90 -> GoodSleep
         day.score != null && day.score <= 59 -> BadSleep
         else -> Color.Transparent
     }

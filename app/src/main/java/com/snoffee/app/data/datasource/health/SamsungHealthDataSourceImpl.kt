@@ -29,6 +29,7 @@ class SamsungHealthDataSourceImpl @Inject constructor(
             SleepSessionRecord::class
         )
     )
+
     private fun calculateSleepScore(
         sleepStart: Long,
         sleepEnd: Long
@@ -37,13 +38,19 @@ class SamsungHealthDataSourceImpl @Inject constructor(
             (sleepEnd - sleepStart) / (1000.0 * 60.0 * 60.0)
 
         return when {
-            sleepHours >= 7.0 && sleepHours <= 9.0 -> 80
-            sleepHours >= 6.0 && sleepHours < 7.0 -> 65
-            sleepHours > 9.0 && sleepHours <= 10.0 -> 70
-            sleepHours >= 5.0 && sleepHours < 6.0 -> 50
-            else -> 40
+            sleepHours < 3.0 -> 20
+            sleepHours in 3.0..<4.0 -> 35
+            sleepHours in 4.0..<5.0 -> 50
+            sleepHours in 5.0..<6.0 -> 60
+            sleepHours in 6.0..<6.5 -> 70
+            sleepHours in 6.5..<7.0 -> 80
+            sleepHours in 7.0..<9.0 -> 90   // 7~8시간 최적
+            sleepHours in 9.0..<10.0 -> 70
+            sleepHours in 10.0..<11.0 -> 55
+            else -> 40                         // 11시간 이상이면 과수면
         }
     }
+
     override suspend fun saveSleepData(
         sleepData: SleepDataDto
     ) {
@@ -51,6 +58,7 @@ class SamsungHealthDataSourceImpl @Inject constructor(
         // TODO:
         // 필요 시 Health Connect 쓰기 구현
     }
+
     override suspend fun getLatestSleepData(): SleepDataDto? {
         val now = System.currentTimeMillis()
 
@@ -64,6 +72,7 @@ class SamsungHealthDataSourceImpl @Inject constructor(
             it.sleepEnd
         }
     }
+
     override suspend fun getSleepDataByDateRange(
         startTimeMillis: Long,
         endTimeMillis: Long
