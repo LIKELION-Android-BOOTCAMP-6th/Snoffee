@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -29,15 +30,27 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             wearDataClient.receivedCaffeineData.collectLatest { dataMap ->
                 if (dataMap.isNotEmpty()) {
-                    _uiState.value = WatchHomeUiState(
-                        residualCaffeineMg = (dataMap["residualMg"] as? Double) ?: 0.0,
-                        riskLevel = CaffeineRiskLevel.valueOf(
-                            (dataMap["riskLevel"] as? String) ?: "SAFE"
-                        ),
-                        metabolismTime = (dataMap["metabolismTime"] as? String) ?: "--:--",
-                        concentrationLevel = (dataMap["concentrationLevel"] as? String) ?: "-",
-                        isLoading = false
-                    )
+                    val rawCaffeine = dataMap["residualMg"]
+                    val caffeineMg = when (rawCaffeine) {
+                        is Number -> rawCaffeine.toDouble()
+                        else -> null
+                    }
+
+                    _uiState.update { currentState ->
+                        currentState.copy(
+                            residualCaffeineMg = caffeineMg ?: currentState.residualCaffeineMg,
+                            riskLevel = (dataMap["riskLevel"] as? String)?.let {
+                                runCatching { CaffeineRiskLevel.valueOf(it) }.getOrDefault(
+                                    currentState.riskLevel
+                                )
+                            } ?: currentState.riskLevel,
+                            metabolismTime = (dataMap["metabolismTime"] as? String)
+                                ?: currentState.metabolismTime,
+                            concentrationLevel = (dataMap["concentrationLevel"] as? String)
+                                ?: currentState.concentrationLevel,
+                            isLoading = false
+                        )
+                    }
                 }
             }
         }

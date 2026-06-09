@@ -140,7 +140,7 @@ class WearDataClient @Inject constructor(
                     if (uri == PATH_RESIDUAL_STATE) {
                         // mapOf 대신 안전한 Map 구조 생성
                         val residualMap = mapOf(
-                            "residualMg" to (dataMap.getDouble("residualMg", 0.0)),
+                            "residualMg" to (dataMap.getDouble("residualCaffeineMg", 0.0)),
                             "riskLevel" to (dataMap.getString("riskLevel") ?: "SAFE"),
                             "metabolismTime" to (dataMap.getString("metabolismTime") ?: "--:--"),
                             "concentrationLevel" to (dataMap.getString("concentrationLevel") ?: "-")
