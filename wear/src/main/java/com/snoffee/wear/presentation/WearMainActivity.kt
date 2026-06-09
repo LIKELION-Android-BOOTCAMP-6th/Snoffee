@@ -113,7 +113,7 @@ fun MainPagerScreen(
     AnimatedContent(
         targetState = currentScreenIndex,
         transitionSpec = {
-            // 화면 인덱스가 커지면 오른쪽에서 왼쪽으로, 작아지면 왼쪽에서 오른쪽으로 슬라이딩
+            // 홈 ->  설정 : 오른쪽에서 왼쪽으로 슬라이드
             if (targetState > initialState) {
                 slideInHorizontally(
                     initialOffsetX = { it },
@@ -124,6 +124,7 @@ fun MainPagerScreen(
                             animationSpec = tween(300)
                         ) + fadeOut()
             } else {
+                // 설정 -> 홈 : 왼쪽에서 오른쪽으로 슬라이드
                 slideInHorizontally(
                     initialOffsetX = { -it },
                     animationSpec = tween(300)
@@ -144,12 +145,10 @@ fun MainPagerScreen(
                 .pointerInput(Unit) {
                     detectHorizontalDragGestures { change, dragAmount ->
                         change.consume()
-                        if (dragAmount < -50f) { // 왼쪽으로 드래그
+                        if (dragAmount < -50f) {
                             if (currentScreenIndex == 1) currentScreenIndex = 2
-                            else if (currentScreenIndex == 0) currentScreenIndex = 1
-                        } else if (dragAmount > 50f) { // 오른쪽으로 드래그
-                            if (currentScreenIndex == 1) currentScreenIndex = 0
-                            else if (currentScreenIndex == 2) currentScreenIndex = 1
+                        } else if (dragAmount > 50f) {
+                            if (currentScreenIndex == 2) currentScreenIndex = 1
                         }
                     }
                 },
@@ -164,7 +163,6 @@ fun MainPagerScreen(
                     },
                     onBack = { currentScreenIndex = 1 }
                 )
-
                 1 -> {
                     HomeScreen(
                         uiState = homeUiState,

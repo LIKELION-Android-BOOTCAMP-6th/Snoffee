@@ -39,6 +39,7 @@ android {
 
 dependencies {
     implementation(libs.androidx.material3)
+    implementation(libs.androidx.wear.input)
     implementation(libs.play.services.wearable)
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))

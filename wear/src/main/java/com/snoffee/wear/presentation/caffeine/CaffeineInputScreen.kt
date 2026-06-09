@@ -1,20 +1,32 @@
 package com.snoffee.wear.presentation.caffeine
 
+import android.app.Activity
+import android.app.RemoteInput
+import android.content.Intent
+import android.os.Bundle
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -27,10 +39,11 @@ import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
 import androidx.wear.compose.material.Card
 import androidx.wear.compose.material.MaterialTheme
-import androidx.wear.compose.material.Stepper
 import androidx.wear.compose.material.Text
+import androidx.wear.input.RemoteInputIntentHelper
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 @Composable
 fun CaffeineInputScreen(
@@ -46,6 +59,20 @@ fun CaffeineInputScreen(
 
     BackHandler { if (mode == 1) mode = 0 else onBack() }
 
+    var drinkName by remember { mutableStateOf("") }
+    val keyboardLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK && result.data != null) {
+            val results: Bundle = RemoteInput.getResultsFromIntent(result.data!!)
+                ?: return@rememberLauncherForActivityResult
+            val inputCharSequence = results.getCharSequence("extra_drink_name")
+            if (inputCharSequence != null) {
+                val rawInput = inputCharSequence.toString().trim()
+                drinkName = if (rawInput.length > 10) rawInput.take(10) else rawInput
+            }
+        }
+    }
     Box(modifier = modifier
         .fillMaxSize()
         .background(colors.background)) {
@@ -63,7 +90,7 @@ fun CaffeineInputScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(top = 45.dp) // [수정] padding 중첩 방지
+                    .padding(top = 40.dp)
                     .padding(bottom = 10.dp)
                     .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally
@@ -105,37 +132,89 @@ fun CaffeineInputScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 8.dp)
-                    .padding(top = 40.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .padding(horizontal = 14.dp)
+                    .padding(top = 34.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
             ) {
-                Text("${amount.toInt()} mg", style = typography.body1)
-
-                // [수정: Stepper 파라미터 및 아이콘 구현]
-                Stepper(
-                    value = amount,
-                    onValueChange = { amount = it },
-                    valueRange = 0f..500f,
-                    steps = 10,
-                    modifier = Modifier.fillMaxWidth(),
-                    decreaseIcon = { Text("-") },
-                    increaseIcon = { Text("+") }
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(0.8f)
+                        .height(34.dp)
+                        .background(colors.surface, shape = RoundedCornerShape(18.dp))
+                        .clickable {
+                            val remoteInputs = listOf(
+                                RemoteInput.Builder("extra_drink_name")
+                                    .setLabel("음료 이름 입력 (최대 10자)")
+                                    .build()
+                            )
+                            val intent: Intent =
+                                RemoteInputIntentHelper.createActionRemoteInputIntent()
+                            RemoteInputIntentHelper.putRemoteInputsExtra(intent, remoteInputs)
+                            keyboardLauncher.launch(intent)
+                        },
+                    contentAlignment = Alignment.CenterStart
                 ) {
-                    Text("${amount.toInt()} mg")
+                    Text(
+                        text = drinkName.ifEmpty { "음료 이름 입력" },
+                        color = if (drinkName.isEmpty()) colors.onSurface.copy(alpha = 0.5f) else colors.onSurface,
+                        style = typography.caption2,
+                        modifier = Modifier.padding(start = 14.dp)
+                    )
                 }
+                Spacer(modifier = Modifier.height(6.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(0.85f),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // 마이너스 (-) 버튼
+                    Button(
+                        onClick = { if (amount >= 10f) amount -= 10f },
+                        modifier = Modifier
+                            .width(36.dp)
+                            .height(32.dp),
+                        colors = ButtonDefaults.secondaryButtonColors()
+                    ) {
+                        Text("-", style = typography.body1)
+                    }
+
+                    // 현재 카페인 값
+                    Text(
+                        text = "${amount.roundToInt()} mg",
+                        style = typography.body2.copy(color = colors.onBackground),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    // 플러스 (+) 버튼
+                    Button(
+                        onClick = { if (amount <= 490f) amount += 10f },
+                        modifier = Modifier
+                            .width(36.dp)
+                            .height(32.dp),
+                        colors = ButtonDefaults.secondaryButtonColors()
+                    ) {
+                        Text("+", style = typography.body1)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
 
                 Button(
                     onClick = {
                         scope.launch {
-                            delay(200L)
-                            onDrinkSelected("직접입력", amount.toDouble())
+                            delay(100L)
+                            val finalName = drinkName.ifEmpty { "직접입력" }
+                            onDrinkSelected(finalName, amount.toDouble())
                         }
                     },
                     modifier = Modifier
-                        .fillMaxWidth(0.85f)
-                        .height(32.dp)
+                        .fillMaxWidth(0.65f)
+                        .height(30.dp)
                 ) {
-                    Text("추가 완료", style = typography.caption1)
+                    Text("추가하기", style = typography.caption1)
                 }
             }
         }
