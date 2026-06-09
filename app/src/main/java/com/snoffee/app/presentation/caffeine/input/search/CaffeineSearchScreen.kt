@@ -235,7 +235,7 @@ fun CaffeineSearchScreen(
                     Text(
                         text = stringResource(
                             R.string.caffeine_drink_search_result_count,
-                            uiState.searchResults.size
+                            uiState.totalCount
                         ),
                         fontSize = 12.sp,
                         color = colorScheme.onSurfaceVariant

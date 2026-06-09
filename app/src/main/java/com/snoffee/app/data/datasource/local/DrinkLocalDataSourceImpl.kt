@@ -32,4 +32,9 @@ class DrinkLocalDataSourceImpl @Inject constructor(
 //    override suspend fun searchDrinks(query: String): List<DrinkEntity> {
 //        return drinkDao.searchDrinks(query)
 //    }
+
+    // 검색 결과 전체 개수
+    override suspend fun getSearchResultCount(query: String): Int {
+        return drinkDao.getSearchResultCount(query)
+    }
 }
