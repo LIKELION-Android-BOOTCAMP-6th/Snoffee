@@ -1,12 +1,13 @@
 package com.snoffee.app
 
 import android.app.Application
+import com.google.android.gms.wearable.Wearable
 import com.snoffee.app.data.initializer.CaffeineDataInitializer
 import dagger.hilt.android.HiltAndroidApp
-import jakarta.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @HiltAndroidApp
 class SnoffeeApplication : Application() {
@@ -20,5 +21,9 @@ class SnoffeeApplication : Application() {
         CoroutineScope(Dispatchers.IO).launch {
             initializer.initializeIfEmpty()
         }
+
+        // Wear OS 통신 Capability 등록
+        val capabilityClient = Wearable.getCapabilityClient(this)
+        capabilityClient.addLocalCapability("caffeine_app")
     }
 }

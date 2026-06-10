@@ -40,6 +40,7 @@ import com.snoffee.wear.data.WearDataClient
 import com.snoffee.wear.presentation.caffeine.CaffeineInputScreen
 import com.snoffee.wear.presentation.caffeine.CaffeineViewModel
 import com.snoffee.wear.presentation.home.HomeScreen
+import com.snoffee.wear.presentation.home.HomeViewModel
 import com.snoffee.wear.presentation.setting.SettingScreen
 import com.snoffee.wear.presentation.setting.SettingViewModel
 import com.snoffee.wear.presentation.theme.WearSnoffeeTheme
@@ -67,7 +68,7 @@ class WearMainActivity : ComponentActivity() {
 @Composable
 fun MainPagerScreen(
     wearDataClient: WearDataClient,
-    homeViewModel: com.snoffee.wear.presentation.home.HomeViewModel = hiltViewModel(),
+    homeViewModel: HomeViewModel = hiltViewModel(),
     caffeineViewModel: CaffeineViewModel = hiltViewModel(),
     settingViewModel: SettingViewModel = hiltViewModel()
 ) {
@@ -103,17 +104,23 @@ fun MainPagerScreen(
         currentScreenIndex = 1
     }
     val homeUiState by homeViewModel.uiState.collectAsState()
-    val isPhoneConnected by homeViewModel.isPhoneConnected.collectAsState()
+    val isPhoneConnected by wearDataClient.isPhoneConnected.collectAsState()
     val connectionError by wearDataClient.connectionError.collectAsState()
     val recentDrinks by caffeineViewModel.drinkList.collectAsState()
     val drinkListForUI = recentDrinks.map { it.name to it.amount }
     val isEmulatorTestMode = true
 
+    LaunchedEffect(isPhoneConnected) {
+        if (!isPhoneConnected) {
+            android.widget.Toast.makeText(context, "연결이 끊어졌습니다.", android.widget.Toast.LENGTH_LONG)
+                .show()
+        }
+    }
     //전환 모션
     AnimatedContent(
         targetState = currentScreenIndex,
         transitionSpec = {
-            // 화면 인덱스가 커지면 오른쪽에서 왼쪽으로, 작아지면 왼쪽에서 오른쪽으로 슬라이딩
+            // 홈 ->  설정 : 오른쪽에서 왼쪽으로 슬라이드
             if (targetState > initialState) {
                 slideInHorizontally(
                     initialOffsetX = { it },
@@ -124,6 +131,7 @@ fun MainPagerScreen(
                             animationSpec = tween(300)
                         ) + fadeOut()
             } else {
+                // 설정 -> 홈 : 왼쪽에서 오른쪽으로 슬라이드
                 slideInHorizontally(
                     initialOffsetX = { -it },
                     animationSpec = tween(300)
@@ -144,12 +152,10 @@ fun MainPagerScreen(
                 .pointerInput(Unit) {
                     detectHorizontalDragGestures { change, dragAmount ->
                         change.consume()
-                        if (dragAmount < -50f) { // 왼쪽으로 드래그
+                        if (dragAmount < -50f) {
                             if (currentScreenIndex == 1) currentScreenIndex = 2
-                            else if (currentScreenIndex == 0) currentScreenIndex = 1
-                        } else if (dragAmount > 50f) { // 오른쪽으로 드래그
-                            if (currentScreenIndex == 1) currentScreenIndex = 0
-                            else if (currentScreenIndex == 2) currentScreenIndex = 1
+                        } else if (dragAmount > 50f) {
+                            if (currentScreenIndex == 2) currentScreenIndex = 1
                         }
                     }
                 },
@@ -158,13 +164,13 @@ fun MainPagerScreen(
             when (targetIndex) {
                 0 -> CaffeineInputScreen(
                     drinkList = drinkListForUI,
-                    onDrinkSelected = { name, amount ->
-                        caffeineViewModel.addCaffeineRecord(name, amount)
+                    isPhoneConnected = isPhoneConnected,
+                    onDrinkSelected = { name, amount, consumedAt ->
+                        caffeineViewModel.addCaffeineRecord(name, amount, consumedAt)
                         currentScreenIndex = 1
                     },
                     onBack = { currentScreenIndex = 1 }
                 )
-
                 1 -> {
                     HomeScreen(
                         uiState = homeUiState,

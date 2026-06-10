@@ -65,7 +65,7 @@ class CaffeineMainViewModel @Inject constructor(
             .takeLast(4)                // 최근 4개
             .map { Pair(it.drinkName, it.intakeCaffeine) }
 
-        phoneDataClient.sendRecentDrinksToWatch(recentDrinks)
+        //phoneDataClient.sendRecentDrinksToWatch(recentDrinks)
     }
 
     init {
