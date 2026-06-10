@@ -3,6 +3,8 @@ package com.snoffee.wear.presentation.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.snoffee.wear.data.WearDataClient
+import com.snoffee.wear.domain.model.CaffeineRecord
+import com.snoffee.wear.domain.usecase.CalculateResidualUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,7 +16,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    private val wearDataClient: WearDataClient
+    private val wearDataClient: WearDataClient,
+    private val calculateResidualUseCase: CalculateResidualUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(WatchHomeUiState())
@@ -49,6 +52,25 @@ class HomeViewModel @Inject constructor(
                                 ?: currentState.metabolismTime,
                             concentrationLevel = (dataMap["concentrationLevel"] as? String)
                                 ?: currentState.concentrationLevel,
+                            isLoading = false
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    private fun observeConnectivity() {
+        viewModelScope.launch {
+            wearDataClient.isPhoneConnected.collectLatest { isConnected ->
+                if (!isConnected) {
+                    val lastRecords = listOf<CaffeineRecord>()
+                    val analysis =
+                        calculateResidualUseCase(lastRecords, 5.0, System.currentTimeMillis())
+
+                    _uiState.update {
+                        it.copy(
+                            residualCaffeineMg = analysis.residualAmount,
                             isLoading = false
                         )
                     }

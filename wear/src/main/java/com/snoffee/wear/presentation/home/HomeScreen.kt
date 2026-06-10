@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
 import androidx.wear.compose.material.CircularProgressIndicator
@@ -71,8 +72,21 @@ fun HomeScreen(
             .background(colors.background),
         contentAlignment = Alignment.Center
     ) {
+        if (!isPhoneConnected) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .fillMaxWidth()
+                    .background(Color.Red.copy(alpha = 0.8f))
+                    .padding(vertical = 4.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("⚠️ 단독 모드 실행 중", color = Color.White, fontSize = 11.sp)
+            }
+        }
+
         // 원형 프로그레스 인디케이터
-        if (!uiState.isLoading && isPhoneConnected && !connectionError) {
+        if (!uiState.isLoading) {
             CircularProgressIndicator(
                 progress = progress,
                 modifier = Modifier
@@ -88,21 +102,14 @@ fun HomeScreen(
                 CircularProgressIndicator(indicatorColor = colors.primary)
             }
 
-            connectionError || !isPhoneConnected -> {
+            connectionError -> {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
                     modifier = Modifier.padding(16.dp)
                 ) {
-                    Text(
-                        "⚠️ 폰 연결 확인 필요",
-                        style = typography.caption1.copy(color = colors.onBackground),
-                        textAlign = TextAlign.Center
-                    )
+                    Text("⚠️ 연결 실패", style = typography.caption1, textAlign = TextAlign.Center)
                     Spacer(modifier = Modifier.height(8.dp))
-                    Button(onClick = onRetryClick) {
-                        Text(text = "재시도", color = colors.onPrimary)
-                    }
+                    Button(onClick = onRetryClick) { Text("재시도") }
                 }
             }
 

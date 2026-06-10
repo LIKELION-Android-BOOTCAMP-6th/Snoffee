@@ -42,7 +42,7 @@ class WearDataClient @Inject constructor(
     private val dataClient = Wearable.getDataClient(context)
 
     //실시간 핸드폰 연결 상태 흐름
-    private val _isPhoneConnected = MutableStateFlow(false)
+    private val _isPhoneConnected = MutableStateFlow(true)
     val isPhoneConnected: StateFlow<Boolean> = _isPhoneConnected.asStateFlow()
 
     //에러 팝업 제어용 메시지 흐름
@@ -72,7 +72,6 @@ class WearDataClient @Inject constructor(
                     .await()
                 updateConnectionState(capabilityInfo)
             } catch (e: Exception) {
-                logger.severe("⚠️ Capability 핸드셰이크 실패 (블루투스 단절 예외): ${e.message}")
                 handleDisconnect()
             }
         }
@@ -107,13 +106,8 @@ class WearDataClient @Inject constructor(
         _isPhoneConnected.value = false
         _connectionError.value = "핸드폰 유실 또는 연결이 끊어졌습니다."
         _isFallbackActive.value = true
-        logger.warning("⚠️ [Edge Case] 기기 단절 감지. Fallback 모바일 단독 알림 제어 플래그를 가동합니다.")
+        scope.launch { _receivedCaffeineData.emit(emptyMap()) }
     }
-
-
-    // 최근 음료 리스트 상태
-    private val _recentDrinks = MutableStateFlow<List<Pair<String, Double>>>(emptyList())
-    val recentDrinks: StateFlow<List<Pair<String, Double>>> = _recentDrinks.asStateFlow()
 
     //데이터 레이어 패킷 변동 리스너 수신 파싱 로그 기록
     override fun onDataChanged(dataEvents: DataEventBuffer) {
@@ -123,20 +117,6 @@ class WearDataClient @Inject constructor(
                 val dataMap = DataMapItem.fromDataItem(event.dataItem).dataMap
 
                 try {
-                    // 리스트 수신 로직 (예외 처리: getStringArrayList가 null일 경우 대비)
-                    if (uri == PATH_RECENT_DRINKS) {
-                        val drinkStrings = dataMap.getStringArrayList("recentDrinksList")
-                        val parsedList = drinkStrings?.mapNotNull { item ->
-                            try {
-                                val parts = item.split("|")
-                                if (parts.size == 2) Pair(parts[0], parts[1].toDouble()) else null
-                            } catch (e: Exception) {
-                                null // 리스트 항목 파싱 실패 시 무시
-                            }
-                        } ?: emptyList()
-                        scope.launch { _recentDrinks.emit(parsedList) }
-                    }
-
                     // 카페인 잔류 상태 수신 로직 (예외 처리: 데이터 누락/타입 불일치 대비)
                     if (uri == PATH_RESIDUAL_STATE) {
                         // mapOf 대신 안전한 Map 구조 생성
@@ -155,6 +135,7 @@ class WearDataClient @Inject constructor(
         }
     }
     suspend fun sendCustomCaffeineRecord(name: String, amount: Int, consumedAt: Long): Boolean {
+        if (!_isPhoneConnected.value) return false
         return try {
             val request = PutDataMapRequest.create("/caffeine/add_record").apply {
                 dataMap.putString("name", name)
@@ -164,7 +145,6 @@ class WearDataClient @Inject constructor(
             }.asPutDataRequest().setUrgent()
 
             com.google.android.gms.tasks.Tasks.await(dataClient.putDataItem(request))
-            logger.info("✅ 폰 DB 저장용 패킷 전송 성공: $name ($amount mg)")
             true
         } catch (e: Exception) {
             logger.severe("❌ 패킷 전송 실패: ${e.message}")

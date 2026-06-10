@@ -32,6 +32,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -49,9 +50,11 @@ import kotlin.math.roundToInt
 fun CaffeineInputScreen(
     modifier: Modifier = Modifier,
     drinkList: List<Pair<String, Double>>,
+    isPhoneConnected: Boolean,
     onDrinkSelected: (String, Double, Long) -> Unit,
     onBack: () -> Unit
 ) {
+    val context = LocalContext.current
     var mode by remember { mutableIntStateOf(0) }
 
     var amount by remember { mutableFloatStateOf(100f) }
@@ -291,12 +294,20 @@ fun CaffeineInputScreen(
                         // 최종 저장 버튼
                         Button(
                             onClick = {
-                                scope.launch {
-                                    delay(100L)
-                                    val finalName = drinkName.ifEmpty { "직접입력" }
-                                    // 최종 저장 버튼을 누른 바로 '현재 시간' 타임스탬프 발행
-                                    val consumedAt = System.currentTimeMillis()
-                                    onDrinkSelected(finalName, amount.toDouble(), consumedAt)
+                                if (!isPhoneConnected) {
+                                    android.widget.Toast.makeText(
+                                        context,
+                                        "연결이 되어 있지 않습니다. 연결 후 다시 시도해주세요.",
+                                        android.widget.Toast.LENGTH_LONG
+                                    ).show()
+                                    onBack()
+                                } else {
+                                    scope.launch {
+                                        delay(100L)
+                                        val finalName = drinkName.ifEmpty { "직접입력" }
+                                        val consumedAt = System.currentTimeMillis()
+                                        onDrinkSelected(finalName, amount.toDouble(), consumedAt)
+                                    }
                                 }
                             },
                             modifier = Modifier
