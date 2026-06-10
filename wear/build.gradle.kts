@@ -1,7 +1,6 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
-
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
 }
@@ -16,24 +15,19 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
-
     }
 
-    buildTypes {
-        release {
-            isMinifyEnabled = false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-        }
-    }
-    buildFeatures {
-        compose = true
-    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+    }
+}
+
+// JVM 시그니처 충돌을 방지하기 위한 컴파일러 옵션
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
+        freeCompilerArgs.add("-Xno-param-names")
     }
 }
 
@@ -44,21 +38,12 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
 
-    // WorkManager
-    val work_version = "2.9.0"
-    implementation("androidx.work:work-runtime-ktx:$work_version")
-
-    // Hilt - WorkManager 연동 라이브러리
-    implementation("androidx.hilt:hilt-work:1.2.0")
-    ksp("androidx.hilt:hilt-compiler:1.2.0")
-    
-    //Hilt 의존성
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     implementation(libs.hilt.navigation.compose)
 
     // Lifecycle & ViewModel
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.10.0")
 
     //워치 코루틴
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.11.0")

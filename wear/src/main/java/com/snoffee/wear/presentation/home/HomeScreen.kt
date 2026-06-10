@@ -34,7 +34,8 @@ data class WatchHomeUiState(
     val riskLevel: CaffeineRiskLevel = CaffeineRiskLevel.SAFE,
     val metabolismTime: String = "--:--",
     val concentrationLevel: String = "-",
-    val isLoading: Boolean = false
+    val isLoading: Boolean = false,
+    val isDataEmpty: Boolean = true
 )
 
 @Composable

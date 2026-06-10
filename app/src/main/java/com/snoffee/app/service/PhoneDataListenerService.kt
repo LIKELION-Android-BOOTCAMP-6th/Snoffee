@@ -7,6 +7,8 @@ import com.google.android.gms.wearable.MessageEvent
 import com.google.android.gms.wearable.WearableListenerService
 import com.snoffee.app.data.wear.PhoneDataClient
 import com.snoffee.app.domain.model.CaffeineRecord
+import com.snoffee.app.domain.model.CaffeineSensitivity
+import com.snoffee.app.domain.model.UserProfile
 import com.snoffee.app.domain.repository.CaffeineRepository
 import com.snoffee.app.domain.repository.UserProfileRepository
 import dagger.hilt.android.AndroidEntryPoint
@@ -76,12 +78,9 @@ class PhoneDataListenerService : WearableListenerService() {
     }
 
     private suspend fun syncWithWatch(currentTime: Long, recentRecords: List<CaffeineRecord>) {
-        val userProfile = userProfileRepository.getUserProfile()
-        val halfLifeHours = when (userProfile?.sensitivity?.name) {
-            "HIGH" -> 6.0
-            "LOW" -> 4.0
-            else -> 5.0
-        }
+        val profile = userProfileRepository.getUserProfile()
+            ?: UserProfile(1, 70.0, 175.0, 400.0, false, 0L, 0L, CaffeineSensitivity.NORMAL, 0L)
+        val halfLifeHours = profile.sensitivity.halfLifeHours
         val halfLifeMillis = halfLifeHours * 60 * 60 * 1000L
 
         var totalResidualMg = 0.0
@@ -112,7 +111,9 @@ class PhoneDataListenerService : WearableListenerService() {
             residualMg = totalResidualMg,
             riskLevel = riskLevel,
             metabolismTime = metabolismTimeStr,
-            concentrationLevel = if (totalResidualMg > 150.0) "높음" else "보통"
+            concentrationLevel = if (totalResidualMg > 150.0) "높음" else "보통",
+            sensitivity = profile.sensitivity.name,
+            targetSleepTime = profile.userSleepTime
         )
     }
 }

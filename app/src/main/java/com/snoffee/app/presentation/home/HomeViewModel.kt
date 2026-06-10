@@ -3,6 +3,9 @@ package com.snoffee.app.presentation.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.snoffee.app.data.wear.PhoneDataClient
+import com.snoffee.app.domain.model.CaffeineSensitivity
+import com.snoffee.app.domain.model.UserProfile
+import com.snoffee.app.domain.repository.UserProfileRepository
 import com.snoffee.app.domain.usecase.caffeine.CalculateResidualUseCase
 import com.snoffee.app.domain.usecase.caffeine.GetTodayCaffeineUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -23,7 +26,8 @@ import javax.inject.Inject
 class HomeViewModel @Inject constructor(
     private val calculateResidualUseCase: CalculateResidualUseCase,
     private val getTodayCaffeineUseCase: GetTodayCaffeineUseCase,
-    private val phoneDataClient: PhoneDataClient
+    private val phoneDataClient: PhoneDataClient,
+    private val userProfileRepository: UserProfileRepository
 ) : ViewModel() {
     private val _uiState =
         MutableStateFlow(HomeUiState(isLoading = true))
@@ -77,8 +81,11 @@ class HomeViewModel @Inject constructor(
                 .sortedByDescending { it.consumedAt }
                 .take(5)
 
-            Pair(residualAnalysis, recentFiveLogs)
-        }.onSuccess { (analysis, recentLogs) ->
+            val profile = userProfileRepository.getUserProfile()
+                ?: UserProfile(1, 70.0, 175.0, 400.0, false, 0L, 0L, CaffeineSensitivity.NORMAL, 0L)
+
+            Triple(residualAnalysis, recentFiveLogs, profile)
+        }.onSuccess { (analysis, recentLogs, profile) ->
             val residualDouble = analysis.residualAmount
             val targetMinCaffeine = 10.0
 
@@ -103,7 +110,9 @@ class HomeViewModel @Inject constructor(
                 residualMg = residualDouble,
                 riskLevel = currentRiskLevel.name,
                 metabolismTime = formattedTime,
-                concentrationLevel = currentConcentrationLevel
+                concentrationLevel = currentConcentrationLevel,
+                sensitivity = profile.sensitivity.name,
+                targetSleepTime = profile.userSleepTime
             )
 
             // 폰 실시간 UI 업데이트 트리거 가동

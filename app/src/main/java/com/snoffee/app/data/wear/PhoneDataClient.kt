@@ -28,7 +28,9 @@ class PhoneDataClient(context: Context) {
         residualMg: Double,
         riskLevel: String,
         metabolismTime: String,
-        concentrationLevel: String
+        concentrationLevel: String,
+        sensitivity: String,
+        targetSleepTime: Long,
     ) {
         scope.launch {
             try {
@@ -37,6 +39,8 @@ class PhoneDataClient(context: Context) {
                     dataMap.putString("riskLevel", riskLevel)
                     dataMap.putString("metabolismTime", metabolismTime)
                     dataMap.putString("concentrationLevel", concentrationLevel)
+                    dataMap.putString("sensitivity", sensitivity)
+                    dataMap.putLong("targetSleepTime", targetSleepTime)
                     // 동일 데이터 구조인 경우에도 유실 없이 수신을 강제하기 위해 타임스탬프 추가
                     dataMap.putLong("timestamp", System.currentTimeMillis())
                 }

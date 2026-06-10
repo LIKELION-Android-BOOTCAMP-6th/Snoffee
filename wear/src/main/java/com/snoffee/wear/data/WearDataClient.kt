@@ -25,7 +25,7 @@ import java.util.logging.Logger
 
 @Singleton
 class WearDataClient @Inject constructor(
-    @param:ApplicationContext private val context: Context
+    @param:ApplicationContext private val context: Context,
 ) : DataClient.OnDataChangedListener {
 
     private val logger = Logger.getLogger("WearDataClient")
@@ -120,11 +120,15 @@ class WearDataClient @Inject constructor(
                     // 카페인 잔류 상태 수신 로직 (예외 처리: 데이터 누락/타입 불일치 대비)
                     if (uri == PATH_RESIDUAL_STATE) {
                         // mapOf 대신 안전한 Map 구조 생성
+                        val sensitivity = dataMap.getString("sensitivity") ?: "NORMAL"
+                        val targetSleepTime = dataMap.getLong("targetSleepTime", 0L)
+
                         val residualMap = mapOf(
-                            "residualMg" to (dataMap.getDouble("residualCaffeineMg", 0.0)),
+                            "residualMg" to dataMap.getDouble("residualCaffeineMg", 0.0),
                             "riskLevel" to (dataMap.getString("riskLevel") ?: "SAFE"),
                             "metabolismTime" to (dataMap.getString("metabolismTime") ?: "--:--"),
-                            "concentrationLevel" to (dataMap.getString("concentrationLevel") ?: "-")
+                            "sensitivity" to sensitivity,
+                            "targetSleepTime" to targetSleepTime
                         )
                         scope.launch { _receivedCaffeineData.emit(residualMap) }
                     }

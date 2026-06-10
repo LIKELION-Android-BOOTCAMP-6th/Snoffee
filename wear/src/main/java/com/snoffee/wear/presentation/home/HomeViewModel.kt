@@ -1,85 +1,127 @@
 package com.snoffee.wear.presentation.home
 
+import android.content.Context
+import android.util.Log
+import androidx.core.content.edit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.snoffee.wear.data.WearDataClient
 import com.snoffee.wear.domain.model.CaffeineRecord
 import com.snoffee.wear.domain.usecase.CalculateResidualUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
+    @param:ApplicationContext private val context: Context,
     private val wearDataClient: WearDataClient,
-    private val calculateResidualUseCase: CalculateResidualUseCase
+    private val calculateResidualUseCase: CalculateResidualUseCase,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(WatchHomeUiState())
     val uiState: StateFlow<WatchHomeUiState> = _uiState.asStateFlow()
 
-    val isPhoneConnected = wearDataClient.isPhoneConnected
+    private val prefs = context.getSharedPreferences("caffeine_prefs", Context.MODE_PRIVATE)
+
+    private var lastSensitivity: String
+        get() = prefs.getString("user_sensitivity", "NORMAL") ?: "NORMAL"
+        set(value) {
+            // KTX 확장 함수 edit { } 사용
+            prefs.edit { putString("user_sensitivity", value) }
+        }
+
+    // 로컬 캐시
+    private val localRecordCache = mutableListOf<CaffeineRecord>()
+
+    // 로컬 계산 루프 관리
+    private var localCalculationJob: Job? = null
 
     init {
-        observePhoneData()
-        viewModelScope.launch {
-            // 연결 확인 후 요청
-            wearDataClient.requestSyncFromPhone()
-        }
+        observeDataFlow()
     }
 
-    private fun observePhoneData() {
-        viewModelScope.launch {
-            wearDataClient.receivedCaffeineData.collectLatest { dataMap ->
-                if (dataMap.isNotEmpty()) {
-                    val rawCaffeine = dataMap["residualMg"]
-                    val caffeineMg = (rawCaffeine as? Number)?.toDouble()
-
-                    _uiState.update { currentState ->
-                        currentState.copy(
-                            residualCaffeineMg = caffeineMg ?: currentState.residualCaffeineMg,
-                            riskLevel = (dataMap["riskLevel"] as? String)?.let {
-                                runCatching { CaffeineRiskLevel.valueOf(it) }.getOrDefault(
-                                    currentState.riskLevel
-                                )
-                            } ?: currentState.riskLevel,
-                            metabolismTime = (dataMap["metabolismTime"] as? String)
-                                ?: currentState.metabolismTime,
-                            concentrationLevel = (dataMap["concentrationLevel"] as? String)
-                                ?: currentState.concentrationLevel,
-                            isLoading = false
-                        )
-                    }
-                }
-            }
-        }
-    }
-
-    private fun observeConnectivity() {
+    private fun observeDataFlow() {
         viewModelScope.launch {
             wearDataClient.isPhoneConnected.collectLatest { isConnected ->
-                if (!isConnected) {
-                    val lastRecords = listOf<CaffeineRecord>()
-                    val analysis =
-                        calculateResidualUseCase(lastRecords, 5.0, System.currentTimeMillis())
-
-                    _uiState.update {
-                        it.copy(
-                            residualCaffeineMg = analysis.residualAmount,
-                            isLoading = false
-                        )
-                    }
+                if (isConnected) {
+                    localCalculationJob?.cancel() // 로컬 루프 정지
+                    observePhoneData()
+                } else {
+                    startLocalCalculationLoop()
                 }
             }
         }
     }
 
-    fun retryConnection() {
-        wearDataClient.checkPhoneCapability()
+    private suspend fun observePhoneData() {
+        wearDataClient.receivedCaffeineData.collectLatest { dataMap ->
+            if (dataMap.isNotEmpty()) {
+                // 민감도 업데이트
+                lastSensitivity = dataMap["sensitivity"] as? String ?: "NORMAL"
+
+                val caffeineMg = (dataMap["residualMg"] as? Number)?.toDouble() ?: 0.0
+                _uiState.update {
+                    it.copy(
+                        residualCaffeineMg = caffeineMg,
+                        riskLevel = runCatching { CaffeineRiskLevel.valueOf(dataMap["riskLevel"] as String) }.getOrDefault(
+                            CaffeineRiskLevel.SAFE
+                        ),
+                        metabolismTime = dataMap["metabolismTime"] as? String ?: "--:--",
+                        isLoading = false,
+                        isDataEmpty = false
+                    )
+                }
+            }
+        }
+    }
+
+    private fun startLocalCalculationLoop() {
+        localCalculationJob = viewModelScope.launch {
+            while (true) {
+                val analysis = calculateResidualUseCase(
+                    records = localRecordCache,
+                    halfLifeHours = lastSensitivity.toHalfLife(),
+                    now = System.currentTimeMillis()
+                )
+
+                _uiState.update {
+                    it.copy(
+                        residualCaffeineMg = analysis.residualAmount,
+                        metabolismTime = formatTime(analysis.cutoffTime),
+                        isLoading = false
+                    )
+                }
+                delay(60000) // 1분마다 재계산
+            }
+        }
+    }
+
+    fun addRecord(name: String, amount: Double) {
+        val newRecord = CaffeineRecord(name, amount, System.currentTimeMillis())
+        localRecordCache.add(newRecord)
+
+        viewModelScope.launch {
+            val success =
+                wearDataClient.sendCustomCaffeineRecord(name, amount.toInt(), newRecord.time)
+            if (!success) {
+                Log.w("HomeViewModel", "폰 연결 안 됨: 로컬 캐시에만 저장됨")
+            }
+        }
+    }
+
+    private fun formatTime(timeMillis: Long): String {
+        return SimpleDateFormat("HH:mm", Locale.KOREA).format(Date(timeMillis))
     }
 }
