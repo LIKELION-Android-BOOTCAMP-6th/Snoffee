@@ -61,6 +61,8 @@ dependencies {
     // health connect
     implementation("androidx.health.connect:connect-client:1.1.0")
     implementation(libs.androidx.compose.material.icons.extended)
+    // Gemini
+    implementation("com.google.firebase:firebase-ai")
     // hilt
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)

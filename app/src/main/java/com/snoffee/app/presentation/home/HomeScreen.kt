@@ -13,10 +13,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -68,6 +71,16 @@ fun HomeScreen(
                     onAddCaffeineClick = onAddCaffeineClick
                 )
             }
+        }
+
+        item {
+            HomeInsightCard(
+                insight = uiState.homeInsight,
+                isLoading = uiState.isInsightLoading,
+                onRefreshClick = {
+                    viewModel.loadHomeInsight(forceRefresh = true)
+                }
+            )
         }
 
         item {
@@ -253,5 +266,85 @@ private fun InfoColumn(label: String, value: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(label, style = MaterialTheme.typography.labelSmall, color = SnoffeeTextHint)
         Text(value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = SnoffeeTextMain)
+    }
+}
+
+@Composable
+private fun HomeInsightCard(
+    insight: String,
+    isLoading: Boolean,
+    onRefreshClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = SnoffeeSurface
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(
+                horizontal = 20.dp,
+                vertical = 8.dp
+            )
+        )
+        {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+
+                Text(
+                    text = "Snoffee AI 헬스 코치",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = SnoffeeTextMain
+                )
+
+                TextButton(
+                    onClick = onRefreshClick,
+                    enabled = !isLoading
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Refresh,
+                        contentDescription = "새로고침",
+                        tint = SnoffeePrimary
+                    )
+                }
+            }
+
+            Spacer(
+                modifier = Modifier.height(4.dp)
+            )
+
+            when {
+                isLoading -> {
+                    CircularProgressIndicator(
+                        color = SnoffeePrimary
+                    )
+                }
+
+                insight.isNotBlank() -> {
+                    Text(
+                        text = insight,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = SnoffeeTextMain
+                    )
+                }
+
+                else -> {
+                    Text(
+                        text = "충분한 데이터가 쌓이면 AI 분석을 제공해드릴게요.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = SnoffeeTextMuted
+                    )
+                }
+            }
+            Spacer(
+                modifier = Modifier.height(4.dp)
+
+            )
+        }
     }
 }
