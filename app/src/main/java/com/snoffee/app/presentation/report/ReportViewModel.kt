@@ -2,10 +2,18 @@ package com.snoffee.app.presentation.report
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.snoffee.app.domain.model.CaffeineRecord
+import com.snoffee.app.domain.model.CaffeineSensitivity
 import com.snoffee.app.domain.model.SleepData
 import com.snoffee.app.domain.repository.SleepRepository
+import com.snoffee.app.domain.repository.UserProfileRepository
+import com.snoffee.app.domain.usecase.gemini.GetMonthlyInsightUseCase
+import com.snoffee.app.domain.usecase.gemini.GetPeriodInsightUseCase
+import com.snoffee.app.domain.usecase.gemini.GetTrendInsightUseCase
+import com.snoffee.app.domain.usecase.gemini.GetWeeklyInsightUseCase
 import com.snoffee.app.domain.usecase.report.GetReportUseCase
 import com.snoffee.app.domain.usecase.sleep.SaveSleepDataUseCase
+import com.snoffee.app.domain.util.CaffeineCalculator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,7 +32,13 @@ import javax.inject.Inject
 class ReportViewModel @Inject constructor(
     private val getReportUseCase: GetReportUseCase,
     private val saveSleepRecordUseCase: SaveSleepDataUseCase,
-    private val sleepRepository: SleepRepository
+    private val sleepRepository: SleepRepository,
+    private val getWeeklyInsightUseCase: GetWeeklyInsightUseCase,
+    private val getTrendInsightUseCase: GetTrendInsightUseCase,
+    private val getMonthlyInsightUseCase: GetMonthlyInsightUseCase,
+    private val getPeriodInsightUseCase: GetPeriodInsightUseCase,
+    private val userProfileRepository: UserProfileRepository,
+    private val caffeineCalculator: CaffeineCalculator
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ReportUiState())
@@ -37,7 +51,10 @@ class ReportViewModel @Inject constructor(
     val isSaveSuccess = _isSaveSuccess.asStateFlow()
 
     private var pendingRecord: SleepData? = null
-
+    private var cachedLateCaffeineCount: Int = 0
+    private var cachedBedtimeResidualCaffeineMg: Int = 0
+    private var cachedMonthlySleepTrend: Map<String, Double> = emptyMap()
+    private var hasLoadedReportInsights = false
 
     init {
         loadReportData()
@@ -54,6 +71,7 @@ class ReportViewModel @Inject constructor(
             if (result.isSuccess) {
                 pendingRecord = null
                 _isSaveSuccess.value = true
+                hasLoadedReportInsights = false
                 loadReportData()
             } else {
                 _isSavingError.value = true
@@ -79,9 +97,17 @@ class ReportViewModel @Inject constructor(
         _uiState.update { it.copy(startDate = start, endDate = end) }
         calculatePeriodData(start, end)
     }
+
     fun loadReportData() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, isError = false, errorMessage = null) }
+            _uiState.update {
+                it.copy(
+                    isLoading = true,
+                    isError = false,
+                    errorMessage = null,
+                    isPeriodInsightLoading = true
+                )
+            }
             val zoneId = ZoneId.systemDefault()
             val nowMillis = System.currentTimeMillis()
 
@@ -175,6 +201,21 @@ class ReportViewModel @Inject constructor(
                     )
                 } else "0h 00m"
 
+                val beforeSleepHours = 6
+
+                val lateCaffeineCount =
+                    weeklyResult.caffeineRecords.count { caffeine ->
+                        weeklyResult.sleepData.any { sleep ->
+                            caffeine.consumedAt in
+                                    (sleep.sleepStart - beforeSleepHours * 60L * 60L * 1000L)..sleep.sleepStart
+                        }
+                    }
+
+                val bedtimeResidualCaffeineMg =
+                    calculateBedtimeResidualCaffeineMg(
+                        caffeineRecords = weeklyResult.caffeineRecords,
+                        sleepData = weeklyResult.sleepData
+                    )
                 //월간 데이터
                 val monthlyAvgCaffeine = if (monthlyResult.caffeineRecords.isNotEmpty()) {
                     (monthlyResult.caffeineRecords.sumOf { it.intakeCaffeine } / 30).toInt()
@@ -220,6 +261,27 @@ class ReportViewModel @Inject constructor(
                     )
                 } else "0h 00m"
 
+                val monthlySleepTrend =
+                    trendResult.sleepData
+                        .groupBy { sleep ->
+                            Instant.ofEpochMilli(sleep.sleepEnd)
+                                .atZone(zoneId)
+                                .monthValue
+                        }
+                        .mapValues { (_, records) ->
+                            val totalHours =
+                                records.sumOf { sleep ->
+                                    (sleep.sleepEnd - sleep.sleepStart) / (1000.0 * 60.0 * 60.0)
+                                }
+
+                            totalHours / records.size
+                        }
+                        .mapKeys { (month, _) ->
+                            "${month}월"
+                        }
+                cachedLateCaffeineCount = lateCaffeineCount
+                cachedBedtimeResidualCaffeineMg = bedtimeResidualCaffeineMg
+                cachedMonthlySleepTrend = monthlySleepTrend
                 val monthlyGroups = trendResult.sleepData.groupBy {
                     java.time.YearMonth.from(
                         Instant.ofEpochMilli(it.date).atZone(zoneId).toLocalDate()
@@ -308,6 +370,13 @@ class ReportViewModel @Inject constructor(
                         weeklyAvgSleepTime = weeklyAvgSleepStr,
                         weeklyCaffeineChartData = weeklyResult.caffeineChartData,
                         weeklySleepChartData = weeklyResult.sleepChartData,
+                        weeklyInsight = _uiState.value.weeklyInsight,
+                        monthlyInsight = _uiState.value.monthlyInsight,
+                        trendInsight = _uiState.value.trendInsight,
+                        isWeeklyInsightLoading = !hasLoadedReportInsights,
+                        isMonthlyInsightLoading = !hasLoadedReportInsights,
+                        isTrendInsightLoading = !hasLoadedReportInsights,
+                        isPeriodInsightLoading = !hasLoadedReportInsights,
                         monthlyCaffeineTrend = trendResult.monthlyCaffeineChartData,
                         monthlyAvgCaffeine = monthlyAvgCaffeine,
                         monthlyAvgSleepTime = monthlyAvgSleepStr,
@@ -328,6 +397,23 @@ class ReportViewModel @Inject constructor(
                         worstMonthScore = if (minScore != 999) minScore else 0
                     )
                 }
+                if (!hasLoadedReportInsights) {
+                    hasLoadedReportInsights = true
+
+                    loadReportInsights(
+                        weeklyAvgSleepStr = weeklyAvgSleepStr,
+                        lateCaffeineCount = lateCaffeineCount,
+                        bedtimeResidualCaffeineMg = bedtimeResidualCaffeineMg,
+                        monthlyAvgCaffeine = monthlyAvgCaffeine,
+                        monthlyAvgSleepStr = monthlyAvgSleepStr,
+                        highLowSleepCompare = highLowSleepCompare,
+                        monthlyCaffeineTrend = trendResult.monthlyCaffeineChartData,
+                        monthlySleepTrend = monthlySleepTrend,
+                        totalAvgSleepStr = totalAvgSleepStr
+                    )
+
+                    refreshPeriodInsight()
+                }
             } catch (e: Exception) {
                 val errorMsg = when (e) {
                     is java.lang.IllegalStateException -> "삼성 헬스 연동에 실패했습니다. 권한 설정을 확인해 주세요."
@@ -337,6 +423,10 @@ class ReportViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         isLoading = false,
+                        isWeeklyInsightLoading = false,
+                        isMonthlyInsightLoading = false,
+                        isTrendInsightLoading = false,
+                        isPeriodInsightLoading = false,
                         isError = true,
                         errorMessage = errorMsg
                     )
@@ -416,6 +506,11 @@ class ReportViewModel @Inject constructor(
     }
 
     private fun calculatePeriodData(start: LocalDate, end: LocalDate) {
+        _uiState.update {
+            it.copy(
+                isPeriodInsightLoading = true
+            )
+        }
         viewModelScope.launch {
             val zoneId = ZoneId.systemDefault()
             val endMillis = end.atTime(23, 59, 59).atZone(zoneId).toInstant().toEpochMilli()
@@ -455,6 +550,13 @@ class ReportViewModel @Inject constructor(
                 Duration.ofMillis(avgSleepMillis).toHours(),
                 Duration.ofMillis(avgSleepMillis).toMinutes() % 60
             )
+            val periodInsight =
+                getPeriodInsightUseCase(
+                    periodTotalCaffeine = totalCaffeine,
+                    periodAvgCaffeine = avgCaffeine,
+                    periodTotalSleepTime = totalSleepStr,
+                    periodAvgSleepTime = avgSleepStr
+                )
 
             _uiState.update {
                 it.copy(
@@ -462,12 +564,182 @@ class ReportViewModel @Inject constructor(
                     periodAvgCaffeine = avgCaffeine,
                     periodTotalSleepTime = totalSleepStr,
                     periodAvgSleepTime = avgSleepStr,
-                    periodCaffeineRecords = filteredCaffeine
+                    periodInsight = periodInsight,
+                    periodCaffeineRecords = filteredCaffeine,
+                    isPeriodInsightLoading = false
                 )
             }
         }
     }
-    fun onTabChanged() {
-        _uiState.update { it.copy(isLoading = true) }
+
+    private fun loadReportInsights(
+        weeklyAvgSleepStr: String,
+        lateCaffeineCount: Int,
+        bedtimeResidualCaffeineMg: Int,
+        monthlyAvgCaffeine: Int,
+        monthlyAvgSleepStr: String,
+        highLowSleepCompare: Pair<String, String>,
+        monthlyCaffeineTrend: Map<String, Double>,
+        monthlySleepTrend: Map<String, Double>,
+        totalAvgSleepStr: String
+    ) {
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(
+                    isWeeklyInsightLoading = true,
+                    isMonthlyInsightLoading = true,
+                    isTrendInsightLoading = true
+                )
+            }
+
+            val weeklyDeferred = async {
+                getWeeklyInsightUseCase(
+                    averageSleepTime = weeklyAvgSleepStr,
+                    lateCaffeineCount = lateCaffeineCount,
+                    bedtimeResidualCaffeineMg = bedtimeResidualCaffeineMg
+                )
+            }
+
+            val monthlyDeferred = async {
+                getMonthlyInsightUseCase(
+                    monthlyAvgCaffeine = monthlyAvgCaffeine,
+                    monthlyAvgSleepTime = monthlyAvgSleepStr,
+                    highCaffeineDaySleepTime = highLowSleepCompare.first,
+                    lowCaffeineDaySleepTime = highLowSleepCompare.second
+                )
+            }
+
+            val trendDeferred = async {
+                getTrendInsightUseCase(
+                    monthlyCaffeineTrend = monthlyCaffeineTrend,
+                    monthlySleepTrend = monthlySleepTrend,
+                    totalAvgSleepTime = totalAvgSleepStr
+                )
+            }
+
+            _uiState.update {
+                it.copy(
+                    weeklyInsight = weeklyDeferred.await(),
+                    monthlyInsight = monthlyDeferred.await(),
+                    trendInsight = trendDeferred.await(),
+                    isWeeklyInsightLoading = false,
+                    isMonthlyInsightLoading = false,
+                    isTrendInsightLoading = false
+                )
+            }
+        }
+    }
+
+    private suspend fun calculateBedtimeResidualCaffeineMg(
+        caffeineRecords: List<CaffeineRecord>,
+        sleepData: List<SleepData>
+    ): Int {
+        if (caffeineRecords.isEmpty() || sleepData.isEmpty()) {
+            return 0
+        }
+
+        val halfLifeHours =
+            userProfileRepository
+                .getUserProfile()
+                ?.sensitivity
+                ?.halfLifeHours
+                ?: CaffeineSensitivity.NORMAL.halfLifeHours
+
+        var totalResidualMg = 0.0
+
+        sleepData.forEach { sleep ->
+
+            caffeineRecords
+                .filter { it.consumedAt <= sleep.sleepStart }
+                .forEach { caffeine ->
+
+                    totalResidualMg +=
+                        caffeineCalculator.calculateResidualCaffeine(
+                            intakeCaffeine = caffeine.intakeCaffeine,
+                            consumedAt = caffeine.consumedAt,
+                            currentTimeMillis = sleep.sleepStart,
+                            halfLifeHours = halfLifeHours
+                        )
+                }
+        }
+
+        return totalResidualMg.toInt()
+    }
+
+    fun refreshWeeklyInsight() {
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(isWeeklyInsightLoading = true)
+            }
+
+            val state = _uiState.value
+
+            val insight = getWeeklyInsightUseCase(
+                averageSleepTime = state.weeklyAvgSleepTime,
+                lateCaffeineCount = cachedLateCaffeineCount,
+                bedtimeResidualCaffeineMg = cachedBedtimeResidualCaffeineMg
+            )
+
+            _uiState.update {
+                it.copy(
+                    weeklyInsight = insight,
+                    isWeeklyInsightLoading = false
+                )
+            }
+        }
+    }
+
+    fun refreshMonthlyInsight() {
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(isMonthlyInsightLoading = true)
+            }
+
+            val state = _uiState.value
+
+            val insight = getMonthlyInsightUseCase(
+                monthlyAvgCaffeine = state.monthlyAvgCaffeine,
+                monthlyAvgSleepTime = state.monthlyAvgSleepTime,
+                highCaffeineDaySleepTime = state.highCaffeineDaySleepTime,
+                lowCaffeineDaySleepTime = state.lowCaffeineDaySleepTime
+            )
+
+            _uiState.update {
+                it.copy(
+                    monthlyInsight = insight,
+                    isMonthlyInsightLoading = false
+                )
+            }
+        }
+    }
+
+    fun refreshTrendInsight() {
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(isTrendInsightLoading = true)
+            }
+
+            val state = _uiState.value
+
+            val insight = getTrendInsightUseCase(
+                monthlyCaffeineTrend = state.monthlyCaffeineTrend,
+                monthlySleepTrend = cachedMonthlySleepTrend,
+                totalAvgSleepTime = state.totalAvgSleepTime
+            )
+
+            _uiState.update {
+                it.copy(
+                    trendInsight = insight,
+                    isTrendInsightLoading = false
+                )
+            }
+        }
+    }
+
+    fun refreshPeriodInsight() {
+        calculatePeriodData(
+            start = _uiState.value.startDate,
+            end = _uiState.value.endDate
+        )
     }
 }

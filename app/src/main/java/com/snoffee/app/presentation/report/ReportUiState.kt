@@ -21,12 +21,16 @@ data class ReportUiState(
     val weeklyCaffeineChartData: Map<String, Double> = emptyMap(), // 요일별 ("월"~"일") 카페인 양
     val weeklySleepChartData: Map<String, Double> = emptyMap(),    // 요일별 ("월"~"일") 수면 시간
     val weeklyScores: Map<LocalDate, Int> = emptyMap(), // 요일별 바 차트 바인딩용
+    val weeklyInsight: String = "",
+    val isWeeklyInsightLoading: Boolean = true,
 
     //월간 데이터 영역
     val monthlyAvgCaffeine: Int = 0,
     val monthlyAvgSleepTime: String = "0h 00m",
     val highCaffeineDaySleepTime: String = "0h 00m", // 대조군: 카페인 과다일 수면 평균
     val lowCaffeineDaySleepTime: String = "0h 00m",  // 대조군: 카페인 최소일 수면 평균
+    val monthlyInsight: String = "",
+    val isMonthlyInsightLoading: Boolean = true,
 
     //전체 추이 영역
     val totalAvgSleepTime: String = "0h 00m",
@@ -35,10 +39,12 @@ data class ReportUiState(
     val bestMonthScore: Int = 0,
     val worstMonthLabel: String = "데이터 없음",
     val worstMonthScore: Int = 0,
+    val trendInsight: String = "",
+    val isTrendInsightLoading: Boolean = true,
 
     // 공통 비어있음 분기점 검증용
     val isDbEmpty: Boolean = true,
-    val isLoading: Boolean = false,
+    val isLoading: Boolean = true,
     val isError: Boolean = false,
     val errorMessage: String? = null,
     val totalSleepDaysCount: Int = 0,
@@ -50,5 +56,7 @@ data class ReportUiState(
     val periodAvgCaffeine: Int = 0,
     val periodTotalSleepTime: String = "0h 00m",
     val periodAvgSleepTime: String = "0h 00m",
-    val periodCaffeineRecords: List<CaffeineRecord> = emptyList()
+    val periodCaffeineRecords: List<CaffeineRecord> = emptyList(),
+    val periodInsight: String = "",
+    val isPeriodInsightLoading: Boolean = true
 )

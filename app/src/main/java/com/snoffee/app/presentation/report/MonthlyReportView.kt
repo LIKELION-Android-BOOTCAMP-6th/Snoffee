@@ -29,7 +29,7 @@ import com.snoffee.app.presentation.report.component.BarChartItem
 import com.snoffee.app.presentation.report.component.InteractiveBarChart
 
 @Composable
-fun MonthlyReportView(uiState: ReportUiState) {
+fun MonthlyReportView(uiState: ReportUiState, onRefreshMonthlyInsight: () -> Unit) {
     val timeParts = uiState.monthlyAvgSleepTime.split(" ")
     val displayHours = timeParts.getOrNull(0)?.replace("h", "") ?: "0"
     val displayMinutes = timeParts.getOrNull(1)?.replace("m", "") ?: "00"
@@ -169,6 +169,14 @@ fun MonthlyReportView(uiState: ReportUiState) {
                     barColor = SnoffeeWarning
                 )
             }
+        }
+        item {
+            ReportInsightCard(
+                title = "Snoffee AI 헬스 코치",
+                insight = uiState.monthlyInsight,
+                isLoading = uiState.isMonthlyInsightLoading,
+                onRefreshClick = onRefreshMonthlyInsight
+            )
         }
     }
 }
