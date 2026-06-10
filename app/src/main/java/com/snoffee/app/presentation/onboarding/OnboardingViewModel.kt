@@ -37,6 +37,8 @@ data class OnboardingUiState(
     val currentStep: OnboardingStep = OnboardingStep.INTRO,
     val height: String = "",
     val weight: String = "",
+    val sleepTime: String = "22:30",
+    val wakeTime: String = "06:30",
     val caffeineSensitivity: CaffeineSensitivityOption = CaffeineSensitivityOption.NORMAL,
     val isHeightValid: Boolean = false,
     val isWeightValid: Boolean = false,
@@ -98,6 +100,14 @@ class OnboardingViewModel @Inject constructor(
         validatePersonalInfo()
     }
 
+    fun updateSleepTime(value: String) {
+        _uiState.update { it.copy(sleepTime = value) }
+    }
+
+    fun updateWakeTime(value: String) {
+        _uiState.update { it.copy(wakeTime = value) }
+    }
+
     private fun validatePersonalInfo() {
         val state = _uiState.value
         val result = validateOnboardingInputUseCase(
@@ -124,7 +134,9 @@ class OnboardingViewModel @Inject constructor(
             val result = completeOnboardingUseCase(
                 height = state.height,
                 weight = state.weight,
-                sensitivity = state.caffeineSensitivity.domainDomainSensitivity
+                sensitivity = state.caffeineSensitivity.domainDomainSensitivity,
+                sleepTime = state.sleepTime.replace(":", "").toLong(), // "22:30" → 2230
+                wakeTime = state.wakeTime.replace(":", "").toLong(),
             )
 
             if (result.isSuccess) {

@@ -175,7 +175,7 @@ fun OnboardingPermissionScreen(
             Text(
                 text = "권한 동의",
                 color = SnoffeeTextMain,
-                fontSize = 32.sp,
+                fontSize = 25.sp,
                 fontWeight = FontWeight.Bold
             )
 

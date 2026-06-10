@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
@@ -16,18 +17,29 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Bolt
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -48,6 +60,8 @@ import com.snoffee.app.core.ui.theme.SnoffeeTextMain
 import com.snoffee.app.core.ui.theme.SnoffeeTextMuted
 import com.snoffee.app.presentation.onboarding.CaffeineSensitivityOption
 import com.snoffee.app.presentation.onboarding.component.ProgressSection
+import com.snoffee.app.presentation.onboarding.component.TimeSettingCard
+import java.util.Locale
 
 @Composable
 fun PersonalInfoSetupScreen(
@@ -55,6 +69,10 @@ fun PersonalInfoSetupScreen(
     weight: String,
     onHeightChange: (String) -> Unit,
     onWeightChange: (String) -> Unit,
+    sleepTime: String,
+    wakeTime: String,
+    onSleepTimeChange: (String) -> Unit,
+    onWakeTimeChange: (String) -> Unit,
     selectedSensitivity: CaffeineSensitivityOption,
     onSensitivityClick: (CaffeineSensitivityOption) -> Unit,
     onNextClick: () -> Unit,
@@ -95,78 +113,98 @@ fun PersonalInfoSetupScreen(
                 .fillMaxSize()
                 .padding(horizontal = 20.dp, vertical = 20.dp)
         ) {
-            Text(
-                text = "당신에 대해 알려주세요",
-                color = SnoffeeTextMain,
-                fontSize = 32.sp,
-                fontWeight = FontWeight.Bold
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = "정확한 카페인 분해 속도 계산을 위해 필요합니다.",
-                color = SnoffeeTextMuted,
-                fontSize = 16.sp
-            )
-
-            Spacer(modifier = Modifier.height(28.dp))
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(IntrinsicSize.Max),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.Top
+            Column(
+                modifier = Modifier.fillMaxWidth()
             ) {
-                val isHeightError = height.isNotBlank() && !isHeightValid
-                InfoInputCard(
-                    title = "신장",
-                    value = height,
-                    unit = "cm",
-                    onValueChange = onHeightChange,
-                    isError = isHeightError,
-                    errorMessage = "100~300cm 입력 가능",
-                    modifier = Modifier.weight(1f)
-                )
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    Text(
+                        text = "당신에 대해 알려주세요",
+                        color = SnoffeeTextMain,
+                        fontSize = 25.sp,
+                        fontWeight = FontWeight.Bold
+                    )
 
-                val isWeightError = weight.isNotBlank() && !isWeightValid
-                InfoInputCard(
-                    title = "체중",
-                    value = weight,
-                    unit = "kg",
-                    onValueChange = onWeightChange,
-                    isError = isWeightError,
-                    errorMessage = "1~400kg 입력 가능",
-                    modifier = Modifier.weight(1f)
-                )
-            }
+                    Spacer(modifier = Modifier.height(8.dp))
 
-            Spacer(modifier = Modifier.height(18.dp))
+                    Text(
+                        text = "정확한 카페인 분해 속도 계산을 위해 필요합니다.",
+                        color = SnoffeeTextMuted,
+                        fontSize = 16.sp
+                    )
 
-            CaffeineSensitivityCard(
-                selectedSensitivity = selectedSensitivity,
-                onSensitivityClick = onSensitivityClick
-            )
+                    Spacer(modifier = Modifier.height(28.dp))
 
-            Spacer(modifier = Modifier.weight(1f))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(IntrinsicSize.Max),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        val isHeightError = height.isNotBlank() && !isHeightValid
+                        InfoInputCard(
+                            title = "신장",
+                            value = height,
+                            unit = "cm",
+                            onValueChange = onHeightChange,
+                            isError = isHeightError,
+                            errorMessage = "100~300cm 입력 가능",
+                            modifier = Modifier.weight(1f)
+                        )
 
-            Button(
-                onClick = onNextClick,
-                enabled = isNextEnabled,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(58.dp),
-                shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = SnoffeePrimary
-                )
-            ) {
-                Text(
-                    text = "다음 단계로 이동  →",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
-                )
+                        val isWeightError = weight.isNotBlank() && !isWeightValid
+                        InfoInputCard(
+                            title = "체중",
+                            value = weight,
+                            unit = "kg",
+                            onValueChange = onWeightChange,
+                            isError = isWeightError,
+                            errorMessage = "1~400kg 입력 가능",
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(18.dp))
+
+                    SleepInfoCard(
+                        sleepTime = sleepTime,
+                        wakeTime = wakeTime,
+                        onSleepTimeChange = onSleepTimeChange,
+                        onWakeTimeChange = onWakeTimeChange
+                    )
+
+                    Spacer(modifier = Modifier.height(18.dp))
+
+                    CaffeineSensitivityCard(
+                        selectedSensitivity = selectedSensitivity,
+                        onSensitivityClick = onSensitivityClick
+                    )
+
+                    Spacer(modifier = Modifier.height(18.dp))
+
+                    Button(
+                        onClick = onNextClick,
+                        enabled = isNextEnabled,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(58.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = SnoffeePrimary
+                        )
+                    ) {
+                        Text(
+                            text = "다음 단계로 이동  →",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
             }
         }
     }
@@ -247,6 +285,112 @@ private fun InfoInputCard(
             )
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SleepInfoCard(
+    sleepTime: String,
+    wakeTime: String,
+    onSleepTimeChange: (String) -> Unit,
+    onWakeTimeChange: (String) -> Unit
+) {
+    var showSleepTimePicker by remember { mutableStateOf(false) }
+    var showWakeTimePicker by remember { mutableStateOf(false) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(12.dp, RoundedCornerShape(16.dp))
+            .background(SnoffeeSurface, RoundedCornerShape(16.dp))
+            .padding(4.dp)
+    ) {
+        TimeSettingCard(
+            title = "목표 수면 시간",
+            time = sleepTime,
+            iconRes = R.drawable.ic_main_bottombar_sleep,
+            onClick = { showSleepTimePicker = true }
+        )
+
+        TimeSettingCard(
+            title = "목표 기상 시간",
+            time = wakeTime,
+            iconRes = R.drawable.ic_setting_light_mode,
+            onClick = { showWakeTimePicker = true }
+        )
+    }
+
+    if (showSleepTimePicker) {
+        val (h, m) = parseDisplayTime(sleepTime, 22, 30)
+        val timePickerState = rememberTimePickerState(
+            initialHour = h, initialMinute = m, is24Hour = false
+        )
+        AlertDialog(
+            onDismissRequest = { showSleepTimePicker = false },
+            title = { Text(text = "목표 수면 시간 설정", fontSize = 16.sp, fontWeight = FontWeight.Bold) },
+            text = {
+                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    TimePicker(state = timePickerState)
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    onSleepTimeChange(
+                        String.format(
+                            Locale.US, "%02d:%02d",
+                            timePickerState.hour, timePickerState.minute
+                        )
+                    )
+                    showSleepTimePicker = false
+                }) { Text("변경", color = SnoffeePrimary) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showSleepTimePicker = false }) {
+                    Text("취소", color = SnoffeeTextMuted)
+                }
+            }
+        )
+    }
+
+    if (showWakeTimePicker) {
+        val (h, m) = parseDisplayTime(wakeTime, 6, 30)
+        val timePickerState = rememberTimePickerState(
+            initialHour = h, initialMinute = m, is24Hour = false
+        )
+        AlertDialog(
+            onDismissRequest = { showWakeTimePicker = false },
+            title = { Text("목표 기상 시간 설정", fontSize = 16.sp, fontWeight = FontWeight.Bold) },
+            text = {
+                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    TimePicker(state = timePickerState)
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    onWakeTimeChange(
+                        String.format(
+                            Locale.US, "%02d:%02d",
+                            timePickerState.hour, timePickerState.minute
+                        )
+                    )
+                    showWakeTimePicker = false
+                }) { Text("변경", color = SnoffeePrimary) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showWakeTimePicker = false }) {
+                    Text("취소", color = SnoffeeTextMuted)
+                }
+            }
+        )
+    }
+}
+
+private fun parseDisplayTime(time: String, defaultHour: Int, defaultMinute: Int): Pair<Int, Int> {
+    val parts = time.split(":")
+    if (parts.size != 2) return defaultHour to defaultMinute
+    val hour = parts[0].toIntOrNull() ?: defaultHour
+    val minute = parts[1].toIntOrNull() ?: defaultMinute
+    return hour to minute
 }
 
 @Composable

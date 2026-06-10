@@ -13,7 +13,9 @@ class CompleteOnboardingUseCase @Inject constructor(
     suspend operator fun invoke(
         height: String,
         weight: String,
-        sensitivity: CaffeineSensitivity
+        sensitivity: CaffeineSensitivity,
+        sleepTime: Long,
+        wakeTime: Long
     ): Result<Unit> {
         return runCatching {
             val userHeight = height.toDoubleOrNull() ?: DEFAULT_HEIGHT
@@ -25,8 +27,8 @@ class CompleteOnboardingUseCase @Inject constructor(
                 weight = userWeight,
                 dailyCaffeineLimit = DEFAULT_DAILY_CAFFEINE_LIMIT,
                 onboardingCompleted = true,
-                userSleepTime = DEFAULT_SLEEP_TIME,
-                wakeTime = DEFAULT_WAKE_TIME,
+                userSleepTime = sleepTime,
+                wakeTime = wakeTime,
                 sensitivity = sensitivity,
                 cutoffTime = DEFAULT_CUTOFF_TIME
             )
