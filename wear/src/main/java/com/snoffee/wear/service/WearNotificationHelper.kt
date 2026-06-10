@@ -78,7 +78,11 @@ object WearNotificationHelper {
         val channelId = if (isCutoff) CHANNEL_CUTOFF_ID else CHANNEL_REMAINDER_ID
         val title = if (isCutoff) "⚠️ 카페인 컷오프 경고" else "🌙 취침 전 잔류량 안내"
         val content = if (isCutoff) {
-            "현재 잔류 카페인이 ${residual.toInt()}mg! 숙면을 위해 섭취를 멈춰주세요!"
+            if (residual > 150.0) {
+                "카페인 누적량 ${residual.toInt()}mg 경고! 지금 이후로 추가 섭취 자제를 권합니다."
+            } else {
+                "현재 잔류 카페인이 ${residual.toInt()}mg! 숙면을 위해 섭취를 멈춰주세요!"
+            }
         } else {
             "현재 잔류 카페인은 ${residual.toInt()}mg. 안락한 수면을 준비하세요."
         }
