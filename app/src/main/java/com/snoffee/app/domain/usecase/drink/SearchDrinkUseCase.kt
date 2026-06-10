@@ -17,4 +17,7 @@ class SearchDrinkUseCase @Inject constructor(
         page = page,
         pageSize = pageSize,
     )
+
+    // 검색 결과 전체 개수
+    suspend fun getCount(query: String): Int = drinkRepository.getSearchResultCount(query)
 }

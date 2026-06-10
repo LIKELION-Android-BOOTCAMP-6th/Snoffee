@@ -42,4 +42,8 @@ interface CaffeineDao {
         startTimeMillis: Long,
         endTimeMillis: Long
     ): Flow<List<CaffeineEntity>>
+
+    //워치 수신 데이터 중복확인
+    @Query("SELECT * FROM caffeine_record WHERE consumed_at = :timestamp LIMIT 1")
+    suspend fun getRecordByTimestamp(timestamp: Long): CaffeineEntity?
 }

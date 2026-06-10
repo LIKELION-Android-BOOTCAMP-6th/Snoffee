@@ -1,10 +1,11 @@
 package com.snoffee.app.domain.usecase.caffeine
 
+import com.snoffee.app.core.caffeine.CaffeineCalculator
 import com.snoffee.app.domain.model.CaffeineAnalysis
 import com.snoffee.app.domain.model.CaffeineSensitivity
 import com.snoffee.app.domain.repository.CaffeineRepository
 import com.snoffee.app.domain.repository.UserProfileRepository
-import com.snoffee.app.domain.util.CaffeineCalculator
+import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 import kotlin.math.log2
 
@@ -18,7 +19,7 @@ class CalculateResidualUseCase @Inject constructor(
         val fiveDaysAgo = now - (5L * 24 * 60 * 60 * 1000)
 
         val records =
-            caffeineRepository.getCaffeineRecordsSince(fiveDaysAgo)
+            caffeineRepository.getCaffeineRecordsSince(fiveDaysAgo).first()
         val userProfile =
             userProfileRepository.getUserProfile()
         val halfLifeHours =

@@ -70,7 +70,6 @@ fun OnboardingCompleteScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(
@@ -87,12 +86,14 @@ fun OnboardingCompleteScreen(
                 fontSize = 40.sp,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier
-                    .padding(start = 24.dp, top = 48.dp)
+                    .padding(innerPadding)
+                    .padding(start = 20.dp, top = 20.dp)
             )
 
             Column(
                 modifier = Modifier
                     .fillMaxSize()
+                    .padding(innerPadding)
                     .padding(horizontal = 20.dp, vertical = 36.dp),
                 verticalArrangement = Arrangement.Center
             ) {

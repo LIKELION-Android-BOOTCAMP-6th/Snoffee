@@ -7,7 +7,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -16,13 +18,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.snoffee.app.core.ui.theme.SnoffeeBgWarm
 import com.snoffee.app.core.ui.theme.SnoffeePrimary
+import com.snoffee.app.core.ui.theme.SnoffeeSurface
 import com.snoffee.app.core.ui.theme.SnoffeeTextMain
 import com.snoffee.app.core.ui.theme.SnoffeeTextMuted
+import com.snoffee.app.core.ui.theme.SnoffeeTheme
 
 @Composable
 fun OnboardingIntroScreen(
@@ -32,7 +38,9 @@ fun OnboardingIntroScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(SnoffeeBgWarm)
-            .padding(24.dp),
+            .statusBarsPadding()
+            .navigationBarsPadding()
+            .padding(horizontal = 20.dp, vertical = 20.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -53,20 +61,29 @@ fun OnboardingIntroScreen(
 
         Spacer(modifier = Modifier.height(48.dp))
 
-        Text(
-            text = "카페인과 수면을 함께 관리해요",
-            color = SnoffeeTextMain,
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold
-        )
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .shadow(18.dp, RoundedCornerShape(28.dp))
+                .background(SnoffeeSurface, RoundedCornerShape(28.dp))
+                .padding(22.dp)
+        ) {
+            Text(
+                text = "카페인과 수면을 함께 관리해요",
+                color = SnoffeeTextMain,
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold
+            )
 
-        Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-        Text(
-            text = "Snoffee는 카페인 섭취 기록과 수면 데이터를 기반으로 나에게 맞는 리포트를 제공합니다.",
-            color = SnoffeeTextMuted,
-            fontSize = 14.sp
-        )
+            Text(
+                text = "Snoffee는 카페인 섭취 기록과 수면 데이터를 기반으로 나에게 맞는 리포트를 제공합니다.",
+                color = SnoffeeTextMuted,
+                fontSize = 14.sp
+            )
+
+        }
 
         Spacer(modifier = Modifier.height(48.dp))
 
@@ -86,5 +103,13 @@ fun OnboardingIntroScreen(
                 fontWeight = FontWeight.Bold
             )
         }
+    }
+}
+
+@Preview(showBackground = true, showSystemUi = true)
+@Composable
+private fun OnboardingIntroScreenPreview() {
+    SnoffeeTheme {
+        OnboardingIntroScreen(onNextClick = {})
     }
 }

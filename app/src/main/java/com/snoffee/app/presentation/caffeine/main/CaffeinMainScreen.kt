@@ -31,7 +31,6 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -59,6 +58,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.snoffee.app.R
+import com.snoffee.app.core.ui.theme.SnoffeeSurface
 import com.snoffee.app.core.ui.theme.SnoffeeTheme
 import com.snoffee.app.domain.model.CaffeineRecord
 import com.snoffee.app.presentation.caffeine.input.dialog.CaffeineInputDialog
@@ -164,8 +164,6 @@ fun CaffeineMainScreen(
         }
     }
 
-    val extColors = SnoffeeTheme.colors
-
     // 삭제 확인 다이얼로그
     pendingDeleteRecordId?.let { recordId ->
         AlertDialog(
@@ -207,17 +205,51 @@ fun CaffeineMainScreen(
         )
     }
 
-    Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
-        snackbarHost = { SnackbarHost(hostState = snackBarHostState) },
-    ) { innerPadding ->
+    // 수정 다이얼로그
+    if (showEditDialog) {
+        Dialog(
+            onDismissRequest = { showEditDialog = false },
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth(0.9f)
+                    .wrapContentHeight(),
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = SnoffeeTheme.colors.surfaceElevated)
+            ) {
+                CaffeineInputDialog(
+                    onDismiss = { showEditDialog = false },
+                    onConfirm = { record ->
+                        // 고유 ID 및 기존 도메인 속성 완전 보존 하에 전달
+                        viewModel.editCaffeineRecord(
+                            CaffeineRecord(
+                                id = editingRecord?.id ?: record.id,
+                                drinkId = editingRecord?.drinkId ?: record.drinkId,
+                                drinkName = record.drinkName,
+                                brandName = record.brandName,
+                                intakeSize = record.intakeSize,
+                                intakeCaffeine = record.intakeCaffeine,
+                                consumedAt = record.consumedAt
+                            )
+                        )
+                        showEditDialog = false
+                    },
+                    editingRecord = editingRecord,
+                    selectedDate = uiState.selectedDate
+                )
+            }
+        }
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
         when {
             // Loading
             uiState.isLoading -> {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(innerPadding),
+                        .background(MaterialTheme.colorScheme.background),
                     contentAlignment = Alignment.Center,
                 ) {
                     CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
@@ -229,11 +261,9 @@ fun CaffeineMainScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(innerPadding)
-                        .padding(top = 4.dp)
+                        .background(MaterialTheme.colorScheme.background)
                         .verticalScroll(rememberScrollState())
-                        .padding(horizontal = 24.dp)
-                        .padding(bottom = 24.dp),
+                        .padding(horizontal = 16.dp, vertical = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(20.dp),
                 ) {
                     MonthlyCalendarCard(
@@ -290,7 +320,7 @@ fun CaffeineMainScreen(
                                 fontSize = 20.sp
                             )
                         }
-                        // 미래 날짜일때 기록하는 상황 메러 문구 노출
+                        // 미래 날짜일때 기록하는 상황 에러 문구 노출
                         if (isFutureDate) {
                             Text(
                                 text = stringResource(R.string.caffeine_error_recode_future_date),
@@ -302,45 +332,14 @@ fun CaffeineMainScreen(
                         }
                     }
                 }
-
-                // 수정 다이얼로그 노출부 구조 단순화
-                if (showEditDialog) {
-                    Dialog(
-                        onDismissRequest = { showEditDialog = false },
-                        properties = DialogProperties(usePlatformDefaultWidth = false)
-                    ) {
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth(0.9f)
-                                .wrapContentHeight(),
-                            shape = RoundedCornerShape(24.dp),
-                            colors = CardDefaults.cardColors(containerColor = SnoffeeTheme.colors.surfaceElevated)
-                        ) {
-                            CaffeineInputDialog(
-                                onDismiss = { showEditDialog = false },
-                                onConfirm = { record ->
-                                    // 고유 ID 및 기존 도메인 속성 완전 보존 하에 전달
-                                    viewModel.editCaffeineRecord(
-                                        CaffeineRecord(
-                                            id = editingRecord?.id ?: record.id,
-                                            drinkId = editingRecord?.drinkId ?: record.drinkId,
-                                            drinkName = record.drinkName,
-                                            brandName = record.brandName,
-                                            intakeSize = record.intakeSize,
-                                            intakeCaffeine = record.intakeCaffeine,
-                                            consumedAt = record.consumedAt
-                                        )
-                                    )
-                                    showEditDialog = false
-                                },
-                                editingRecord = editingRecord,
-                                selectedDate = uiState.selectedDate
-                            )
-                        }
-                    }
-                }
             }
         }
+
+        // 화면 하단 중앙에 스낵바 오버레이
+        SnackbarHost(
+            hostState = snackBarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter)
+        )
     }
 }
 
@@ -354,8 +353,7 @@ private fun MonthlyCalendarCard(
 ) {
     Surface(
         shape = RoundedCornerShape(24.dp),
-        color = MaterialTheme.colorScheme.surface,
-        shadowElevation = 3.dp,
+        color = SnoffeeSurface
     ) {
         Column(
             modifier = Modifier
@@ -480,17 +478,21 @@ private fun CalendarDayCell(
                 textAlign = TextAlign.Center,
             )
             // 섭취 기록 점
-            if (day.hasDot && day.isCurrentMonth) {
-                Spacer(modifier = Modifier.height(2.dp))
-                Box(
-                    modifier = Modifier
-                        .size(4.dp)
-                        .background(
-                            if (day.isSelected) primary else primary.copy(alpha = 0.5f),
-                            CircleShape,
-                        )
-                )
-            }
+            val showDot = day.hasDot && day.isCurrentMonth
+            Spacer(modifier = Modifier.height(2.dp))
+            Box(
+                modifier = Modifier
+                    .size(4.dp)
+                    .background(
+                        // 기록이 추가되면 dot 영역 때문에 날짜가 들쑥 날쑥이 되어서 코드 수정
+                        color = if (showDot) {
+                            if (day.isSelected) primary else primary.copy(alpha = 0.5f)
+                        } else {
+                            androidx.compose.ui.graphics.Color.Transparent
+                        },
+                        shape = CircleShape,
+                    )
+            )
         }
     }
 }
@@ -547,7 +549,6 @@ private fun TodaySummarySection(
         Surface(
             shape = RoundedCornerShape(24.dp),
             color = MaterialTheme.colorScheme.surface,
-            shadowElevation = 3.dp,
         ) {
             Column(
                 modifier = Modifier
@@ -631,7 +632,6 @@ private fun ActivityLogSection(
             Surface(
                 shape = RoundedCornerShape(20.dp),
                 color = MaterialTheme.colorScheme.surface,
-                shadowElevation = 2.dp,
             ) {
                 Box(
                     modifier = Modifier
@@ -701,7 +701,6 @@ private fun CaffeineLogItemCard(
     Surface(
         shape = RoundedCornerShape(20.dp),
         color = MaterialTheme.colorScheme.surface,
-        shadowElevation = 2.dp,
     ) {
         Row(
             modifier = Modifier

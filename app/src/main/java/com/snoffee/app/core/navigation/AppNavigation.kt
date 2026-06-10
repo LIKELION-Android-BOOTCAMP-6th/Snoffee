@@ -21,6 +21,9 @@ sealed class Screen(val route: String) {
     // 리포트
     object Report : Screen("report")
 
-    // 마이 설정
+    // 설정
     object Setting : Screen("setting")
+    object SettingHelp : Screen("setting_help/{cancelClick}") {
+        fun createRoute(cancelClick: Boolean) = "setting_help/$cancelClick"
+    }
 }

@@ -6,8 +6,6 @@ import com.snoffee.app.data.mapper.SleepMapper
 import com.snoffee.app.domain.model.SleepData
 import com.snoffee.app.domain.model.SleepSource
 import com.snoffee.app.domain.repository.SleepRepository
-import java.time.Instant
-import java.time.ZoneId
 import javax.inject.Inject
 
 class SleepRepositoryImpl @Inject constructor(
@@ -82,9 +80,12 @@ class SleepRepositoryImpl @Inject constructor(
         }
 
         val mergedSleepDataList =
-            localSleepDataList + healthSleepDataList
+            (localSleepDataList + healthSleepDataList).distinctBy { sleepData ->
+                // 고유 식별자인 시작 시간, 종료 시간, 데이터 출처 조합으로 유니크 키 생성
+                "${sleepData.sleepStart}_${sleepData.sleepEnd}_${sleepData.source}"
+            }
 
-        return deduplicateByDate(
+        return resolveSourceConflictByDate(
             sleepDataList = mergedSleepDataList
         )
     }
@@ -95,30 +96,20 @@ class SleepRepositoryImpl @Inject constructor(
         }.getOrDefault(false)
     }
 
-    private fun deduplicateByDate(
+    private fun resolveSourceConflictByDate(
         sleepDataList: List<SleepData>
     ): List<SleepData> {
-        return sleepDataList
-            .groupBy { sleepData ->
-                Instant.ofEpochMilli(sleepData.sleepEnd)
-                    .atZone(ZoneId.systemDefault())
-                    .toLocalDate()
+        val manualRecords = sleepDataList.filter { it.source == SleepSource.MANUAL }
+        val healthRecords = sleepDataList.filter { it.source == SleepSource.SAMSUNG_HEALTH }
+
+        val filteredHealthRecords = healthRecords.filter { health ->
+            manualRecords.none { manual ->
+                // 시간 매칭 중복 검증 (서로의 영역을 침범하는지 체크)
+                health.sleepStart < manual.sleepEnd && health.sleepEnd > manual.sleepStart
             }
-            .map { (_, records) ->
-                records.maxWith(
-                    compareBy<SleepData> { sleepData ->
-                        when (sleepData.source) {
-                            SleepSource.MANUAL -> 2
-                            SleepSource.SAMSUNG_HEALTH -> 1
-                        }
-                    }.thenBy { sleepData ->
-                        sleepData.sleepEnd
-                    }
-                )
-            }
-            .sortedByDescending { sleepData ->
-                sleepData.sleepEnd
-            }
+        }
+
+        return (manualRecords + filteredHealthRecords).sortedBy { it.sleepStart }
     }
 
     companion object {

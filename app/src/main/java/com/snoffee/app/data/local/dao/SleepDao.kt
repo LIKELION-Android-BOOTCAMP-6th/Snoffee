@@ -27,8 +27,8 @@ interface SleepDao {
     @Query(
         """
         SELECT * FROM sleep_data
-        WHERE sleep_end BETWEEN :startTimeMillis AND :endTimeMillis
-        ORDER BY sleep_end DESC
+        WHERE date BETWEEN :startTimeMillis AND :endTimeMillis
+        ORDER BY date DESC
     """
     )
     suspend fun getSleepDataByDateRange(

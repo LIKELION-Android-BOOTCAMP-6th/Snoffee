@@ -13,6 +13,7 @@ import com.snoffee.app.presentation.home.HomeScreen
 import com.snoffee.app.presentation.onboarding.OnboardingScreen
 import com.snoffee.app.presentation.report.ReportScreen
 import com.snoffee.app.presentation.setting.SettingScreen
+import com.snoffee.app.presentation.setting.help.HelpScreen
 import com.snoffee.app.presentation.sleep.SleepScreen
 import java.time.LocalDate
 
@@ -104,9 +105,21 @@ fun AppNavHost(
             )
         }
 
-        //설정 화면
+        // 설정 화면
         composable(Screen.Setting.route) {
-            SettingScreen() // presentation.mySetting.SettingScreen
+            SettingScreen(
+                onHelpClick = {
+                    // 도움말 화면으로 이동
+                    navController.navigate(Screen.SettingHelp.route)
+                }
+            )
+        }
+
+        // 설정 도움말
+        composable(Screen.SettingHelp.route) {
+            HelpScreen(
+                onCancelClick = { navController.popBackStack() }
+            )
         }
     }
 }

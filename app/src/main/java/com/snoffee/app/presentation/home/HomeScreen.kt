@@ -57,7 +57,7 @@ fun HomeScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(SnoffeeBgBase),
-        contentPadding =PaddingValues(horizontal = 16.dp, vertical = 16.dp),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
 
@@ -98,9 +98,13 @@ fun HomeScreen(
         }
 
         item {
-            Row(modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 4.dp, top = 8.dp, bottom = 4.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 4.dp, top = 8.dp, bottom = 4.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text("최근 기록", style = MaterialTheme.typography.titleLarge, color = SnoffeeTextMain)
                 TextButton(onClick = onViewAllClick) {
                     Text("전체보기", color = SnoffeeTextMuted)
@@ -175,11 +179,22 @@ fun HomeScreen(
 
 @Composable
 private fun SuccessState(uiState: HomeUiState, onAddCaffeineClick: () -> Unit) {
-    Card(modifier = Modifier
-        .fillMaxWidth()
-        .padding(vertical = 4.dp), shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = SnoffeeSurface)) {
-        Column(modifier = Modifier.padding(vertical = 30.dp, horizontal = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("현재 체내 카페인 잔량", style = MaterialTheme.typography.titleLarge, color = SnoffeeTextMain)
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = SnoffeeSurface)
+    ) {
+        Column(
+            modifier = Modifier.padding(vertical = 30.dp, horizontal = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                "현재 체내 카페인 잔량",
+                style = MaterialTheme.typography.titleLarge,
+                color = SnoffeeTextMain
+            )
             Spacer(modifier = Modifier.height(30.dp))
             CaffeineGauge(uiState.residualCaffeineMg, uiState.riskLevel)
             Spacer(modifier = Modifier.height(48.dp))
@@ -192,34 +207,54 @@ private fun SuccessState(uiState: HomeUiState, onAddCaffeineClick: () -> Unit) {
                 InfoColumn("대사 예상 시간", uiState.metabolismTime)
             }
             Spacer(modifier = Modifier.height(45.dp))
-            Button(onClick = onAddCaffeineClick, modifier = Modifier.fillMaxWidth()) { Text("카페인 추가") }
+            Button(
+                onClick = onAddCaffeineClick,
+                modifier = Modifier.fillMaxWidth()
+            ) { Text("카페인 추가") }
         }
     }
 }
 
 @Composable
 private fun EmptyState(onAddCaffeineClick: () -> Unit) {
-    Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = SnoffeeSurface)) {
-        Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = SnoffeeSurface)
+    ) {
+        Column(
+            modifier = Modifier.padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
             Text("아직 기록이 없어요", style = MaterialTheme.typography.titleMedium)
-            Button(onClick = onAddCaffeineClick, modifier = Modifier.fillMaxWidth()) { Text("카페인 입력하기") }
+            Button(
+                onClick = onAddCaffeineClick,
+                modifier = Modifier.fillMaxWidth()
+            ) { Text("카페인 입력하기") }
         }
     }
 }
 
 @Composable
 private fun LoadingState() {
-    Box(modifier = Modifier
-        .fillMaxWidth()
-        .height(200.dp), contentAlignment = Alignment.Center) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(200.dp), contentAlignment = Alignment.Center
+    ) {
         CircularProgressIndicator(color = SnoffeePrimary)
     }
 }
 
 @Composable
 private fun ErrorState(message: String, onRetryClick: () -> Unit) {
-    Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = SnoffeeSurface)) {
-        Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = SnoffeeSurface)
+    ) {
+        Column(
+            modifier = Modifier.padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
             Text("오류 발생: $message", color = SnoffeeError)
             Button(onClick = onRetryClick) { Text("다시 시도") }
         }

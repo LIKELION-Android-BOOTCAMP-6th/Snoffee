@@ -28,7 +28,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -44,6 +45,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -54,6 +57,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.snoffee.app.R
 import com.snoffee.app.core.ui.theme.BadSleep
 import com.snoffee.app.core.ui.theme.GoodSleep
 import com.snoffee.app.core.ui.theme.SnoffeeBgBase
@@ -64,10 +68,14 @@ import com.snoffee.app.core.ui.theme.SnoffeeSurface
 import com.snoffee.app.core.ui.theme.SnoffeeTextHint
 import com.snoffee.app.core.ui.theme.SnoffeeTextMain
 import com.snoffee.app.core.ui.theme.SnoffeeTextMuted
+import com.snoffee.app.core.util.Utils.toMonthLabel
 import com.snoffee.app.domain.model.SleepData
+import com.snoffee.app.domain.model.SleepSource
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
+
+private val DAY_LABELS = listOf("일", "월", "화", "수", "목", "금", "토")
 
 data class SleepCalendarDay(
     val date: LocalDate?,
@@ -127,12 +135,11 @@ fun SleepScreen(viewModel: SleepViewModel = hiltViewModel()) {
         }
     }
 
-    Scaffold(containerColor = SnoffeeBgBase) { padding ->
+    Box(modifier = Modifier.fillMaxSize()) {
         if (!uiState.hasHealthPermission) {
             SleepPermissionEmptyView(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
+                    .fillMaxSize(),
                 onPermissionClick = {
                     val status = HealthConnectClient.getSdkStatus(context)
 
@@ -156,15 +163,13 @@ fun SleepScreen(viewModel: SleepViewModel = hiltViewModel()) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(padding)
-                    .padding(horizontal = 12.dp)
-                    .verticalScroll(rememberScrollState()),
+                    .background(SnoffeeBgBase)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp, vertical = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(20.dp),
             ) {
                 SleepCalendarCard(
-                    monthLabel = uiState.currentYearMonth.format(
-                        DateTimeFormatter.ofPattern("M월 yyyy")
-                    ),
+                    monthLabel = uiState.currentYearMonth.toMonthLabel(),
                     onPrev = viewModel::onPrevMonth,
                     onNext = viewModel::onNextMonth,
                     grid = sleepGrid,
@@ -205,11 +210,14 @@ fun SleepScreen(viewModel: SleepViewModel = hiltViewModel()) {
                         val minutes = (durationMillis / (1000 * 60)) % 60
                         val timeLabel = "${hours}h ${minutes}m"
 
+                        val isManualInput = record.source == SleepSource.MANUAL
+                        val sourceLabel = if (isManualInput) "수동 입력" else "삼성 헬스"
+
                         Column {
                             Text(
-                                text = "기록 #${index + 1}",
+                                text = "기록 #${index + 1} ($sourceLabel)",
                                 fontSize = 12.sp,
-                                color = SnoffeePrimary,
+                                color = if (isManualInput) SnoffeePrimary else SnoffeeTextMuted,
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
                             )
@@ -221,48 +229,56 @@ fun SleepScreen(viewModel: SleepViewModel = hiltViewModel()) {
                                 labelPrefix = "수면"
                             )
 
-                            // 개별 수정 / 삭제 버튼
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(top = 6.dp, bottom = 12.dp),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                TextButton(
-                                    onClick = {
-                                        editTargetData = record
-                                        showSleepDialog = true
-                                    },
+                            //수동 입력(MANUAL) 데이터일 때만 수정/삭제 버튼을 화면에 렌더링
+                            if (isManualInput) {
+                                Row(
                                     modifier = Modifier
-                                        .weight(1f)
-                                        .height(38.dp)
-                                        .border(1.dp, SnoffeePrimary, RoundedCornerShape(8.dp)),
-                                    shape = RoundedCornerShape(8.dp)
+                                        .fillMaxWidth()
+                                        .padding(top = 6.dp, bottom = 12.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                                 ) {
-                                    Text(
-                                        "수정",
-                                        color = SnoffeePrimary,
-                                        fontSize = 13.sp,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
-                                }
+                                    TextButton(
+                                        onClick = {
+                                            editTargetData = record
+                                            showSleepDialog = true
+                                        },
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .height(38.dp)
+                                            .border(1.dp, SnoffeePrimary, RoundedCornerShape(8.dp)),
+                                        shape = RoundedCornerShape(8.dp)
+                                    ) {
+                                        Text(
+                                            "수정",
+                                            color = SnoffeePrimary,
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                    }
 
-                                Button(
-                                    onClick = {
-                                        deleteTargetData = record
-                                        showDeleteConfirmDialog = true
-                                    },
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .height(38.dp),
-                                    shape = RoundedCornerShape(8.dp),
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = Color(0xFFFFEBEE),
-                                        contentColor = Color(0xFFC62828)
-                                    )
-                                ) {
-                                    Text("삭제", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                                    Button(
+                                        onClick = {
+                                            deleteTargetData = record
+                                            showDeleteConfirmDialog = true
+                                        },
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .height(38.dp),
+                                        shape = RoundedCornerShape(8.dp),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = Color(0xFFFFEBEE),
+                                            contentColor = Color(0xFFC62828)
+                                        )
+                                    ) {
+                                        Text(
+                                            "삭제",
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                    }
                                 }
+                            } else {
+                                Spacer(modifier = Modifier.height(16.dp))
                             }
                         }
                     }
@@ -305,8 +321,7 @@ fun SleepScreen(viewModel: SleepViewModel = hiltViewModel()) {
                 ) {
                     Text(
                         text = if (uiState.selectedDateRecords.size >= 3) "수면 추가 완료 (최대 3개)" else "수면 추가하기",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold
+                        fontSize = 20.sp
                     )
                 }
             }
@@ -469,10 +484,23 @@ private fun buildSleepCalendarGrid(
     val daysInMonth = yearMonth.lengthOfMonth()
     val grid = mutableListOf<SleepCalendarDay>()
 
-    repeat(startOffset) {
-        grid.add(SleepCalendarDay(date = null))
+    // 이전 달 채우기
+    val prevMonth = yearMonth.minusMonths(1)
+    val prevDays = prevMonth.lengthOfMonth()
+    repeat(startOffset) { i ->
+        val date = prevMonth.atDay(prevDays - startOffset + i + 1)
+        grid.add(
+            SleepCalendarDay(
+                date = date,
+                isCurrentMonth = false,
+                isSelected = date == selectedDate,
+                isToday = date == today,
+                score = dailyScores[date]
+            )
+        )
     }
 
+    // 이번 달
     for (day in 1..daysInMonth) {
         val date = yearMonth.atDay(day)
 
@@ -486,8 +514,20 @@ private fun buildSleepCalendarGrid(
         )
     }
 
+    // 다음 달 채우기 (6주 = 42칸 고정)
+    val nextMonth = yearMonth.plusMonths(1)
+    var nextDay = 1
     while (grid.size < 42) {
-        grid.add(SleepCalendarDay(date = null))
+        val date = nextMonth.atDay(nextDay++)
+        grid.add(
+            SleepCalendarDay(
+                date = date,
+                isCurrentMonth = false,
+                isSelected = date == selectedDate,
+                isToday = date == today,
+                score = dailyScores[date]
+            )
+        )
     }
 
     return grid
@@ -503,69 +543,96 @@ private fun SleepCalendarCard(
 ) {
     Surface(
         shape = RoundedCornerShape(24.dp),
-        shadowElevation = 2.dp,
         color = SnoffeeSurface
     ) {
         Column(
-            modifier = Modifier.padding(20.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
         ) {
             Row(
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth()
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                TextButton(onClick = onPrev) {
-                    Text("<")
+                IconButton(onClick = onPrev) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_arrow_left),
+                        contentDescription = stringResource(R.string.caffeine_prev_month_desc),
+                        tint = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier.size(20.dp),
+                    )
                 }
 
                 Text(
                     text = monthLabel,
                     fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground,
                 )
 
-                TextButton(onClick = onNext) {
-                    Text(">")
-                }
-            }
-
-            Row(modifier = Modifier.fillMaxWidth()) {
-                listOf("일", "월", "화", "수", "목", "금", "토").forEach {
-                    Text(
-                        text = it,
-                        modifier = Modifier.weight(1f),
-                        textAlign = TextAlign.Center,
-                        color = Color.Gray
+                IconButton(onClick = onNext) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_arrow_right),
+                        contentDescription = stringResource(R.string.caffeine_next_month_desc),
+                        tint = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier.size(20.dp),
                     )
                 }
             }
 
-            grid.chunked(7).forEach { week ->
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                // 요일 헤더
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp)
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    week.forEach { day ->
-                        SleepDayCell(
-                            day = day,
+                    DAY_LABELS.forEach { label ->
+                        Text(
+                            text = label,
                             modifier = Modifier.weight(1f),
-                            onClick = {
-                                onDayClick(day)
-                            }
+                            textAlign = TextAlign.Center,
+                            fontSize = 17.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
-            }
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center
-            ) {
-                LegendItem(GoodSleep, "좋은 수면")
+                // 6주 그리드
+                grid.chunked(7).forEach { week ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        week.forEach { day ->
+                            SleepDayCell(
+                                day = day,
+                                modifier = Modifier.weight(1f),
+                                onClick = { onDayClick(day) }
+                            )
+                        }
+                    }
+                }
 
-                Spacer(modifier = Modifier.width(16.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    LegendItem(GoodSleep, "좋은 수면")
 
-                LegendItem(BadSleep, "부족 수면")
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    LegendItem(BadSleep, "부족 수면")
+                }
             }
         }
     }
@@ -584,6 +651,7 @@ private fun SleepDayCell(
     }
 
     val contentColor = when {
+        !day.isCurrentMonth -> SnoffeeTextMain.copy(alpha = 0.3f)
         statusColor != Color.Transparent -> Color.White
         day.isSelected -> SnoffeePrimary
         else -> SnoffeeTextMain
@@ -613,26 +681,21 @@ private fun SleepDayCell(
         ) {
             Text(
                 text = day.date?.dayOfMonth?.toString() ?: "",
-                fontSize = 14.sp,
+                fontSize = 16.sp,
                 color = contentColor
             )
 
-            if (day.score != null) {
-                Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
-                Box(
-                    modifier = Modifier
-                        .size(5.dp)
-                        .background(
-                            if (day.isSelected) {
-                                Color.White
-                            } else {
-                                SnoffeePrimary
-                            },
-                            CircleShape
-                        )
-                )
-            }
+            Box(
+                modifier = Modifier
+                    .size(5.dp)
+                    .background(
+                        // 기록이 추가되면 dot 영역 때문에 날짜가 들쑥 날쑥이 되어서 코드 수정
+                        color = if (day.score != null) SnoffeePrimary else Color.Transparent,
+                        shape = CircleShape
+                    )
+            )
         }
     }
 }

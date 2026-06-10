@@ -1,12 +1,12 @@
 package com.snoffee.app.usecase
 
+import com.snoffee.app.core.caffeine.CaffeineCalculator
 import com.snoffee.app.domain.model.CaffeineRecord
 import com.snoffee.app.domain.model.SleepData
 import com.snoffee.app.domain.model.SleepSource
 import com.snoffee.app.domain.usecase.report.AnalyzeCaffeineSleepCorrelationUseCase
 import com.snoffee.app.domain.usecase.report.AnalyzeDailyCorrelationUseCase
 import com.snoffee.app.domain.usecase.report.GenerateFallbackInsightUseCase
-import com.snoffee.app.domain.util.CaffeineCalculator
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull

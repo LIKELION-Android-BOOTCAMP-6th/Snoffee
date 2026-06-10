@@ -1,5 +1,9 @@
 package com.snoffee.app.presentation.report
 
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.snoffee.app.domain.model.CaffeineRecord
@@ -15,6 +19,7 @@ import com.snoffee.app.domain.usecase.report.GetReportUseCase
 import com.snoffee.app.domain.usecase.sleep.SaveSleepDataUseCase
 import com.snoffee.app.domain.util.CaffeineCalculator
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -23,6 +28,7 @@ import kotlinx.coroutines.launch
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
+import java.time.YearMonth
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -30,6 +36,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ReportViewModel @Inject constructor(
+    @param:ApplicationContext private val context: Context,
     private val getReportUseCase: GetReportUseCase,
     private val saveSleepRecordUseCase: SaveSleepDataUseCase,
     private val sleepRepository: SleepRepository,
@@ -56,8 +63,36 @@ class ReportViewModel @Inject constructor(
     private var cachedMonthlySleepTrend: Map<String, Double> = emptyMap()
     private var hasLoadedReportInsights = false
 
+    //자정 감지 브로드캐스트 리시버
+    private val dateChangedReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action == Intent.ACTION_DATE_CHANGED) {
+                _uiState.update { currentState ->
+                    // 자정이 지나면 '기간 탭'의 기본 기간도 자동으로 오늘 기준으로 한 칸 미뤄 밀림 방지
+                    currentState.copy(
+                        startDate = LocalDate.now().minusDays(6),
+                        endDate = LocalDate.now()
+                    )
+                }
+                // 전체 일간/주간/월간 비동기 통계 대시보드 리로드 수행
+                loadReportData()
+            }
+        }
+    }
+
     init {
         loadReportData()
+        val filter = IntentFilter(Intent.ACTION_DATE_CHANGED)
+        context.registerReceiver(dateChangedReceiver, filter)
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        try {
+            context.unregisterReceiver(dateChangedReceiver)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     fun saveSleepRecord(record: SleepData) {
@@ -192,7 +227,7 @@ class ReportViewModel @Inject constructor(
                         weeklyResult.sleepData.sumOf { it.sleepEnd - it.sleepStart }
 
                     val avgDuration =
-                        Duration.ofMillis(totalWeeklySleepMillis / weeklySleepByDate.size)
+                        Duration.ofMillis(totalWeeklySleepMillis / 7)
                     String.format(
                         Locale.KOREA,
                         "%dh %02dm",
@@ -217,8 +252,10 @@ class ReportViewModel @Inject constructor(
                         sleepData = weeklyResult.sleepData
                     )
                 //월간 데이터
+                val currentLocalDate = Instant.ofEpochMilli(nowMillis).atZone(zoneId).toLocalDate()
+                val daysInCurrentMonth = YearMonth.from(currentLocalDate).lengthOfMonth()
                 val monthlyAvgCaffeine = if (monthlyResult.caffeineRecords.isNotEmpty()) {
-                    (monthlyResult.caffeineRecords.sumOf { it.intakeCaffeine } / 30).toInt()
+                    (monthlyResult.caffeineRecords.sumOf { it.intakeCaffeine } / daysInCurrentMonth).toInt()
                 } else 0
                 val monthlyAvgSleepStr = if (monthlyResult.sleepData.isNotEmpty()) {
                     val monthlySleepByDate = monthlyResult.sleepData.groupBy {
@@ -228,7 +265,7 @@ class ReportViewModel @Inject constructor(
                         monthlyResult.sleepData.sumOf { it.sleepEnd - it.sleepStart }
 
                     val avgDuration =
-                        Duration.ofMillis(totalMonthlySleepMillis / monthlySleepByDate.size)
+                        Duration.ofMillis(totalMonthlySleepMillis / daysInCurrentMonth)
                     String.format(
                         Locale.KOREA,
                         "%dh %02dm",
@@ -334,11 +371,7 @@ class ReportViewModel @Inject constructor(
                     Duration.ofMillis(periodTotalSleepMillis).toMinutes() % 60
                 )
 
-                val periodSleepDaysCount = filteredSleep.groupBy {
-                    Instant.ofEpochMilli(it.sleepEnd).atZone(zoneId).toLocalDate()
-                }.size
-                val periodAvgSleepMillis =
-                    if (periodSleepDaysCount > 0) periodTotalSleepMillis / periodSleepDaysCount else 0L
+                val periodAvgSleepMillis = periodTotalSleepMillis / daysBetween
                 val periodAvgSleepStr = String.format(
                     Locale.KOREA, "%dh %02dm",
                     Duration.ofMillis(periodAvgSleepMillis).toHours(),
@@ -538,12 +571,8 @@ class ReportViewModel @Inject constructor(
                 Duration.ofMillis(totalSleepMillis).toHours(),
                 Duration.ofMillis(totalSleepMillis).toMinutes() % 60
             )
-            val sleepDaysCount = filteredSleep.groupBy {
-                Instant.ofEpochMilli(it.sleepEnd).atZone(zoneId).toLocalDate()
-            }.size
 
-            val avgSleepMillis =
-                if (sleepDaysCount > 0) totalSleepMillis / sleepDaysCount else 0L
+            val avgSleepMillis = totalSleepMillis / daysBetween
             val avgSleepStr = String.format(
                 Locale.KOREA,
                 "%dh %02dm",

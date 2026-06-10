@@ -59,12 +59,15 @@ fun ReportScreen(
         }
     }
 
-    Scaffold { innerPadding ->
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(SnoffeeBgBase)
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .background(SnoffeeBgBase)
-                .padding(innerPadding)
         ) {
             Row(
                 modifier = Modifier

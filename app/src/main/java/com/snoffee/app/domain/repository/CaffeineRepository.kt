@@ -13,7 +13,7 @@ interface CaffeineRepository {
     fun getTodayCaffeineRecords(): Flow<List<CaffeineRecord>>
 
     //게이지 계산용 섭취 목록 조회
-    suspend fun getCaffeineRecordsSince(sinceMillis: Long): List<CaffeineRecord>
+    fun getCaffeineRecordsSince(sinceMillis: Long): Flow<List<CaffeineRecord>>
 
     // 카페인 섭취 기록 삭제
     suspend fun deleteCaffeineRecord(id: Long)
@@ -25,4 +25,8 @@ interface CaffeineRepository {
 
     // 카페인 섭취 기록 수정
     suspend fun editCaffeineRecord(record: CaffeineRecord)
+
+
+    //워치 수신용 중복 체크 및 저장
+    suspend fun processAndInsertCaffeine(name: String, amount: Int, timestamp: Long)
 }
