@@ -91,20 +91,6 @@ fun HomeScreen(
         }
 
         item {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(100.dp),
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = SnoffeeSurface)
-            ) {
-                Box(Modifier.fillMaxSize(), Alignment.Center) {
-                    Text("데일리 권고 섭취량", color = SnoffeeTextDisabled)
-                }
-            }
-        }
-
-        item {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
