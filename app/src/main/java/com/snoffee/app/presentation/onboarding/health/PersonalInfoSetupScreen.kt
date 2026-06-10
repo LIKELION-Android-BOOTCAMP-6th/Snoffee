@@ -105,7 +105,7 @@ fun PersonalInfoSetupScreen(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            ProgressSection("단계 3 / 4", 0.66f)
+            ProgressSection("단계 3 / 5", 0.55f)
         }
 
         Column(

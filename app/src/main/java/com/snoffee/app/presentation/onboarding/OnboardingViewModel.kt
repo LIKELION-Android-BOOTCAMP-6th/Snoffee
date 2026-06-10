@@ -21,6 +21,7 @@ enum class OnboardingStep {
     PERMISSION,
     HEALTH_CONNECT_INFO,
     PERSONAL_INFO,
+    WEAR_INFO,
     COMPLETE
 }
 
@@ -63,7 +64,8 @@ class OnboardingViewModel @Inject constructor(
                     OnboardingStep.INTRO -> OnboardingStep.PERMISSION
                     OnboardingStep.PERMISSION -> OnboardingStep.HEALTH_CONNECT_INFO
                     OnboardingStep.HEALTH_CONNECT_INFO -> OnboardingStep.PERSONAL_INFO
-                    OnboardingStep.PERSONAL_INFO -> OnboardingStep.COMPLETE
+                    OnboardingStep.PERSONAL_INFO -> OnboardingStep.WEAR_INFO
+                    OnboardingStep.WEAR_INFO -> OnboardingStep.COMPLETE
                     OnboardingStep.COMPLETE -> OnboardingStep.COMPLETE
                 }
             )
@@ -78,7 +80,8 @@ class OnboardingViewModel @Inject constructor(
                     OnboardingStep.PERMISSION -> OnboardingStep.INTRO
                     OnboardingStep.HEALTH_CONNECT_INFO -> OnboardingStep.PERMISSION
                     OnboardingStep.PERSONAL_INFO -> OnboardingStep.HEALTH_CONNECT_INFO
-                    OnboardingStep.COMPLETE -> OnboardingStep.PERSONAL_INFO
+                    OnboardingStep.WEAR_INFO -> OnboardingStep.PERSONAL_INFO
+                    OnboardingStep.COMPLETE -> OnboardingStep.WEAR_INFO
                 }
             )
         }

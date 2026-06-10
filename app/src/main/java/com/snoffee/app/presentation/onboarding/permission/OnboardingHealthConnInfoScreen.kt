@@ -69,7 +69,7 @@ fun OnboardingHealthConnInfoScreen(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            ProgressSection("단계 2 / 4", 0.44f)
+            ProgressSection("단계 2 / 5", 0.33f)
         }
 
         Column(

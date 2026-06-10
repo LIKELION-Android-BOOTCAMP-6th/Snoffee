@@ -164,7 +164,7 @@ fun OnboardingPermissionScreen(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            ProgressSection("단계 1 / 4", 0.22f)
+            ProgressSection("단계 1 / 5", 0.11f)
         }
 
         Column(

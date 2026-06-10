@@ -10,6 +10,7 @@ import com.snoffee.app.presentation.onboarding.health.PersonalInfoSetupScreen
 import com.snoffee.app.presentation.onboarding.intro.OnboardingIntroScreen
 import com.snoffee.app.presentation.onboarding.permission.OnboardingHealthConnInfoScreen
 import com.snoffee.app.presentation.onboarding.permission.OnboardingPermissionScreen
+import com.snoffee.app.presentation.onboarding.wear.OnboardingWearInfoScreen
 
 @Composable
 fun OnboardingScreen(
@@ -62,6 +63,13 @@ fun OnboardingScreen(
                 isHeightValid = uiState.isHeightValid,
                 isWeightValid = uiState.isWeightValid,
                 isNextEnabled = uiState.isPersonalInfoValid
+            )
+        }
+
+        OnboardingStep.WEAR_INFO -> {
+            OnboardingWearInfoScreen(
+                onNextClick = viewModel::moveToNextStep,
+                onBackClick = viewModel::moveToPreviousStep
             )
         }
 
