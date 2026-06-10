@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.snoffee.app.core.caffeine.CaffeineCalculator
 import com.snoffee.app.domain.model.CaffeineRecord
 import com.snoffee.app.domain.model.CaffeineSensitivity
 import com.snoffee.app.domain.model.SleepData
@@ -17,7 +18,6 @@ import com.snoffee.app.domain.usecase.gemini.GetTrendInsightUseCase
 import com.snoffee.app.domain.usecase.gemini.GetWeeklyInsightUseCase
 import com.snoffee.app.domain.usecase.report.GetReportUseCase
 import com.snoffee.app.domain.usecase.sleep.SaveSleepDataUseCase
-import com.snoffee.app.domain.util.CaffeineCalculator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.async
