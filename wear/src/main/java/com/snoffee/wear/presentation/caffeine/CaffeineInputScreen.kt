@@ -4,6 +4,7 @@ import android.app.Activity
 import android.app.RemoteInput
 import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -73,6 +74,7 @@ fun CaffeineInputScreen(
         }
     }
     var drinkName by remember { mutableStateOf("") }
+    val isNameValid = drinkName.isNotEmpty() && drinkName.length <= 10
     val keyboardLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -82,7 +84,9 @@ fun CaffeineInputScreen(
             val inputCharSequence = results.getCharSequence("extra_drink_name")
             if (inputCharSequence != null) {
                 val rawInput = inputCharSequence.toString().trim()
-                drinkName = if (rawInput.length > 10) rawInput.take(10) else rawInput
+                if (rawInput.length > 10) {
+                    Toast.makeText(context, "이름은 최대 10자까지 입력 가능합니다.", Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }
@@ -202,6 +206,7 @@ fun CaffeineInputScreen(
                     ) {
                         Button(
                             onClick = { if (amount >= 10f) amount -= 10f },
+                            enabled = amount > 10f,
                             modifier = Modifier
                                 .width(36.dp)
                                 .height(32.dp),
@@ -219,6 +224,7 @@ fun CaffeineInputScreen(
 
                         Button(
                             onClick = { if (amount <= 490f) amount += 10f },
+                            enabled = amount < 400f,
                             modifier = Modifier
                                 .width(36.dp)
                                 .height(32.dp),
@@ -232,9 +238,16 @@ fun CaffeineInputScreen(
 
                     Button(
                         onClick = {
-                            // 변수 상태 보존, 최종 확인 단계(Mode 2)로
-                            isFromDirectInput = true
-                            mode = 2
+                            if (amount < 1f || amount > 400f) {
+                                Toast.makeText(
+                                    context,
+                                    "카페인은 1mg ~ 400mg까지만 입력 가능합니다.",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            } else {
+                                isFromDirectInput = true
+                                mode = 2
+                            }
                         },
                         modifier = Modifier
                             .fillMaxWidth(0.65f)
@@ -295,10 +308,10 @@ fun CaffeineInputScreen(
                         Button(
                             onClick = {
                                 if (!isPhoneConnected) {
-                                    android.widget.Toast.makeText(
+                                    Toast.makeText(
                                         context,
                                         "연결이 되어 있지 않습니다. 연결 후 다시 시도해주세요.",
-                                        android.widget.Toast.LENGTH_LONG
+                                        Toast.LENGTH_LONG
                                     ).show()
                                     onBack()
                                 } else {
@@ -310,6 +323,7 @@ fun CaffeineInputScreen(
                                     }
                                 }
                             },
+                            enabled = (amount in 1f..400f) && isNameValid,
                             modifier = Modifier
                                 .weight(1f)
                                 .height(32.dp),
