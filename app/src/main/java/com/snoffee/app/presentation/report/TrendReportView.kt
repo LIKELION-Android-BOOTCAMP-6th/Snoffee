@@ -21,6 +21,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.snoffee.app.core.ui.component.InsightCard
 import com.snoffee.app.core.ui.theme.SnoffeeBgWarm
 import com.snoffee.app.core.ui.theme.SnoffeeError
 import com.snoffee.app.core.ui.theme.SnoffeePrimaryDark
@@ -191,11 +192,12 @@ fun TrendReportView(uiState: ReportUiState, onRefreshTrendInsight: () -> Unit) {
             }
         }
         item {
-            ReportInsightCard(
-                title = "Snoffee AI 헬스 코치",
+            InsightCard(
                 insight = uiState.trendInsight,
                 isLoading = uiState.isTrendInsightLoading,
-                onRefreshClick = onRefreshTrendInsight
+                onRefreshClick = onRefreshTrendInsight,
+                emptyText = "분석할 데이터가 충분하지 않아요.",
+                shape = RoundedCornerShape(20.dp)
             )
         }
     }

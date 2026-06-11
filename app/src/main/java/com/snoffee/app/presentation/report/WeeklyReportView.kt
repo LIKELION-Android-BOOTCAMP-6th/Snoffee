@@ -19,6 +19,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.snoffee.app.core.ui.component.InsightCard
 import com.snoffee.app.core.ui.theme.SnoffeeSurface
 import com.snoffee.app.core.ui.theme.SnoffeeTextMain
 import com.snoffee.app.core.util.Utils.toSleepTimeParts
@@ -86,11 +87,12 @@ fun WeeklyReportView(uiState: ReportUiState, onRefreshWeeklyInsight: () -> Unit)
             }
         }
         item {
-            ReportInsightCard(
-                title = "Snoffee AI 헬스 코치",
+            InsightCard(
                 insight = uiState.weeklyInsight,
                 isLoading = uiState.isWeeklyInsightLoading,
-                onRefreshClick = onRefreshWeeklyInsight
+                onRefreshClick = onRefreshWeeklyInsight,
+                emptyText = "분석할 데이터가 충분하지 않아요.",
+                shape = RoundedCornerShape(20.dp)
             )
         }
     }

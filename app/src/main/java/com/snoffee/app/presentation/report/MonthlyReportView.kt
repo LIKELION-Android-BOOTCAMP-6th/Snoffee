@@ -19,6 +19,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.snoffee.app.core.ui.component.InsightCard
 import com.snoffee.app.core.ui.theme.SnoffeeSuccess
 import com.snoffee.app.core.ui.theme.SnoffeeSurface
 import com.snoffee.app.core.ui.theme.SnoffeeTextMain
@@ -134,11 +135,12 @@ fun MonthlyReportView(uiState: ReportUiState, onRefreshMonthlyInsight: () -> Uni
             }
         }
         item {
-            ReportInsightCard(
-                title = "Snoffee AI 헬스 코치",
+            InsightCard(
                 insight = uiState.monthlyInsight,
                 isLoading = uiState.isMonthlyInsightLoading,
-                onRefreshClick = onRefreshMonthlyInsight
+                onRefreshClick = onRefreshMonthlyInsight,
+                emptyText = "분석할 데이터가 충분하지 않아요.",
+                shape = RoundedCornerShape(20.dp)
             )
         }
     }
