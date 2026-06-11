@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.snoffee.wear.data.WearDataClient
 import com.snoffee.wear.domain.model.CaffeineRecord
 import com.snoffee.wear.domain.usecase.CalculateResidualUseCase
+import com.snoffee.wear.service.WearNotificationHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Job
@@ -42,6 +43,12 @@ class HomeViewModel @Inject constructor(
             prefs.edit { putString("user_sensitivity", value) }
         }
 
+    //목표 취침 시간 저장
+    private var targetBedTimeMillis: Long
+        get() = prefs.getLong("target_bed_time", System.currentTimeMillis() + 4 * 60 * 60 * 1000)
+        set(value) {
+            prefs.edit { putLong("target_bed_time", value) }
+        }
     // 로컬 캐시
     private val localRecordCache = mutableListOf<CaffeineRecord>()
 
@@ -71,6 +78,9 @@ class HomeViewModel @Inject constructor(
                 // 민감도 업데이트
                 lastSensitivity = dataMap["sensitivity"] as? String ?: "NORMAL"
 
+                targetBedTimeMillis =
+                    (dataMap["targetBedTimeMillis"] as? Number)?.toLong() ?: targetBedTimeMillis
+
                 val caffeineMg = (dataMap["residualMg"] as? Number)?.toDouble() ?: 0.0
                 _uiState.update {
                     it.copy(
@@ -83,6 +93,7 @@ class HomeViewModel @Inject constructor(
                         isDataEmpty = false
                     )
                 }
+                checkAndScheduleCutoff(caffeineMg)
             }
         }
     }
@@ -103,6 +114,7 @@ class HomeViewModel @Inject constructor(
                         isLoading = false
                     )
                 }
+                checkAndScheduleCutoff(analysis.residualAmount)
                 delay(60000) // 1분마다 재계산
             }
         }
@@ -121,7 +133,32 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    private fun checkAndScheduleCutoff(residualMg: Double) {
+        val isEnabled = prefs.getBoolean("is_notification_enabled", true)
+
+        WearNotificationHelper.scheduleCutoffAlarm(
+            context = context,
+            currentResidual = residualMg,
+            halfLifeHours = lastSensitivity.toHalfLife(),
+            targetBedTimeMillis = targetBedTimeMillis,
+            isNotificationEnabled = isEnabled
+        )
+    }
+
     private fun formatTime(timeMillis: Long): String {
         return SimpleDateFormat("HH:mm", Locale.KOREA).format(Date(timeMillis))
+    }
+
+    fun triggerNotification(isCutoff: Boolean, residual: Double) {
+        // 설정값 가져오기
+        val isEnabled = prefs.getBoolean("is_notification_enabled", true)
+
+        WearNotificationHelper.sendCaffeineNotification(
+            context = context,
+            id = if (isCutoff) 1001 else 1002,
+            isCutoff = isCutoff,
+            residual = residual,
+            isNotificationEnabled = isEnabled // 설정 적용
+        )
     }
 }

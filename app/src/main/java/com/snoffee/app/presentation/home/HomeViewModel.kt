@@ -1,5 +1,6 @@
 package com.snoffee.app.presentation.home
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.snoffee.app.data.wear.PhoneDataClient
@@ -12,8 +13,10 @@ import com.snoffee.app.domain.repository.SleepRepository
 import com.snoffee.app.domain.repository.UserProfileRepository
 import com.snoffee.app.domain.usecase.caffeine.CalculateResidualUseCase
 import com.snoffee.app.domain.usecase.caffeine.GetTodayCaffeineUseCase
+import com.snoffee.app.service.PhoneNotificationHelper
 import com.snoffee.app.domain.usecase.gemini.GetHomeInsightUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,6 +33,7 @@ import kotlin.math.pow
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
+    @param:ApplicationContext private val context: Context,
     private val calculateResidualUseCase: CalculateResidualUseCase,
     private val getTodayCaffeineUseCase: GetTodayCaffeineUseCase,
     private val getHomeInsightUseCase: GetHomeInsightUseCase,
@@ -138,6 +142,20 @@ class HomeViewModel @Inject constructor(
                     lastUpdated = System.currentTimeMillis()
                 )
             }
+            val halfLife = when (profile.sensitivity) {
+                CaffeineSensitivity.SENSITIVE -> 6.0
+                CaffeineSensitivity.NORMAL -> 5.0
+                CaffeineSensitivity.LOW -> 4.0
+                else -> 5.0
+            }
+
+            PhoneNotificationHelper.schedulePhoneAlarms(
+                context = context,
+                currentResidual = residualDouble,
+                halfLifeHours = halfLife,
+                targetBedTimeMillis = profile.userSleepTime,
+                isNotificationEnabled = true
+            )
         }.onFailure { throwable ->
             _uiState.update { state ->
                 state.copy(

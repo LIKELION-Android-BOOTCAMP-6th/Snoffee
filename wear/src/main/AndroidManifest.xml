@@ -28,6 +28,13 @@
             android:exported="false" />
 
         <receiver
+            android:name=".receiver.CutoffAlarmReceiver"
+            android:exported="false" />
+
+        <receiver
+            android:name=".receiver.RemainderAlarmReceiver"
+            android:exported="false" />
+        <receiver
             android:name=".receiver.BootReceiver"
             android:exported="true">
             <intent-filter>
