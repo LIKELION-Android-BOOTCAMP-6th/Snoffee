@@ -10,7 +10,6 @@ import com.snoffee.app.core.caffeine.CaffeineCalculator
 import com.snoffee.app.domain.model.CaffeineRecord
 import com.snoffee.app.domain.model.CaffeineSensitivity
 import com.snoffee.app.domain.model.SleepData
-import com.snoffee.app.domain.repository.SleepRepository
 import com.snoffee.app.domain.repository.UserProfileRepository
 import com.snoffee.app.domain.usecase.gemini.GetMonthlyInsightUseCase
 import com.snoffee.app.domain.usecase.gemini.GetPeriodInsightUseCase
@@ -28,7 +27,6 @@ import kotlinx.coroutines.launch
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
-import java.time.YearMonth
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -39,7 +37,7 @@ class ReportViewModel @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val getReportUseCase: GetReportUseCase,
     private val saveSleepRecordUseCase: SaveSleepDataUseCase,
-    private val sleepRepository: SleepRepository,
+
     private val getWeeklyInsightUseCase: GetWeeklyInsightUseCase,
     private val getTrendInsightUseCase: GetTrendInsightUseCase,
     private val getMonthlyInsightUseCase: GetMonthlyInsightUseCase,
@@ -175,6 +173,13 @@ class ReportViewModel @Inject constructor(
                 val totalSleepDaysCount = trendResult.sleepData.groupBy {
                     Instant.ofEpochMilli(it.sleepEnd).atZone(zoneId).toLocalDate()
                 }.size
+                val today = LocalDate.now()
+                val startOfWeek = today.with(java.time.DayOfWeek.MONDAY)
+
+                val daysPassedThisWeek =
+                    java.time.temporal.ChronoUnit.DAYS.between(startOfWeek, today).toInt() + 1
+
+                val daysPassedThisMonth = today.dayOfMonth
 
                 //일간 데이터
                 val todayTotalCaffeine =
@@ -215,19 +220,38 @@ class ReportViewModel @Inject constructor(
                 }
 
                 //주간 데이터
-                val weeklyAvgCaffeine = if (weeklyResult.caffeineRecords.isNotEmpty()) {
-                    (weeklyResult.caffeineRecords.sumOf { it.intakeCaffeine } / 7).toInt()
-                } else 0
+                val caffeineDaysCount =
+                    weeklyResult.caffeineRecords
+                        .map {
+                            Instant.ofEpochMilli(it.consumedAt)
+                                .atZone(zoneId)
+                                .toLocalDate()
+                        }
+                        .distinct()
+                        .size
+
+                val weeklyAvgCaffeine =
+                    if (caffeineDaysCount > 0) {
+                        (weeklyResult.caffeineRecords.sumOf { it.intakeCaffeine } / caffeineDaysCount).toInt()
+                    } else 0
 
                 val weeklyAvgSleepStr = if (weeklyResult.sleepData.isNotEmpty()) {
-                    val weeklySleepByDate = weeklyResult.sleepData.groupBy {
-                        Instant.ofEpochMilli(it.sleepEnd).atZone(zoneId).toLocalDate()
-                    }
+
+                    val sleepDaysCount =
+                        weeklyResult.sleepData
+                            .groupBy {
+                                Instant.ofEpochMilli(it.sleepEnd)
+                                    .atZone(zoneId)
+                                    .toLocalDate()
+                            }
+                            .size
+
                     val totalWeeklySleepMillis =
                         weeklyResult.sleepData.sumOf { it.sleepEnd - it.sleepStart }
 
                     val avgDuration =
-                        Duration.ofMillis(totalWeeklySleepMillis / 7)
+                        Duration.ofMillis(totalWeeklySleepMillis / sleepDaysCount)
+
                     String.format(
                         Locale.KOREA,
                         "%dh %02dm",
@@ -252,20 +276,37 @@ class ReportViewModel @Inject constructor(
                         sleepData = weeklyResult.sleepData
                     )
                 //월간 데이터
-                val currentLocalDate = Instant.ofEpochMilli(nowMillis).atZone(zoneId).toLocalDate()
-                val daysInCurrentMonth = YearMonth.from(currentLocalDate).lengthOfMonth()
-                val monthlyAvgCaffeine = if (monthlyResult.caffeineRecords.isNotEmpty()) {
-                    (monthlyResult.caffeineRecords.sumOf { it.intakeCaffeine } / daysInCurrentMonth).toInt()
-                } else 0
+                val monthlyCaffeineDaysCount =
+                    monthlyResult.caffeineRecords
+                        .map {
+                            Instant.ofEpochMilli(it.consumedAt)
+                                .atZone(zoneId)
+                                .toLocalDate()
+                        }
+                        .distinct()
+                        .size
+
+                val monthlyAvgCaffeine =
+                    if (monthlyCaffeineDaysCount > 0) {
+                        (monthlyResult.caffeineRecords.sumOf { it.intakeCaffeine } / monthlyCaffeineDaysCount).toInt()
+                    } else 0
                 val monthlyAvgSleepStr = if (monthlyResult.sleepData.isNotEmpty()) {
-                    val monthlySleepByDate = monthlyResult.sleepData.groupBy {
-                        Instant.ofEpochMilli(it.sleepEnd).atZone(zoneId).toLocalDate()
-                    }
+
+                    val sleepDaysCount =
+                        monthlyResult.sleepData
+                            .groupBy {
+                                Instant.ofEpochMilli(it.sleepEnd)
+                                    .atZone(zoneId)
+                                    .toLocalDate()
+                            }
+                            .size
+
                     val totalMonthlySleepMillis =
                         monthlyResult.sleepData.sumOf { it.sleepEnd - it.sleepStart }
 
                     val avgDuration =
-                        Duration.ofMillis(totalMonthlySleepMillis / daysInCurrentMonth)
+                        Duration.ofMillis(totalMonthlySleepMillis / sleepDaysCount)
+
                     String.format(
                         Locale.KOREA,
                         "%dh %02dm",
@@ -469,7 +510,7 @@ class ReportViewModel @Inject constructor(
     }
 
     private fun calculateHighLowCaffeineSleepCompare(
-        caffeineRecords: List<com.snoffee.app.domain.model.CaffeineRecord>,
+        caffeineRecords: List<CaffeineRecord>,
         sleepData: List<SleepData>,
         zoneId: ZoneId
     ): Pair<String, String> {

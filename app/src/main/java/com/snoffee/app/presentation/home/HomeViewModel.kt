@@ -2,14 +2,13 @@ package com.snoffee.app.presentation.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.snoffee.app.data.wear.PhoneDataClient
 import com.snoffee.app.domain.model.CaffeineRecord
 import com.snoffee.app.domain.model.CaffeineSensitivity
 import com.snoffee.app.domain.model.SleepData
+import com.snoffee.app.domain.model.UserProfile
 import com.snoffee.app.domain.repository.CaffeineRepository
 import com.snoffee.app.domain.repository.SleepRepository
-import com.snoffee.app.data.wear.PhoneDataClient
-import com.snoffee.app.domain.model.CaffeineSensitivity
-import com.snoffee.app.domain.model.UserProfile
 import com.snoffee.app.domain.repository.UserProfileRepository
 import com.snoffee.app.domain.usecase.caffeine.CalculateResidualUseCase
 import com.snoffee.app.domain.usecase.caffeine.GetTodayCaffeineUseCase
@@ -175,7 +174,7 @@ class HomeViewModel @Inject constructor(
                     )
 
                 val weeklyCaffeineRecords =
-                    caffeineRepository.getCaffeineRecordsSince(sevenDaysAgo)
+                    caffeineRepository.getCaffeineRecordsSince(sevenDaysAgo).first()
 
                 val averageSleepMillis =
                     if (sleepData.isNotEmpty()) {
