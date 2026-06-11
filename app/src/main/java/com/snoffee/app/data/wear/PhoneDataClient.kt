@@ -28,7 +28,9 @@ class PhoneDataClient(context: Context) {
         residualMg: Double,
         riskLevel: String,
         metabolismTime: String,
-        concentrationLevel: String
+        concentrationLevel: String,
+        sensitivity: String,
+        targetSleepTime: Long,
     ) {
         scope.launch {
             try {
@@ -37,6 +39,8 @@ class PhoneDataClient(context: Context) {
                     dataMap.putString("riskLevel", riskLevel)
                     dataMap.putString("metabolismTime", metabolismTime)
                     dataMap.putString("concentrationLevel", concentrationLevel)
+                    dataMap.putString("sensitivity", sensitivity)
+                    dataMap.putLong("targetSleepTime", targetSleepTime)
                     // 동일 데이터 구조인 경우에도 유실 없이 수신을 강제하기 위해 타임스탬프 추가
                     dataMap.putLong("timestamp", System.currentTimeMillis())
                 }
@@ -51,21 +55,21 @@ class PhoneDataClient(context: Context) {
     }
 
     //최근 섭취 음료 4개 리스트 전송
-    fun sendRecentDrinksToWatch(drinks: List<Pair<String, Double>>) {
-        scope.launch {
-            try {
-                val formattedDrinks = drinks.map { "${it.first}|${it.second}" }
-
-                val putDataReq = PutDataMapRequest.create(PATH_RECENT_DRINKS).apply {
-                    dataMap.putStringArrayList("recentDrinksList", ArrayList(formattedDrinks))
-                    dataMap.putLong("timestamp", System.currentTimeMillis())
-                }.asPutDataRequest().setUrgent()
-
-                dataClient.putDataItem(putDataReq).await()
-                logger.info("📱 [Phone ➔ Watch] 최근 음료 리스트 전송 성공: $formattedDrinks")
-            } catch (e: Exception) {
-                logger.severe("❌ [Phone ➔ Watch] 음료 리스트 전송 실패: ${e.message}")
-            }
-        }
-    }
+//    fun sendRecentDrinksToWatch(drinks: List<Pair<String, Double>>) {
+//        scope.launch {
+//            try {
+//                val formattedDrinks = drinks.map { "${it.first}|${it.second}" }
+//
+//                val putDataReq = PutDataMapRequest.create(PATH_RECENT_DRINKS).apply {
+//                    dataMap.putStringArrayList("recentDrinksList", ArrayList(formattedDrinks))
+//                    dataMap.putLong("timestamp", System.currentTimeMillis())
+//                }.asPutDataRequest().setUrgent()
+//
+//                dataClient.putDataItem(putDataReq).await()
+//                logger.info("📱 [Phone ➔ Watch] 최근 음료 리스트 전송 성공: $formattedDrinks")
+//            } catch (e: Exception) {
+//                logger.severe("❌ [Phone ➔ Watch] 음료 리스트 전송 실패: ${e.message}")
+//            }
+//        }
+//    }
 }

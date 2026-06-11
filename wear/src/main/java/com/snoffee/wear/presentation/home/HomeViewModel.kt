@@ -1,49 +1,164 @@
 package com.snoffee.wear.presentation.home
 
+import android.content.Context
+import android.util.Log
+import androidx.core.content.edit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.snoffee.wear.data.WearDataClient
+import com.snoffee.wear.domain.model.CaffeineRecord
+import com.snoffee.wear.domain.usecase.CalculateResidualUseCase
+import com.snoffee.wear.service.WearNotificationHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    private val wearDataClient: WearDataClient
+    @param:ApplicationContext private val context: Context,
+    private val wearDataClient: WearDataClient,
+    private val calculateResidualUseCase: CalculateResidualUseCase,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(WatchHomeUiState())
     val uiState: StateFlow<WatchHomeUiState> = _uiState.asStateFlow()
 
-    val isPhoneConnected = wearDataClient.isPhoneConnected
+    private val prefs = context.getSharedPreferences("caffeine_prefs", Context.MODE_PRIVATE)
+
+    private var lastSensitivity: String
+        get() = prefs.getString("user_sensitivity", "NORMAL") ?: "NORMAL"
+        set(value) {
+            // KTX 확장 함수 edit { } 사용
+            prefs.edit { putString("user_sensitivity", value) }
+        }
+
+    //목표 취침 시간 저장
+    private var targetBedTimeMillis: Long
+        get() = prefs.getLong("target_bed_time", System.currentTimeMillis() + 4 * 60 * 60 * 1000)
+        set(value) {
+            prefs.edit { putLong("target_bed_time", value) }
+        }
+    // 로컬 캐시
+    private val localRecordCache = mutableListOf<CaffeineRecord>()
+
+    // 로컬 계산 루프 관리
+    private var localCalculationJob: Job? = null
 
     init {
-        observePhoneData()
+        observeDataFlow()
     }
 
-    private fun observePhoneData() {
+    private fun observeDataFlow() {
         viewModelScope.launch {
-            wearDataClient.receivedCaffeineData.collectLatest { dataMap ->
-                if (dataMap.isNotEmpty()) {
-                    _uiState.value = WatchHomeUiState(
-                        residualCaffeineMg = (dataMap["residualMg"] as? Double) ?: 0.0,
-                        riskLevel = CaffeineRiskLevel.valueOf(
-                            (dataMap["riskLevel"] as? String) ?: "SAFE"
-                        ),
-                        metabolismTime = (dataMap["metabolismTime"] as? String) ?: "--:--",
-                        concentrationLevel = (dataMap["concentrationLevel"] as? String) ?: "-",
-                        isLoading = false
-                    )
+            wearDataClient.isPhoneConnected.collectLatest { isConnected ->
+                if (isConnected) {
+                    localCalculationJob?.cancel() // 로컬 루프 정지
+                    observePhoneData()
+                } else {
+                    startLocalCalculationLoop()
                 }
             }
         }
     }
 
-    fun retryConnection() {
-        wearDataClient.checkPhoneCapability()
+    private suspend fun observePhoneData() {
+        wearDataClient.receivedCaffeineData.collectLatest { dataMap ->
+            if (dataMap.isNotEmpty()) {
+                // 민감도 업데이트
+                lastSensitivity = dataMap["sensitivity"] as? String ?: "NORMAL"
+
+                targetBedTimeMillis =
+                    (dataMap["targetBedTimeMillis"] as? Number)?.toLong() ?: targetBedTimeMillis
+
+                val caffeineMg = (dataMap["residualMg"] as? Number)?.toDouble() ?: 0.0
+                _uiState.update {
+                    it.copy(
+                        residualCaffeineMg = caffeineMg,
+                        riskLevel = runCatching { CaffeineRiskLevel.valueOf(dataMap["riskLevel"] as String) }.getOrDefault(
+                            CaffeineRiskLevel.SAFE
+                        ),
+                        metabolismTime = dataMap["metabolismTime"] as? String ?: "--:--",
+                        isLoading = false,
+                        isDataEmpty = false
+                    )
+                }
+                checkAndScheduleCutoff(caffeineMg)
+            }
+        }
+    }
+
+    private fun startLocalCalculationLoop() {
+        localCalculationJob = viewModelScope.launch {
+            while (true) {
+                val analysis = calculateResidualUseCase(
+                    records = localRecordCache,
+                    halfLifeHours = lastSensitivity.toHalfLife(),
+                    now = System.currentTimeMillis()
+                )
+
+                _uiState.update {
+                    it.copy(
+                        residualCaffeineMg = analysis.residualAmount,
+                        metabolismTime = formatTime(analysis.cutoffTime),
+                        isLoading = false
+                    )
+                }
+                checkAndScheduleCutoff(analysis.residualAmount)
+                delay(60000) // 1분마다 재계산
+            }
+        }
+    }
+
+    fun addRecord(name: String, amount: Double) {
+        val newRecord = CaffeineRecord(name, amount, System.currentTimeMillis())
+        localRecordCache.add(newRecord)
+
+        viewModelScope.launch {
+            val success =
+                wearDataClient.sendCustomCaffeineRecord(name, amount.toInt(), newRecord.time)
+            if (!success) {
+                Log.w("HomeViewModel", "폰 연결 안 됨: 로컬 캐시에만 저장됨")
+            }
+        }
+    }
+
+    private fun checkAndScheduleCutoff(residualMg: Double) {
+        val isEnabled = prefs.getBoolean("is_notification_enabled", true)
+
+        WearNotificationHelper.scheduleCutoffAlarm(
+            context = context,
+            currentResidual = residualMg,
+            halfLifeHours = lastSensitivity.toHalfLife(),
+            targetBedTimeMillis = targetBedTimeMillis,
+            isNotificationEnabled = isEnabled
+        )
+    }
+
+    private fun formatTime(timeMillis: Long): String {
+        return SimpleDateFormat("HH:mm", Locale.KOREA).format(Date(timeMillis))
+    }
+
+    fun triggerNotification(isCutoff: Boolean, residual: Double) {
+        // 설정값 가져오기
+        val isEnabled = prefs.getBoolean("is_notification_enabled", true)
+
+        WearNotificationHelper.sendCaffeineNotification(
+            context = context,
+            id = if (isCutoff) 1001 else 1002,
+            isCutoff = isCutoff,
+            residual = residual,
+            isNotificationEnabled = isEnabled // 설정 적용
+        )
     }
 }
