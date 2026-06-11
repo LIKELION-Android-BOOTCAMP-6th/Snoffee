@@ -164,7 +164,7 @@ fun OnboardingPermissionScreen(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            ProgressSection("단계 1 / 4", 0.22f)
+            ProgressSection("단계 1 / 5", 0.11f)
         }
 
         Column(
@@ -175,7 +175,7 @@ fun OnboardingPermissionScreen(
             Text(
                 text = "권한 동의",
                 color = SnoffeeTextMain,
-                fontSize = 32.sp,
+                fontSize = 25.sp,
                 fontWeight = FontWeight.Bold
             )
 

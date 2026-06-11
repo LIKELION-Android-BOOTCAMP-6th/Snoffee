@@ -64,8 +64,8 @@ import com.snoffee.app.core.ui.theme.SnoffeeBgBase
 import com.snoffee.app.core.ui.theme.SnoffeeDivider
 import com.snoffee.app.core.ui.theme.SnoffeePrimary
 import com.snoffee.app.core.ui.theme.SnoffeePrimaryLight
+import com.snoffee.app.core.ui.theme.SnoffeePrimarySubtle
 import com.snoffee.app.core.ui.theme.SnoffeeSurface
-import com.snoffee.app.core.ui.theme.SnoffeeTextHint
 import com.snoffee.app.core.ui.theme.SnoffeeTextMain
 import com.snoffee.app.core.ui.theme.SnoffeeTextMuted
 import com.snoffee.app.core.util.Utils.toMonthLabel
@@ -277,9 +277,33 @@ fun SleepScreen(viewModel: SleepViewModel = hiltViewModel()) {
                                         )
                                     }
                                 }
-                            } else {
-                                Spacer(modifier = Modifier.height(16.dp))
                             }
+                        }
+                    }
+
+                    if (uiState.selectedDateRecords.any { it.source != SleepSource.MANUAL }) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    SnoffeePrimarySubtle.copy(alpha = 0.45f),
+                                    RoundedCornerShape(10.dp)
+                                )
+                                .padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "ⓘ",
+                                color = SnoffeePrimary
+                            )
+
+                            Spacer(modifier = Modifier.width(8.dp))
+
+                            Text(
+                                text = "삼성 헬스 수면 점수와 다른 자체 기준 점수 입니다.",
+                                color = SnoffeeTextMuted,
+                                fontSize = 12.sp
+                            )
                         }
                     }
                 }
@@ -367,19 +391,19 @@ fun SleepScreen(viewModel: SleepViewModel = hiltViewModel()) {
         AlertDialog(
             onDismissRequest = {
                 showDeleteConfirmDialog = false
+                deleteTargetData = null
             },
             title = {
                 Text(
                     text = "수면 기록 삭제",
                     fontWeight = FontWeight.Bold,
-                    color = SnoffeeTextMain
+                    fontSize = 18.sp
                 )
             },
             text = {
                 Text(
-                    text = "선택하신 수면 기록을 삭제하시겠습니까?\n" +
-                            "삭제된 데이터는 복구할 수 없습니다.",
-                    color = SnoffeeTextMain
+                    text = "선택하신 수면 기록을 삭제하시겠습니까?\n삭제된 데이터는 복구할 수 없습니다.",
+                    fontSize = 15.sp
                 )
             },
             confirmButton = {
@@ -392,27 +416,23 @@ fun SleepScreen(viewModel: SleepViewModel = hiltViewModel()) {
                 ) {
                     Text(
                         text = "삭제",
-                        color = Color.Red,
-                        fontWeight = FontWeight.Bold
+                        color = MaterialTheme.colorScheme.error,
+                        fontWeight = FontWeight.SemiBold
                     )
                 }
             },
             dismissButton = {
                 TextButton(
                     onClick = {
-                        showDeleteConfirmDialog = false;
+                        showDeleteConfirmDialog = false
                         deleteTargetData = null
-                    }
-                )
-                {
-                    Text(
-                        text = "취소",
-                        color = SnoffeeTextHint
-                    )
+                    },
+                ) {
+                    Text(text = "취소", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             },
             shape = RoundedCornerShape(16.dp),
-            containerColor = SnoffeePrimaryLight
+            containerColor = SnoffeeSurface
         )
     }
 }
@@ -645,7 +665,7 @@ private fun SleepDayCell(
     onClick: () -> Unit
 ) {
     val statusColor = when {
-        day.score != null && day.score >= 85 -> GoodSleep
+        day.score != null && day.score >= 90 -> GoodSleep
         day.score != null && day.score <= 59 -> BadSleep
         else -> Color.Transparent
     }

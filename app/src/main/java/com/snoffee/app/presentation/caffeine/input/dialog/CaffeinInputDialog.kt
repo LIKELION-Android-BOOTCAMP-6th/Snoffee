@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
@@ -43,6 +42,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.snoffee.app.R
+import com.snoffee.app.core.ui.theme.SnoffeeError
 import com.snoffee.app.core.ui.theme.SnoffeeTheme
 import com.snoffee.app.core.util.Utils.toEpochMilli
 import com.snoffee.app.core.util.Utils.toLocalDateTime
@@ -97,9 +97,13 @@ fun CaffeineInputDialog(
         )
     }
 
+    val drinkNameFocusRequester = remember { FocusRequester() }
     val caffeineFocusRequester = remember { FocusRequester() }
     val volumeFocusRequester = remember { FocusRequester() }
     var isTimeError by remember { mutableStateOf(false) }
+    var drinkNameError by remember { mutableStateOf<String?>(null) }
+    var caffeineError by remember { mutableStateOf<String?>(null) }
+    var volumeError by remember { mutableStateOf<String?>(null) }
 
     val colorScheme = SnoffeeTheme.colorScheme
     val extColors = SnoffeeTheme.colors
@@ -142,7 +146,7 @@ fun CaffeineInputDialog(
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(13.dp))
 
             Column(modifier = Modifier.fillMaxWidth()) {
                 Text(
@@ -159,7 +163,10 @@ fun CaffeineInputDialog(
                         .height(56.dp),
                     shape = RoundedCornerShape(12.dp),
                     color = SnoffeeTheme.colorScheme.surfaceVariant.copy(alpha = 0.9f),
-                    border = BorderStroke(0.5.dp, SnoffeeTheme.colorScheme.outlineVariant)
+                    border = BorderStroke(
+                        if (drinkNameError != null) 1.5.dp else 0.5.dp,
+                        if (drinkNameError != null) SnoffeeError else SnoffeeTheme.colorScheme.outlineVariant
+                    )
                 ) {
                     Box(
                         contentAlignment = Alignment.CenterStart,
@@ -176,7 +183,10 @@ fun CaffeineInputDialog(
                         // 음료명 실제 입력 필드
                         BasicTextField(
                             value = drinkName,
-                            onValueChange = { drinkName = it },
+                            onValueChange = {
+                                drinkName = it
+                                drinkNameError = null
+                            },
                             keyboardOptions = KeyboardOptions(
                                 imeAction = ImeAction.Next,
                                 keyboardType = KeyboardType.Text
@@ -197,143 +207,188 @@ fun CaffeineInputDialog(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            // 음료명 경고
+            if (drinkNameError != null) {
+                Text(
+                    text = drinkNameError!!,
+                    color = SnoffeeError,
+                    fontSize = 12.sp,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 4.dp, top = 6.dp)
+                )
+            }
 
-            // 카페인 함량 + 음료 용량 입력 영역
-            Row(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = stringResource(R.string.caffeine_drink_input_dialog_drink_caffeine_amount_subtitle),
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = SnoffeeTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
-                    )
+            Spacer(modifier = Modifier.height(13.dp))
 
-                    Surface(
-                        modifier = Modifier.height(56.dp),
-                        shape = RoundedCornerShape(16.dp),
-                        color = SnoffeeTheme.colorScheme.surfaceVariant.copy(alpha = 0.9f),
-                        border = BorderStroke(0.5.dp, SnoffeeTheme.colorScheme.outlineVariant),
+            // 카페인 함량 입력 영역
+            Column(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = stringResource(R.string.caffeine_drink_input_dialog_drink_caffeine_amount_subtitle),
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = SnoffeeTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
+                )
+
+                Surface(
+                    modifier = Modifier.height(56.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    color = SnoffeeTheme.colorScheme.surfaceVariant.copy(alpha = 0.9f),
+                    border = BorderStroke(
+                        if (caffeineError != null) 1.5.dp else 0.5.dp,
+                        if (caffeineError != null) SnoffeeError else SnoffeeTheme.colorScheme.outlineVariant
+                    ),
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(horizontal = 16.dp)
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(horizontal = 16.dp)
+                        Box(
+                            modifier = Modifier.weight(1f),
+                            contentAlignment = Alignment.CenterStart
                         ) {
-                            Box(
-                                modifier = Modifier.weight(1f),
-                                contentAlignment = Alignment.CenterStart
-                            ) {
-                                if (caffeineInputString.isEmpty()) {
-                                    Text(
-                                        text = "0.0",
-                                        color = SnoffeeTheme.colors.textHint,
-                                        fontSize = 24.sp,
-                                        fontWeight = FontWeight.Medium
-                                    )
-                                }
-
-                                BasicTextField(
-                                    value = caffeineInputString,
-                                    onValueChange = { newValue ->
-                                        if (newValue.all { it.isDigit() || it == '.' } && newValue.length <= 5) {
-                                            caffeineInputString = newValue
-                                        }
-                                    },
-                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                    textStyle = TextStyle(
-                                        fontSize = 24.sp,
-                                        fontWeight = FontWeight.Medium,
-                                        color = SnoffeeTheme.colorScheme.primary,
-                                        letterSpacing = 0.5.sp
-                                    ),
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .focusRequester(caffeineFocusRequester),
-                                    singleLine = true
+                            if (caffeineInputString.isEmpty()) {
+                                Text(
+                                    text = "0.0",
+                                    color = SnoffeeTheme.colors.textHint,
+                                    fontSize = 24.sp,
+                                    fontWeight = FontWeight.Medium
                                 )
                             }
 
-                            Text(
-                                text = "mg",
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = SnoffeeTheme.colors.textHint,
-                                modifier = Modifier.padding(start = 8.dp)
+                            BasicTextField(
+                                value = caffeineInputString,
+                                onValueChange = { newValue ->
+                                    if (newValue.all { it.isDigit() || it == '.' } && newValue.length <= 5) {
+                                        caffeineInputString = newValue
+                                        caffeineError = null   // 입력 시작하면 에러 해제
+                                    }
+                                },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                textStyle = TextStyle(
+                                    fontSize = 24.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = SnoffeeTheme.colorScheme.primary,
+                                    letterSpacing = 0.5.sp
+                                ),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .focusRequester(caffeineFocusRequester),
+                                singleLine = true
                             )
                         }
-                    }
-                }
 
-                Spacer(modifier = Modifier.width(12.dp))
-
-                // 음료 용량 입력
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = stringResource(R.string.caffeine_drink_input_dialog_drink_amount_subtitle),
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = SnoffeeTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
-                    )
-
-                    Surface(
-                        modifier = Modifier.height(56.dp),
-                        shape = RoundedCornerShape(16.dp),
-                        color = SnoffeeTheme.colorScheme.surfaceVariant.copy(alpha = 0.9f),
-                        border = BorderStroke(0.5.dp, SnoffeeTheme.colorScheme.outlineVariant),
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(horizontal = 16.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier.weight(1f),
-                                contentAlignment = Alignment.CenterStart
-                            ) {
-                                if (volumeInputString.isEmpty()) {
-                                    Text(
-                                        text = "0",
-                                        color = SnoffeeTheme.colors.textHint,
-                                        fontSize = 24.sp,
-                                        fontWeight = FontWeight.Medium
-                                    )
-                                }
-
-                                BasicTextField(
-                                    value = volumeInputString,
-                                    onValueChange = { newValue ->
-                                        if (newValue.all { it.isDigit() } && newValue.length <= 5) {
-                                            volumeInputString = newValue
-                                        }
-                                    },
-                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                    textStyle = TextStyle(
-                                        fontSize = 24.sp,
-                                        fontWeight = FontWeight.Medium,
-                                        color = SnoffeeTheme.colorScheme.primary,
-                                        letterSpacing = 0.5.sp
-                                    ),
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .focusRequester(volumeFocusRequester),
-                                    singleLine = true
-                                )
-                            }
-
-                            Text(
-                                text = "ml",
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = SnoffeeTheme.colors.textHint,
-                                modifier = Modifier.padding(start = 8.dp)
-                            )
-                        }
+                        Text(
+                            text = "mg",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = SnoffeeTheme.colors.textHint,
+                            modifier = Modifier.padding(start = 8.dp)
+                        )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            // 경고 문구 (두 입력칸 Row 바깥, 아래 공통 영역)
+            if (caffeineError != null) {
+                Text(
+                    text = caffeineError!!,
+                    color = SnoffeeError,
+                    fontSize = 12.sp,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 4.dp, top = 6.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(13.dp))
+
+            // 음료 용량 입력 영역
+            Column(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = stringResource(R.string.caffeine_drink_input_dialog_drink_amount_subtitle),
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = SnoffeeTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
+                )
+
+                Surface(
+                    modifier = Modifier.height(56.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    color = SnoffeeTheme.colorScheme.surfaceVariant.copy(alpha = 0.9f),
+                    border = BorderStroke(
+                        if (volumeError != null) 1.5.dp else 0.5.dp,
+                        if (volumeError != null) SnoffeeError else SnoffeeTheme.colorScheme.outlineVariant
+                    ),
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier.weight(1f),
+                            contentAlignment = Alignment.CenterStart
+                        ) {
+                            if (volumeInputString.isEmpty()) {
+                                Text(
+                                    text = "0",
+                                    color = SnoffeeTheme.colors.textHint,
+                                    fontSize = 24.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+
+                            BasicTextField(
+                                value = volumeInputString,
+                                onValueChange = { newValue ->
+                                    if (newValue.all { it.isDigit() } && newValue.length <= 5) {
+                                        volumeInputString = newValue
+                                        volumeError = null
+                                    }
+                                },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                textStyle = TextStyle(
+                                    fontSize = 24.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = SnoffeeTheme.colorScheme.primary,
+                                    letterSpacing = 0.5.sp
+                                ),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .focusRequester(volumeFocusRequester),
+                                singleLine = true
+                            )
+                        }
+
+                        Text(
+                            text = "ml",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = SnoffeeTheme.colors.textHint,
+                            modifier = Modifier.padding(start = 8.dp)
+                        )
+                    }
+                }
+            }
+
+            if (volumeError != null) {
+                Text(
+                    text = volumeError!!,
+                    color = SnoffeeError,
+                    fontSize = 12.sp,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 4.dp, top = 6.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(13.dp))
 
             // 섭취 시간 영역
             TimePickerBox(
@@ -349,12 +404,41 @@ fun CaffeineInputDialog(
             // 기록하기 버튼
             Button(
                 onClick = {
+                    val caffeine = caffeineInputString.toDoubleOrNull()
+                    val volume = volumeInputString.toDoubleOrNull()
+
+                    // 초기화
+                    drinkNameError = null
+                    caffeineError = null
+                    volumeError = null
+
+                    // 음료명 검증
+                    if (drinkName.isBlank()) {
+                        drinkNameError = "음료명을 입력해주세요"
+                        drinkNameFocusRequester.requestFocus()
+                        return@Button
+                    }
+
+                    // 카페인 검증 (1~400mg)
+                    if (caffeine == null || caffeine < 1.0 || caffeine > 400.0) {
+                        caffeineError = "1~400mg 사이로 입력해주세요"
+                        caffeineFocusRequester.requestFocus()
+                        return@Button
+                    }
+
+                    // 용량 검증 (50~1000ml)
+                    if (volume == null || volume < 50.0 || volume > 1000.0) {
+                        volumeError = "50~1000ml 사이로 입력해주세요"
+                        volumeFocusRequester.requestFocus()
+                        return@Button
+                    }
+
                     val finalRecord = CaffeineRecord(
                         drinkId = stableDrinkId,
                         drinkName = drinkName,
                         brandName = editingRecord?.brandName ?: "직접 입력",
-                        intakeSize = volumeInputString.toDoubleOrNull() ?: 0.0,
-                        intakeCaffeine = caffeineInputString.toDoubleOrNull() ?: 0.0,
+                        intakeSize = volume,
+                        intakeCaffeine = caffeine,
                         consumedAt = consumedAtMilli
                     )
                     onConfirm(finalRecord)

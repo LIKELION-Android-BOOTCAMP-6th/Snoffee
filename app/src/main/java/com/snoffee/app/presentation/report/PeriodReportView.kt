@@ -7,10 +7,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -26,6 +24,10 @@ import androidx.compose.ui.unit.sp
 import com.snoffee.app.core.ui.theme.SnoffeeSurface
 import com.snoffee.app.core.ui.theme.SnoffeeTextMain
 import com.snoffee.app.core.ui.theme.SnoffeeTextMuted
+import com.snoffee.app.core.util.Utils.toSleepTimeParts
+import com.snoffee.app.presentation.report.component.SleepValue
+import com.snoffee.app.presentation.report.component.StatCard
+import com.snoffee.app.presentation.report.component.StatValue
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -120,74 +122,22 @@ fun PeriodReportView(
         item {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    StatCard(
-                        modifier = Modifier.weight(1f),
-                        label = "기간 총 카페인",
-                        value = uiState.periodTotalCaffeine.toString(),
-                        unit = " mg"
-                    )
-                    StatCard(
-                        modifier = Modifier.weight(1f),
-                        label = "기간 총 수면",
-                        value = uiState.periodTotalSleepTime.split(" ").firstOrNull() ?: "0",
-                        unit = " " + (uiState.periodTotalSleepTime.split(" ").getOrNull(1) ?: "")
-                    )
+                    StatCard(modifier = Modifier.weight(1f), label = "기간 총 카페인") {
+                        StatValue(uiState.periodTotalCaffeine.toString(), " mg")
+                    }
+                    StatCard(modifier = Modifier.weight(1f), label = "기간 총 수면") {
+                        SleepValue(uiState.periodTotalSleepTime.toSleepTimeParts())
+                    }
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    StatCard(
-                        modifier = Modifier.weight(1f),
-                        label = "일평균 카페인",
-                        value = uiState.periodAvgCaffeine.toString(),
-                        unit = " mg"
-                    )
-                    StatCard(
-                        modifier = Modifier.weight(1f),
-                        label = "일평균 수면시간",
-                        value = uiState.periodAvgSleepTime,
-                        unit = ""
-                    )
+                    StatCard(modifier = Modifier.weight(1f), label = "일평균 카페인") {
+                        StatValue(uiState.periodAvgCaffeine.toString(), " mg")
+                    }
+                    StatCard(modifier = Modifier.weight(1f), label = "일평균 수면시간") {
+                        SleepValue(uiState.periodAvgSleepTime.toSleepTimeParts())
+                    }
                 }
             }
-        }
-        item {
-            ReportInsightCard(
-                title = "Snoffee AI 헬스 코치",
-                insight = uiState.periodInsight,
-                isLoading = uiState.isPeriodInsightLoading,
-                onRefreshClick = onRefreshPeriodInsight
-            )
-        }
-    }
-}
-
-@Composable
-private fun StatCard(
-    modifier: Modifier = Modifier,
-    label: String,
-    value: String,
-    unit: String
-) {
-    Column(
-        modifier = modifier
-            .clip(RoundedCornerShape(16.dp))
-            .background(SnoffeeSurface)
-            .padding(16.dp)
-    ) {
-        Text(
-            text = label,
-            color = SnoffeeTextMuted,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Medium
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Row(verticalAlignment = Alignment.Bottom) {
-            Text(
-                text = value,
-                color = SnoffeeTextMain,
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold
-            )
-            Text(text = unit, color = SnoffeeTextMuted, fontSize = 13.sp)
         }
     }
 }

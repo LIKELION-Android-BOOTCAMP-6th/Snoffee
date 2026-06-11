@@ -67,6 +67,7 @@ import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import kotlin.math.roundToInt
 
 private val DAY_LABELS = listOf("일", "월", "화", "수", "목", "금", "토")
 
@@ -532,7 +533,7 @@ private fun TodaySummarySection(
                     color = MaterialTheme.colorScheme.onBackground,
                 )
                 Text(
-                    text = stringResource(R.string.caffeine_remain_amount, totalMg.toInt()),
+                    text = stringResource(R.string.caffeine_remain_amount, totalMg.roundToInt()),
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
@@ -736,7 +737,7 @@ private fun CaffeineLogItemCard(
                     )
                     // 브랜드 · 시간 · 카페인량
                     Text(
-                        text = "${record.brandName}  •  $timeLabel  •  ${record.intakeCaffeine.toInt()}mg",
+                        text = "${record.brandName}  •  $timeLabel  •  ${record.intakeCaffeine.roundToInt()}mg",
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )

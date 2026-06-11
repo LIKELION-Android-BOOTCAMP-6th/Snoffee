@@ -21,6 +21,7 @@ enum class OnboardingStep {
     PERMISSION,
     HEALTH_CONNECT_INFO,
     PERSONAL_INFO,
+    WEAR_INFO,
     COMPLETE
 }
 
@@ -37,6 +38,8 @@ data class OnboardingUiState(
     val currentStep: OnboardingStep = OnboardingStep.INTRO,
     val height: String = "",
     val weight: String = "",
+    val sleepTime: String = "22:30",
+    val wakeTime: String = "06:30",
     val caffeineSensitivity: CaffeineSensitivityOption = CaffeineSensitivityOption.NORMAL,
     val isHeightValid: Boolean = false,
     val isWeightValid: Boolean = false,
@@ -61,7 +64,8 @@ class OnboardingViewModel @Inject constructor(
                     OnboardingStep.INTRO -> OnboardingStep.PERMISSION
                     OnboardingStep.PERMISSION -> OnboardingStep.HEALTH_CONNECT_INFO
                     OnboardingStep.HEALTH_CONNECT_INFO -> OnboardingStep.PERSONAL_INFO
-                    OnboardingStep.PERSONAL_INFO -> OnboardingStep.COMPLETE
+                    OnboardingStep.PERSONAL_INFO -> OnboardingStep.WEAR_INFO
+                    OnboardingStep.WEAR_INFO -> OnboardingStep.COMPLETE
                     OnboardingStep.COMPLETE -> OnboardingStep.COMPLETE
                 }
             )
@@ -76,7 +80,8 @@ class OnboardingViewModel @Inject constructor(
                     OnboardingStep.PERMISSION -> OnboardingStep.INTRO
                     OnboardingStep.HEALTH_CONNECT_INFO -> OnboardingStep.PERMISSION
                     OnboardingStep.PERSONAL_INFO -> OnboardingStep.HEALTH_CONNECT_INFO
-                    OnboardingStep.COMPLETE -> OnboardingStep.PERSONAL_INFO
+                    OnboardingStep.WEAR_INFO -> OnboardingStep.PERSONAL_INFO
+                    OnboardingStep.COMPLETE -> OnboardingStep.WEAR_INFO
                 }
             )
         }
@@ -96,6 +101,14 @@ class OnboardingViewModel @Inject constructor(
             it.copy(weight = value)
         }
         validatePersonalInfo()
+    }
+
+    fun updateSleepTime(value: String) {
+        _uiState.update { it.copy(sleepTime = value) }
+    }
+
+    fun updateWakeTime(value: String) {
+        _uiState.update { it.copy(wakeTime = value) }
     }
 
     private fun validatePersonalInfo() {
@@ -124,7 +137,9 @@ class OnboardingViewModel @Inject constructor(
             val result = completeOnboardingUseCase(
                 height = state.height,
                 weight = state.weight,
-                sensitivity = state.caffeineSensitivity.domainDomainSensitivity
+                sensitivity = state.caffeineSensitivity.domainDomainSensitivity,
+                sleepTime = state.sleepTime.replace(":", "").toLong(), // "22:30" → 2230
+                wakeTime = state.wakeTime.replace(":", "").toLong(),
             )
 
             if (result.isSuccess) {

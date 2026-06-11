@@ -65,6 +65,7 @@ import com.snoffee.app.core.ui.theme.SnoffeeTextHint
 import com.snoffee.app.core.ui.theme.SnoffeeTextMain
 import com.snoffee.app.core.ui.theme.SnoffeeTextMuted
 import com.snoffee.app.domain.model.CaffeineSensitivity
+import com.snoffee.app.presentation.onboarding.component.TimeSettingCard
 import kotlinx.coroutines.launch
 import java.util.Locale
 
@@ -615,58 +616,6 @@ fun CaffeineSensitivityCard(statusText: String, progressFill: Float) {
     }
 }
 
-@Composable
-fun TimeSettingCard(title: String, time: String, iconRes: Int, onClick: () -> Unit) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() },
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = SnoffeeSurface)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(14.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .background(SnoffeeBgBase, RoundedCornerShape(12.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        painter = painterResource(id = iconRes),
-                        contentDescription = null,
-                        modifier = Modifier.size(22.dp),
-                        tint = SnoffeePrimary
-                    )
-                }
-                Column {
-                    Text(text = title, fontSize = 12.sp, color = SnoffeeTextHint)
-                    Text(
-                        text = time,
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = SnoffeeTextMain
-                    )
-                }
-            }
-            Icon(
-                painter = painterResource(id = R.drawable.ic_arrow_right),
-                contentDescription = null,
-                tint = SnoffeeTextDisabled,
-                modifier = Modifier.size(18.dp)
-            )
-        }
-    }
-}
 
 @Composable
 fun MenuRowItem(

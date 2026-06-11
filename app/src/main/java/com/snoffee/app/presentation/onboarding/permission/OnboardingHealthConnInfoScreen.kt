@@ -69,7 +69,7 @@ fun OnboardingHealthConnInfoScreen(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            ProgressSection("단계 2 / 4", 0.44f)
+            ProgressSection("단계 2 / 5", 0.33f)
         }
 
         Column(
@@ -77,7 +77,6 @@ fun OnboardingHealthConnInfoScreen(
                 .fillMaxSize()
                 .padding(horizontal = 20.dp, vertical = 20.dp)
         ) {
-
             Column(
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -90,8 +89,8 @@ fun OnboardingHealthConnInfoScreen(
                     Text(
                         text = "헬스 커넥트로 수면 기록 불러오기",
                         color = SnoffeeTextMain,
-                        fontSize = 30.sp,
-                        lineHeight = 32.sp,
+                        fontSize = 25.sp,
+                        lineHeight = 27.sp,
                         fontWeight = FontWeight.Bold,
                         style = TextStyle(
                             lineBreak = LineBreak.Heading

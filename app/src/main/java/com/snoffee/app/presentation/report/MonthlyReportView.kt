@@ -14,19 +14,22 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.snoffee.app.core.ui.component.InsightCard
 import com.snoffee.app.core.ui.theme.SnoffeeSuccess
 import com.snoffee.app.core.ui.theme.SnoffeeSurface
 import com.snoffee.app.core.ui.theme.SnoffeeTextMain
-import com.snoffee.app.core.ui.theme.SnoffeeTextMuted
 import com.snoffee.app.core.ui.theme.SnoffeeWarning
+import com.snoffee.app.core.util.Utils.toSleepTimeParts
 import com.snoffee.app.presentation.report.component.BarChartItem
 import com.snoffee.app.presentation.report.component.InteractiveBarChart
+import com.snoffee.app.presentation.report.component.SleepValue
+import com.snoffee.app.presentation.report.component.StatCard
+import com.snoffee.app.presentation.report.component.StatValue
 
 @Composable
 fun MonthlyReportView(uiState: ReportUiState, onRefreshMonthlyInsight: () -> Unit) {
@@ -49,51 +52,12 @@ fun MonthlyReportView(uiState: ReportUiState, onRefreshMonthlyInsight: () -> Uni
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(SnoffeeSurface)
-                        .padding(16.dp)
-                ) {
-                    Text("월간 평균 카페인", color = SnoffeeTextMuted, fontSize = 12.sp)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(verticalAlignment = Alignment.Bottom) {
-                        Text(
-                            text = uiState.monthlyAvgCaffeine.toString(),
-                            color = SnoffeeTextMain,
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(" mg", color = SnoffeeTextMuted, fontSize = 14.sp)
-                    }
+                StatCard(modifier = Modifier.weight(1f), label = "월간 평균 카페인") {
+                    StatValue(uiState.monthlyAvgCaffeine.toString(), " mg")
                 }
 
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(SnoffeeSurface)
-                        .padding(16.dp)
-                ) {
-                    Text("월간 수면 평균", color = SnoffeeTextMuted, fontSize = 12.sp)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(verticalAlignment = Alignment.Bottom) {
-                        Text(
-                            displayHours,
-                            color = SnoffeeTextMain,
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text("h ", color = SnoffeeTextMuted, fontSize = 14.sp)
-                        Text(
-                            displayMinutes,
-                            color = SnoffeeTextMain,
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text("m", color = SnoffeeTextMuted, fontSize = 14.sp)
-                    }
+                StatCard(modifier = Modifier.weight(1f), label = "월간 수면 평균") {
+                    SleepValue(uiState.monthlyAvgSleepTime.toSleepTimeParts())
                 }
             }
         }
@@ -164,26 +128,25 @@ fun MonthlyReportView(uiState: ReportUiState, onRefreshMonthlyInsight: () -> Uni
                             value = parseSleepHourValue(uiState.lowCaffeineDaySleepTime)
                         )
                     ),
-                    valueSuffix = "h",
+                    valueSuffix = "시간",
                     barWidth = 36.dp,
                     barColor = SnoffeeWarning
                 )
             }
         }
         item {
-            ReportInsightCard(
-                title = "Snoffee AI 헬스 코치",
+            InsightCard(
                 insight = uiState.monthlyInsight,
                 isLoading = uiState.isMonthlyInsightLoading,
-                onRefreshClick = onRefreshMonthlyInsight
+                onRefreshClick = onRefreshMonthlyInsight,
+                emptyText = "분석할 데이터가 충분하지 않아요.",
+                shape = RoundedCornerShape(20.dp)
             )
         }
     }
 }
 
 private fun parseSleepHourValue(sleepTime: String): Double {
-    val parts = sleepTime.split(" ")
-    val hours = parts.getOrNull(0)?.replace("h", "")?.toDoubleOrNull() ?: 0.0
-    val minutes = parts.getOrNull(1)?.replace("m", "")?.toDoubleOrNull() ?: 0.0
-    return hours + minutes / 60.0
+    val parts = sleepTime.toSleepTimeParts()
+    return parts.hours + parts.minutes / 60.0
 }

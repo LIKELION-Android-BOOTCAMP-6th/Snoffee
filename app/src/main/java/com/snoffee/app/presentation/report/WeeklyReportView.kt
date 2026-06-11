@@ -14,17 +14,20 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.snoffee.app.core.ui.component.InsightCard
 import com.snoffee.app.core.ui.theme.SnoffeeSurface
 import com.snoffee.app.core.ui.theme.SnoffeeTextMain
-import com.snoffee.app.core.ui.theme.SnoffeeTextMuted
+import com.snoffee.app.core.util.Utils.toSleepTimeParts
 import com.snoffee.app.presentation.report.component.DoubleBarChartItem
 import com.snoffee.app.presentation.report.component.InteractiveDoubleBarChart
+import com.snoffee.app.presentation.report.component.SleepValue
+import com.snoffee.app.presentation.report.component.StatCard
+import com.snoffee.app.presentation.report.component.StatValue
 
 @Composable
 fun WeeklyReportView(uiState: ReportUiState, onRefreshWeeklyInsight: () -> Unit) {
@@ -42,51 +45,12 @@ fun WeeklyReportView(uiState: ReportUiState, onRefreshWeeklyInsight: () -> Unit)
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(SnoffeeSurface)
-                        .padding(16.dp)
-                ) {
-                    Text("주간 평균 카페인", color = SnoffeeTextMuted, fontSize = 12.sp)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(verticalAlignment = Alignment.Bottom) {
-                        Text(
-                            text = uiState.weeklyAvgCaffeine.toString(),
-                            color = SnoffeeTextMain,
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(" mg", color = SnoffeeTextMuted, fontSize = 14.sp)
-                    }
+                StatCard(modifier = Modifier.weight(1f), label = "주간 평균 카페인") {
+                    StatValue(uiState.weeklyAvgCaffeine.toString(), " mg")
                 }
 
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(SnoffeeSurface)
-                        .padding(16.dp)
-                ) {
-                    Text("주간 수면 평균", color = SnoffeeTextMuted, fontSize = 12.sp)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(verticalAlignment = Alignment.Bottom) {
-                        Text(
-                            weeklyHours,
-                            color = SnoffeeTextMain,
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text("h ", color = SnoffeeTextMuted, fontSize = 14.sp)
-                        Text(
-                            weeklyMinutes,
-                            color = SnoffeeTextMain,
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text("m", color = SnoffeeTextMuted, fontSize = 14.sp)
-                    }
+                StatCard(modifier = Modifier.weight(1f), label = "주간 수면 평균") {
+                    SleepValue(uiState.weeklyAvgSleepTime.toSleepTimeParts())
                 }
             }
         }
@@ -119,16 +83,16 @@ fun WeeklyReportView(uiState: ReportUiState, onRefreshWeeklyInsight: () -> Unit)
                         )
                     }
                 )
-
                 Spacer(modifier = Modifier.height(16.dp))
             }
         }
         item {
-            ReportInsightCard(
-                title = "Snoffee AI 헬스 코치",
+            InsightCard(
                 insight = uiState.weeklyInsight,
                 isLoading = uiState.isWeeklyInsightLoading,
-                onRefreshClick = onRefreshWeeklyInsight
+                onRefreshClick = onRefreshWeeklyInsight,
+                emptyText = "분석할 데이터가 충분하지 않아요.",
+                shape = RoundedCornerShape(20.dp)
             )
         }
     }
