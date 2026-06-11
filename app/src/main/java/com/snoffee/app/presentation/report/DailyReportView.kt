@@ -31,6 +31,10 @@ import com.snoffee.app.core.ui.theme.SnoffeeTextHint
 import com.snoffee.app.core.ui.theme.SnoffeeTextMain
 import com.snoffee.app.core.ui.theme.SnoffeeTextMuted
 import com.snoffee.app.core.ui.theme.SnoffeeWarning
+import com.snoffee.app.core.util.SleepTimeParts
+import com.snoffee.app.presentation.report.component.SleepValue
+import com.snoffee.app.presentation.report.component.StatCard
+import com.snoffee.app.presentation.report.component.StatValue
 import java.time.Duration
 import java.time.Instant
 import java.time.ZoneId
@@ -60,61 +64,13 @@ fun DailyReportView(uiState: ReportUiState) {
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 // 총 섭취 카페인 카드
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(SnoffeeSurface)
-                        .padding(16.dp)
-                ) {
-                    Text(
-                        text = "총 섭취 카페인",
-                        color = SnoffeeTextMuted,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(verticalAlignment = Alignment.Bottom) {
-                        Text(
-                            text = uiState.todayTotalCaffeine.toString(),
-                            color = SnoffeeTextMain,
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = " mg",
-                            color = SnoffeeTextMuted,
-                            fontSize = 14.sp
-                        )
-                    }
+                StatCard(modifier = Modifier.weight(1f), label = "총 섭취 카페인") {
+                    StatValue(uiState.todayTotalCaffeine.toString(), " mg")
                 }
 
                 // 총 수면 시간 카드
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(SnoffeeSurface)
-                        .padding(16.dp)
-                ) {
-                    Text(text = "총 수면 시간", color = SnoffeeTextMuted, fontSize = 12.sp)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(verticalAlignment = Alignment.Bottom) {
-                        Text(
-                            text = displayHours,
-                            color = SnoffeeTextMain,
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(text = "h ", color = SnoffeeTextMuted, fontSize = 14.sp)
-                        Text(
-                            text = displayMinutes,
-                            color = SnoffeeTextMain,
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(text = "m", color = SnoffeeTextMuted, fontSize = 14.sp)
-                    }
+                StatCard(modifier = Modifier.weight(1f), label = "총 수면 시간") {
+                    SleepValue(SleepTimeParts(uiState.todaySleepHours, uiState.todaySleepMinutes))
                 }
             }
         }
@@ -191,7 +147,7 @@ fun DailyReportView(uiState: ReportUiState) {
                             DailyRecordItem(
                                 time = "$startTime ~ $endTime",
                                 title = if (sortedSleepRecords.size > 1) "수면 기록 #${index + 1}" else "오늘의 수면",
-                                value = "${hourLabel}h ${minuteLabel}m 수면",
+                                value = "${hourLabel}시간 ${minuteLabel}분 수면",
                                 typeColor = SnoffeeInfo
                             )
                         }

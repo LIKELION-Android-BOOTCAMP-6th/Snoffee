@@ -29,8 +29,10 @@ import com.snoffee.app.core.ui.theme.SnoffeeSurface
 import com.snoffee.app.core.ui.theme.SnoffeeTextMain
 import com.snoffee.app.core.ui.theme.SnoffeeTextMuted
 import com.snoffee.app.core.ui.theme.SnoffeeWarning
+import com.snoffee.app.core.util.Utils.toSleepTimeParts
 import com.snoffee.app.presentation.report.component.BarChartItem
 import com.snoffee.app.presentation.report.component.InteractiveBarChart
+import com.snoffee.app.presentation.report.component.SleepValue
 import java.time.YearMonth
 
 @Composable
@@ -51,12 +53,12 @@ fun TrendReportView(uiState: ReportUiState, onRefreshTrendInsight: () -> Unit) {
             ) {
                 Text("전체 기간 수면 평균", color = SnoffeeTextMuted, fontSize = 13.sp)
                 Spacer(modifier = Modifier.height(6.dp))
-                Text(
-                    text = uiState.totalAvgSleepTime,
-                    color = SnoffeeTextMain,
-                    fontSize = 30.sp,
-                    fontWeight = FontWeight.Bold
-                )
+                Row(verticalAlignment = Alignment.Bottom) {
+                    SleepValue(
+                        parts = uiState.totalAvgSleepTime.toSleepTimeParts(),
+                        numberSize = 30.sp
+                    )
+                }
             }
         }
 

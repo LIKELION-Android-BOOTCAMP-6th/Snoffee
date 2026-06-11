@@ -26,7 +26,7 @@ import javax.inject.Inject
 data class SleepUiState(
     //실제 DB에서 가져온 수면 기록 목록 추가하기
     val currentYearMonth: YearMonth = YearMonth.now(),
-    val averageSleepTime: String = "0h 00m",
+    val averageSleepTime: String = "0시간 00분",
     val averageScore: Int = 0,
     val selectedDate: LocalDate = LocalDate.now(),
     val dailyScores: Map<LocalDate, Int> = emptyMap(),
@@ -146,9 +146,9 @@ class SleepViewModel @Inject constructor(
 
                 val hours = avgDuration.toHours()
                 val minutes = avgDuration.toMinutes() % 60
-                String.format(Locale.KOREA, "%dh %02dm", hours, minutes)
+                String.format(Locale.KOREA, "%d시간 %02d분", hours, minutes)
             } else {
-                "0h 00m"
+                "0시간 00분"
             }
             _uiState.update { currentState ->
                 val freshSortedRecords = groupedData[currentState.selectedDate]

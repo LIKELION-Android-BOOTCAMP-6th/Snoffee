@@ -224,5 +224,5 @@ private fun formatSleepHour(value: Double): String {
     val hours = value.toInt()
     val minutes = ((value - hours) * 60).roundToInt()
 
-    return "${hours}h ${minutes.toString().padStart(2, '0')}m"
+    return "${hours}시간 ${minutes.toString().padStart(2, '0')}분"
 }

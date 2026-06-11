@@ -200,7 +200,7 @@ class ReportViewModel @Inject constructor(
 
                 var todayHours = 0
                 var todayMinutes = 0
-                var todayTimeStr = "0h 00m"
+                var todayTimeStr = "0시간 00분"
                 var todayStartStr = "--:--"
                 val hasTodayRecord = todaySleepRecords.isNotEmpty()
 
@@ -211,7 +211,7 @@ class ReportViewModel @Inject constructor(
                     todayHours = duration.toHours().toInt()
                     todayMinutes = (duration.toMinutes() % 60).toInt()
                     todayTimeStr =
-                        String.format(Locale.KOREA, "%dh %02dm", todayHours, todayMinutes)
+                        String.format(Locale.KOREA, "%d %02d", todayHours, todayMinutes)
 
                     val earliestSleepStart = todaySleepRecords.minOf { it.sleepStart }
                     todayStartStr =
@@ -254,11 +254,11 @@ class ReportViewModel @Inject constructor(
 
                     String.format(
                         Locale.KOREA,
-                        "%dh %02dm",
+                        "%d %02d",
                         avgDuration.toHours(),
                         avgDuration.toMinutes() % 60
                     )
-                } else "0h 00m"
+                } else "0 00"
 
                 val beforeSleepHours = 6
 
@@ -309,11 +309,11 @@ class ReportViewModel @Inject constructor(
 
                     String.format(
                         Locale.KOREA,
-                        "%dh %02dm",
+                        "%d %02d",
                         avgDuration.toHours(),
                         avgDuration.toMinutes() % 60
                     )
-                } else "0h 00m"
+                } else "0 00"
 
                 val highLowSleepCompare =
                     calculateHighLowCaffeineSleepCompare(
@@ -333,11 +333,11 @@ class ReportViewModel @Inject constructor(
                     val avgDuration = Duration.ofMillis(totalSleepMillis / totalSleepByDate.size)
                     String.format(
                         Locale.KOREA,
-                        "%dh %02dm",
+                        "%d %02d",
                         avgDuration.toHours(),
                         avgDuration.toMinutes() % 60
                     )
-                } else "0h 00m"
+                } else "0 00"
 
                 val monthlySleepTrend =
                     trendResult.sleepData
@@ -407,14 +407,14 @@ class ReportViewModel @Inject constructor(
 
                 val periodTotalSleepMillis = filteredSleep.sumOf { it.sleepEnd - it.sleepStart }
                 val periodTotalSleepStr = String.format(
-                    Locale.KOREA, "%dh %02dm",
+                    Locale.KOREA, "%d %02d",
                     Duration.ofMillis(periodTotalSleepMillis).toHours(),
                     Duration.ofMillis(periodTotalSleepMillis).toMinutes() % 60
                 )
 
                 val periodAvgSleepMillis = periodTotalSleepMillis / daysBetween
                 val periodAvgSleepStr = String.format(
-                    Locale.KOREA, "%dh %02dm",
+                    Locale.KOREA, "%d시간 %02d분",
                     Duration.ofMillis(periodAvgSleepMillis).toHours(),
                     Duration.ofMillis(periodAvgSleepMillis).toMinutes() % 60
                 )
@@ -515,7 +515,7 @@ class ReportViewModel @Inject constructor(
         zoneId: ZoneId
     ): Pair<String, String> {
         if (caffeineRecords.isEmpty() || sleepData.isEmpty()) {
-            return "0h 00m" to "0h 00m"
+            return "0시간 00분" to "0시간 00분"
         }
 
         val caffeineByDate =
@@ -544,7 +544,7 @@ class ReportViewModel @Inject constructor(
             caffeineByDate.keys.intersect(sleepByDate.keys)
 
         if (matchedDates.isEmpty()) {
-            return "0h 00m" to "0h 00m"
+            return "0시간 00분" to "0시간 00분"
         }
 
         val highCaffeineDate =
@@ -573,7 +573,7 @@ class ReportViewModel @Inject constructor(
 
         return String.format(
             Locale.KOREA,
-            "%dh %02dm",
+            "%d시간 %02d분",
             duration.toHours(),
             duration.toMinutes() % 60
         )
@@ -608,7 +608,7 @@ class ReportViewModel @Inject constructor(
             val totalSleepMillis = filteredSleep.sumOf { it.sleepEnd - it.sleepStart }
             val totalSleepStr = String.format(
                 Locale.KOREA,
-                "%dh %02dm",
+                "%d시간 %02d분",
                 Duration.ofMillis(totalSleepMillis).toHours(),
                 Duration.ofMillis(totalSleepMillis).toMinutes() % 60
             )
@@ -616,7 +616,7 @@ class ReportViewModel @Inject constructor(
             val avgSleepMillis = totalSleepMillis / daysBetween
             val avgSleepStr = String.format(
                 Locale.KOREA,
-                "%dh %02dm",
+                "%d시간 %02d분",
                 Duration.ofMillis(avgSleepMillis).toHours(),
                 Duration.ofMillis(avgSleepMillis).toMinutes() % 60
             )
