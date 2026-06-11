@@ -30,4 +30,9 @@ class DrinkRepositoryImpl @Inject constructor(
             .searchDrinks(query = query, limit = pageSize, offset = offset)
             .map { entity -> mapper.mapToDomain(entity) }
     }
+
+    // 검색 결과 전체 개수
+    override suspend fun getSearchResultCount(query: String): Int {
+        return localDataSource.getSearchResultCount(query)
+    }
 }

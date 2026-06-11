@@ -34,7 +34,8 @@ import java.util.Locale
 @Composable
 fun PeriodReportView(
     uiState: ReportUiState,
-    onDateRangeChanged: (LocalDate, LocalDate) -> Unit
+    onDateRangeChanged: (LocalDate, LocalDate) -> Unit,
+    onRefreshPeriodInsight: () -> Unit
 ) {
     val context = LocalContext.current
     val dateFormatter = DateTimeFormatter.ofPattern("yyyy.MM.dd")
@@ -147,6 +148,14 @@ fun PeriodReportView(
                     )
                 }
             }
+        }
+        item {
+            ReportInsightCard(
+                title = "Snoffee AI 헬스 코치",
+                insight = uiState.periodInsight,
+                isLoading = uiState.isPeriodInsightLoading,
+                onRefreshClick = onRefreshPeriodInsight
+            )
         }
     }
 }

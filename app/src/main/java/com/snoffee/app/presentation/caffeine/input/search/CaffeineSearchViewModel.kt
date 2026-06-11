@@ -55,7 +55,8 @@ class CaffeineSearchViewModel @Inject constructor(
             it.copy(
                 searchQuery = "",
                 searchResults = emptyList(),    // 이전 결과 삭제
-                isLastPage = false
+                isLastPage = false,
+                totalCount = 0,
             )
         }
     }
@@ -104,6 +105,13 @@ class CaffeineSearchViewModel @Inject constructor(
 
             try {
                 Log.d("SearchDebug", "Query: $query, Page: $currentPage")
+                // 새 검색일 때만 전체 카운트 조회
+                val totalCount = if (isNewSearch) {
+                    searchDrinkUseCase.getCount(query)
+                } else {
+                    _uiState.value.totalCount
+                }
+
                 val result = searchDrinkUseCase(
                     query = query,
                     page = currentPage,
@@ -123,6 +131,7 @@ class CaffeineSearchViewModel @Inject constructor(
                         isLoading = false,
                         isPagingLoading = false,
                         searchResults = updatedList,
+                        totalCount = totalCount,
                     )
                 }
             } catch (e: Exception) {

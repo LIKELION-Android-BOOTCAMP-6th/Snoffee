@@ -19,8 +19,74 @@ class GeminiRepositoryImpl @Inject constructor(
         TODO("Not yet implemented")
     }
 
-    override suspend fun getWeeklyInsight(): String {
-        // TODO: Gemini API 호출 후 인사이트 문자열 반환
-        TODO("Not yet implemented")
+    override suspend fun getWeeklyInsight(
+        averageSleepTime: String,
+        lateCaffeineCount: Int,
+        bedtimeResidualCaffeineMg: Int
+    ): String {
+
+        return remoteDataSource.generateWeeklyInsight(
+            averageSleepTime,
+            lateCaffeineCount,
+            bedtimeResidualCaffeineMg
+        )
+    }
+
+    override suspend fun getTrendInsight(
+        monthlyCaffeineTrend: Map<String, Double>,
+        monthlySleepTrend: Map<String, Double>,
+        totalAvgSleepTime: String
+    ): String {
+        return remoteDataSource.generateTrendInsight(
+            monthlyCaffeineTrend = monthlyCaffeineTrend,
+            monthlySleepTrend = monthlySleepTrend,
+            totalAvgSleepTime = totalAvgSleepTime
+        )
+    }
+
+    override suspend fun getMonthlyInsight(
+        monthlyAvgCaffeine: Int,
+        monthlyAvgSleepTime: String,
+        highCaffeineDaySleepTime: String,
+        lowCaffeineDaySleepTime: String
+    ): String {
+        return remoteDataSource.generateMonthlyInsight(
+            monthlyAvgCaffeine = monthlyAvgCaffeine,
+            monthlyAvgSleepTime = monthlyAvgSleepTime,
+            highCaffeineDaySleepTime = highCaffeineDaySleepTime,
+            lowCaffeineDaySleepTime = lowCaffeineDaySleepTime
+        )
+    }
+
+    override suspend fun getPeriodInsight(
+        periodTotalCaffeine: Int,
+        periodAvgCaffeine: Int,
+        periodTotalSleepTime: String,
+        periodAvgSleepTime: String
+    ): String {
+        return remoteDataSource.generatePeriodInsight(
+            periodTotalCaffeine = periodTotalCaffeine,
+            periodAvgCaffeine = periodAvgCaffeine,
+            periodTotalSleepTime = periodTotalSleepTime,
+            periodAvgSleepTime = periodAvgSleepTime
+        )
+    }
+
+    override suspend fun getHomeInsight(
+        recentDays: Int,
+        beforeSleepHours: Int,
+        lateCaffeineCount: Int,
+        averageSleepTime: String,
+        averageSleepScore: Int,
+        bedtimeResidualCaffeineMg: Int
+    ): String {
+        return remoteDataSource.generateHomeInsight(
+            recentDays = recentDays,
+            beforeSleepHours = beforeSleepHours,
+            lateCaffeineCount = lateCaffeineCount,
+            averageSleepTime = averageSleepTime,
+            averageSleepScore = averageSleepScore,
+            bedtimeResidualCaffeineMg = bedtimeResidualCaffeineMg
+        )
     }
 }

@@ -39,4 +39,14 @@ interface DrinkDao {
         limit: Int,
         offset: Int,
     ): List<DrinkEntity>
+
+    // 검색 결과 전체 개수 (페이징 검색과 동일한 WHERE 조건)
+    @Query(
+        """
+    SELECT COUNT(*) FROM DrinkEntity
+    WHERE name LIKE '%' || :query || '%'
+       OR brand LIKE '%' || :query || '%'
+       """
+    )
+    suspend fun getSearchResultCount(query: String): Int
 }

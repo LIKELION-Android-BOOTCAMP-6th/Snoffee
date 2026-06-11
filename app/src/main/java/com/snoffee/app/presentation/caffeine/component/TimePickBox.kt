@@ -96,13 +96,13 @@ private fun BoxVariant(
             fontSize = 17.sp,
             fontWeight = FontWeight.Bold,
             color = colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
+            modifier = Modifier.padding(start = 4.dp, bottom = 5.dp)
         )
 
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 4.dp) // 그림자가 그려질 최소 공간 확보
+                .padding(vertical = 3.dp) // 그림자가 그려질 최소 공간 확보
         ) {
             Surface(
                 modifier = Modifier
@@ -141,7 +141,7 @@ private fun BoxVariant(
             fontSize = 14.sp,
             color = if (isError) SnoffeeTheme.colorScheme.error
             else SnoffeeTheme.colors.textDisabled,
-            modifier = Modifier.padding(start = 4.dp, top = 8.dp)
+            modifier = Modifier.padding(start = 4.dp, top = 4.dp)
         )
     }
 }

@@ -16,4 +16,7 @@ interface DrinkLocalDataSource{
     suspend fun searchDrinks(query: String, limit: Int, offset: Int): List<DrinkEntity>
 
 //    suspend fun searchDrinks(query: String): List<DrinkEntity>
+
+    // 검색 결과 전체 개수
+    suspend fun getSearchResultCount(query: String): Int
 }

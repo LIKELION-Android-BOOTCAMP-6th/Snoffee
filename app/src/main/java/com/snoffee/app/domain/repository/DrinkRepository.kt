@@ -9,4 +9,7 @@ interface DrinkRepository {
     // 음료 검색 + 페이징
     // page: 페이지 번호 (0부터 시작), pageSize: 페이지 크기 (기본 10)
     suspend fun searchDrinks(query: String, page: Int, pageSize: Int = 10): List<DrinkItem>
+
+    // 검색 결과 전체 개수 (페이징과 동일한 검색 조건)
+    suspend fun getSearchResultCount(query: String): Int
 }

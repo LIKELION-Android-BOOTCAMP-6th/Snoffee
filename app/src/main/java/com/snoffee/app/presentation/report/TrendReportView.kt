@@ -34,7 +34,7 @@ import com.snoffee.app.presentation.report.component.InteractiveBarChart
 import java.time.YearMonth
 
 @Composable
-fun TrendReportView(uiState: ReportUiState) {
+fun TrendReportView(uiState: ReportUiState, onRefreshTrendInsight: () -> Unit) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp, 4.dp, 16.dp, 24.dp),
@@ -187,6 +187,14 @@ fun TrendReportView(uiState: ReportUiState) {
                     }
                 }
             }
+        }
+        item {
+            ReportInsightCard(
+                title = "Snoffee AI 헬스 코치",
+                insight = uiState.trendInsight,
+                isLoading = uiState.isTrendInsightLoading,
+                onRefreshClick = onRefreshTrendInsight
+            )
         }
     }
 }

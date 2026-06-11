@@ -10,8 +10,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -48,9 +52,6 @@ fun ReportScreen(
 
     var showSleepDialog by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) {
-        viewModel.loadReportData()
-    }
     LaunchedEffect(isSaveSuccess) {
         if (isSaveSuccess) {
             showSleepDialog = false
@@ -58,12 +59,15 @@ fun ReportScreen(
         }
     }
 
-    Scaffold { innerPadding ->
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(SnoffeeBgBase)
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .background(SnoffeeBgBase)
-                .padding(innerPadding)
         ) {
             Row(
                 modifier = Modifier
@@ -81,8 +85,6 @@ fun ReportScreen(
                             .clickable {
                                 if (selectedTab != tab) {
                                     selectedTab = tab
-                                    viewModel.onTabChanged()
-                                    viewModel.loadReportData()
                                 }
                             }
                             .padding(vertical = 8.dp),
@@ -144,13 +146,33 @@ fun ReportScreen(
                                 uiState = uiState,
                                 onDateRangeChanged = { start, end ->
                                     viewModel.updatePeriodRange(start, end)
+                                },
+                                onRefreshPeriodInsight = {
+                                    viewModel.refreshPeriodInsight()
                                 }
                             )
 
                             "일간" -> DailyReportView(uiState = uiState)
-                            "주간" -> WeeklyReportView(uiState = uiState)
-                            "월간" -> MonthlyReportView(uiState = uiState)
-                            "추이" -> TrendReportView(uiState = uiState)
+                            "주간" -> WeeklyReportView(
+                                uiState = uiState,
+                                onRefreshWeeklyInsight = {
+                                    viewModel.refreshWeeklyInsight()
+                                }
+                            )
+
+                            "월간" -> MonthlyReportView(
+                                uiState = uiState,
+                                onRefreshMonthlyInsight = {
+                                    viewModel.refreshMonthlyInsight()
+                                }
+                            )
+
+                            "추이" -> TrendReportView(
+                                uiState = uiState,
+                                onRefreshTrendInsight = {
+                                    viewModel.refreshTrendInsight()
+                                }
+                            )
                         }
                     }
                 }
@@ -173,5 +195,81 @@ fun ReportScreen(
             },
             initialData = null
         )
+    }
+}
+
+@Composable
+fun ReportInsightCard(
+    title: String,
+    insight: String,
+    isLoading: Boolean,
+    onRefreshClick: () -> Unit
+) {
+    androidx.compose.material3.Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = androidx.compose.material3.CardDefaults.cardColors(
+            containerColor = SnoffeeSurface
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(
+                horizontal = 20.dp,
+                vertical = 14.dp
+            )
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = title,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = com.snoffee.app.core.ui.theme.SnoffeeTextMain
+                )
+
+                TextButton(
+                    onClick = onRefreshClick,
+                    enabled = !isLoading
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Refresh,
+                        contentDescription = "새로고침",
+                        tint = SnoffeePrimary
+                    )
+                }
+            }
+
+            androidx.compose.foundation.layout.Spacer(
+                modifier = Modifier.padding(top = 6.dp)
+            )
+
+            when {
+                isLoading -> {
+                    androidx.compose.material3.CircularProgressIndicator(
+                        color = SnoffeePrimary
+                    )
+                }
+
+                insight.isNotBlank() -> {
+                    Text(
+                        text = insight,
+                        fontSize = 14.sp,
+                        lineHeight = 20.sp,
+                        color = com.snoffee.app.core.ui.theme.SnoffeeTextMain
+                    )
+                }
+
+                else -> {
+                    Text(
+                        text = "분석할 데이터가 충분하지 않아요.",
+                        fontSize = 14.sp,
+                        color = SnoffeeTextMuted
+                    )
+                }
+            }
+        }
     }
 }

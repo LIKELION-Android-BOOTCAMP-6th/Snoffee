@@ -13,7 +13,8 @@ data class CaffeineSearchUiState(
     val error: String? = null,
     val isSaved: Boolean = false,
     val isPagingLoading: Boolean = false,
-    val showErrorToast: Boolean = false
+    val showErrorToast: Boolean = false,
+    val totalCount: Int = 0,
 ) {
     val isRecordEnabled: Boolean
         get() = selectedDrink != null && !isLoading

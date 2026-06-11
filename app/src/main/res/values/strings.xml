@@ -32,7 +32,7 @@
     <string name="caffeine_drink_back">뒤로가기</string>
     <string name="caffeine_drink_search_result_count">검색 결과 %d개</string>
     <string name="caffeine_drink_input_info">원하는 음료가 없으신가요?</string>
-    <string name="caffeine_drink_input_self">직접 등록하기</string>
+    <string name="caffeine_drink_input_self">상단 + 버튼을 통해 직접 등록하기</string>
     <string name="caffeine_search_drink_info">음료를 검색해 주세요</string>
 
     <!-- 카페인 입력 화면 -->

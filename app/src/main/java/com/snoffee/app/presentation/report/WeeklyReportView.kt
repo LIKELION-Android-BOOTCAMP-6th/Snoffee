@@ -27,7 +27,7 @@ import com.snoffee.app.presentation.report.component.DoubleBarChartItem
 import com.snoffee.app.presentation.report.component.InteractiveDoubleBarChart
 
 @Composable
-fun WeeklyReportView(uiState: ReportUiState) {
+fun WeeklyReportView(uiState: ReportUiState, onRefreshWeeklyInsight: () -> Unit) {
     val sleepTimeParts = uiState.weeklyAvgSleepTime.split(" ")
     val weeklyHours = sleepTimeParts.getOrNull(0)?.replace("h", "") ?: "0"
     val weeklyMinutes = sleepTimeParts.getOrNull(1)?.replace("m", "") ?: "00"
@@ -122,6 +122,14 @@ fun WeeklyReportView(uiState: ReportUiState) {
 
                 Spacer(modifier = Modifier.height(16.dp))
             }
+        }
+        item {
+            ReportInsightCard(
+                title = "Snoffee AI 헬스 코치",
+                insight = uiState.weeklyInsight,
+                isLoading = uiState.isWeeklyInsightLoading,
+                onRefreshClick = onRefreshWeeklyInsight
+            )
         }
     }
 }
