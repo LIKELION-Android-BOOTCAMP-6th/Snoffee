@@ -208,7 +208,7 @@ fun SleepScreen(viewModel: SleepViewModel = hiltViewModel()) {
                         val durationMillis = record.sleepEnd - record.sleepStart
                         val hours = durationMillis / (1000 * 60 * 60)
                         val minutes = (durationMillis / (1000 * 60)) % 60
-                        val timeLabel = "${hours}h ${minutes}m"
+                        val timeLabel = "${hours}시간 ${minutes}분"
 
                         val isManualInput = record.source == SleepSource.MANUAL
                         val sourceLabel = if (isManualInput) "수동 입력" else "삼성 헬스"
