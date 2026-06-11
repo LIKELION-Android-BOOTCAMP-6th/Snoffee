@@ -329,36 +329,64 @@ fun SleepDialog(
                     if (showFutureTimeError) {
                         AlertDialog(
                             onDismissRequest = { showFutureTimeError = false },
-                            title = { Text("시간 설정 오류", fontWeight = FontWeight.Bold) },
-                            text = { Text("아직 오지 않은 미래의 시간은 수면 기록으로 등록할 수 없습니다.\n현재 스마트폰 시간을 확인해 주세요.") },
+                            title = {
+                                Text(
+                                    text = "시간 설정 오류",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 18.sp
+                                )
+                            },
+                            text = {
+                                Text(
+                                    text = "아직 오지 않은 미래의 시간은 수면 기록으로 등록할 수 없습니다.\n현재 스마트폰 시간을 확인해 주세요.",
+                                    fontSize = 15.sp
+                                )
+                            },
                             confirmButton = {
                                 TextButton(onClick = { showFutureTimeError = false }) {
-                                    Text("확인", color = SnoffeePrimary)
+                                    Text(
+                                        text = "확인",
+                                        color = SnoffeePrimary,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
                                 }
                             },
                             shape = RoundedCornerShape(16.dp),
-                            containerColor = SnoffeePrimaryLight
+                            containerColor = SnoffeeSurfaceElevated
                         )
                     }
 
                     if (showTimeOrderError) {
                         AlertDialog(
                             onDismissRequest = { showTimeOrderError = false },
-                            title = { Text("시간 설정 오류", fontWeight = FontWeight.Bold) },
+                            title = {
+                                Text(
+                                    text = "시간 설정 오류",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 18.sp
+                                )
+                            },
                             text = {
-                                if (lastWakeUpTimeLabel.isNotEmpty()) {
-                                    Text("이미 등록된 수면 기록 [ $lastWakeUpTimeLabel ] 시간대와 겹칩니다.\n겹치지 않는 다른 시간으로 입력해 주세요.")
-                                } else {
-                                    Text("입력하신 수면 시간대가 올바르지 않거나 순서가 잘못되었습니다.\n취침/기상 날짜 설정을 다시 확인해 주세요.")
-                                }
+                                Text(
+                                    text = if (lastWakeUpTimeLabel.isNotEmpty()) {
+                                        "이미 등록된 수면 기록 [ $lastWakeUpTimeLabel ] 시간대와 겹칩니다.\n겹치지 않는 다른 시간으로 입력해 주세요."
+                                    } else {
+                                        "입력하신 수면 시간대가 올바르지 않거나 순서가 잘못되었습니다.\n취침/기상 날짜 설정을 다시 확인해 주세요."
+                                    },
+                                    fontSize = 15.sp
+                                )
                             },
                             confirmButton = {
                                 TextButton(onClick = { showTimeOrderError = false }) {
-                                    Text("확인", color = SnoffeePrimary)
+                                    Text(
+                                        text = "확인",
+                                        color = SnoffeePrimary,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
                                 }
                             },
                             shape = RoundedCornerShape(16.dp),
-                            containerColor = SnoffeePrimaryLight
+                            containerColor = SnoffeeSurfaceElevated
                         )
                     }
 
@@ -366,15 +394,30 @@ fun SleepDialog(
                     if (showTimeValidationError) {
                         AlertDialog(
                             onDismissRequest = { showTimeValidationError = false },
-                            title = { Text("시간 설정 확인", fontWeight = FontWeight.Bold) },
-                            text = { Text("연속 수면 기록은 최대 21시간 미만까지만 입력할 수 있습니다.\n설정하신 취침/기상 시간을 다시 확인해 주세요.") },
+                            title = {
+                                Text(
+                                    text = "시간 설정 확인",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 18.sp
+                                )
+                            },
+                            text = {
+                                Text(
+                                    text = "연속 수면 기록은 최대 21시간 미만까지만 입력할 수 있습니다.\n설정하신 취침/기상 시간을 다시 확인해 주세요.",
+                                    fontSize = 15.sp
+                                )
+                            },
                             confirmButton = {
                                 TextButton(onClick = { showTimeValidationError = false }) {
-                                    Text("확인", color = SnoffeePrimary)
+                                    Text(
+                                        text = "확인",
+                                        color = SnoffeePrimary,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
                                 }
                             },
                             shape = RoundedCornerShape(16.dp),
-                            containerColor = SnoffeePrimaryLight
+                            containerColor = SnoffeeSurfaceElevated
                         )
                     }
 
@@ -382,7 +425,13 @@ fun SleepDialog(
                     if (showConfirmDialog && tempRecord != null) {
                         AlertDialog(
                             onDismissRequest = { showConfirmDialog = false },
-                            title = { Text(text = if (initialData != null) "수정 내용 확인" else "입력 내용 확인") },
+                            title = {
+                                Text(
+                                    text = if (initialData != null) "수정 내용 확인" else "입력 내용 확인",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 18.sp
+                                )
+                            },
                             text = {
                                 Column {
                                     Text(
@@ -390,21 +439,24 @@ fun SleepDialog(
                                             bedTime.format(
                                                 timeFormatter
                                             )
-                                        }"
+                                        }",
+                                        fontSize = 15.sp
                                     )
                                     Text(
                                         "기상: ${wakeUpDate.format(inputDisplayFormatter)} ${
                                             wakeUpTime.format(
                                                 timeFormatter
                                             )
-                                        }"
+                                        }",
+                                        fontSize = 15.sp
                                     )
-                                    Text("만족도: ${tempRecord!!.deepSleepRatio}점")
+                                    Text("만족도: ${tempRecord!!.deepSleepRatio}점", fontSize = 15.sp)
                                     Spacer(modifier = Modifier.height(8.dp))
                                     Text(
                                         text = if (initialData != null) "위 내용으로 수정하시겠습니까?" else "위 내용으로 저장하시겠습니까?",
                                         fontWeight = FontWeight.Bold,
-                                        color = SnoffeeTextMain
+                                        color = SnoffeeTextMain,
+                                        fontSize = 15.sp
                                     )
                                 }
                             },
@@ -415,7 +467,13 @@ fun SleepDialog(
                                         showConfirmDialog = false
                                         onDismiss()
                                     }
-                                ) { Text("확인", color = SnoffeeTextMain) }
+                                ) {
+                                    Text(
+                                        "확인",
+                                        color = SnoffeePrimary,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                }
                             },
                             dismissButton = {
                                 TextButton(onClick = { showConfirmDialog = false }) {
@@ -423,7 +481,7 @@ fun SleepDialog(
                                 }
                             },
                             shape = RoundedCornerShape(16.dp),
-                            containerColor = SnoffeePrimaryLight
+                            containerColor = SnoffeeSurfaceElevated
                         )
                     }
                 }
