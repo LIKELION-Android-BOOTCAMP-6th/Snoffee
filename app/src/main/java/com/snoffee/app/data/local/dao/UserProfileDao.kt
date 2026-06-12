@@ -24,4 +24,13 @@ interface UserProfileDao {
     // 단발성 조회를 위한 suspend 함수 (테스트 및 UseCase 대응용)
     @Query("SELECT * FROM user_table WHERE id = 1")
     suspend fun getUserProfileOnce(): UserProfileEntity?
+
+    @Query(
+        """
+        UPDATE user_table
+        SET notification_enabled = :enabled
+        WHERE id = 1
+    """
+    )
+    suspend fun updateNotificationEnabled(enabled: Boolean)
 }

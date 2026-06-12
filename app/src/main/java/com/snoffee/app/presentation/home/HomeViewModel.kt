@@ -1,6 +1,7 @@
 package com.snoffee.app.presentation.home
 
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.snoffee.app.data.wear.PhoneDataClient
@@ -13,8 +14,8 @@ import com.snoffee.app.domain.repository.SleepRepository
 import com.snoffee.app.domain.repository.UserProfileRepository
 import com.snoffee.app.domain.usecase.caffeine.CalculateResidualUseCase
 import com.snoffee.app.domain.usecase.caffeine.GetTodayCaffeineUseCase
-import com.snoffee.app.service.PhoneNotificationHelper
 import com.snoffee.app.domain.usecase.gemini.GetHomeInsightUseCase
+import com.snoffee.app.presentation.notification.NotificationHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Job
@@ -26,6 +27,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
@@ -59,7 +61,10 @@ class HomeViewModel @Inject constructor(
         observeJob?.cancel()
         observeJob = viewModelScope.launch {
             getTodayCaffeineUseCase().collect { todayRecords ->
-                calculateAndEmitCaffeineState(todayRecords)
+                calculateAndEmitCaffeineState(
+                    todayRecords = todayRecords,
+                    shouldScheduleAlarm = true
+                )
             }
         }
     }
@@ -67,7 +72,7 @@ class HomeViewModel @Inject constructor(
         refreshJob?.cancel()
         refreshJob = viewModelScope.launch {
             while (true) {
-                delay(1 * 60 * 1000L)
+                delay(10 * 60 * 1000L)
                 loadResidualCaffeine()
             }
         }
@@ -76,12 +81,18 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             runCatching {
                 val todayRecords = getTodayCaffeineUseCase().first()
-                calculateAndEmitCaffeineState(todayRecords)
+                calculateAndEmitCaffeineState(
+                    todayRecords = todayRecords,
+                    shouldScheduleAlarm = false
+                )
             }
         }
     }
 
-    private suspend fun calculateAndEmitCaffeineState(todayRecords: List<com.snoffee.app.domain.model.CaffeineRecord>) {
+    private suspend fun calculateAndEmitCaffeineState(
+        todayRecords: List<CaffeineRecord>,
+        shouldScheduleAlarm: Boolean
+    ) {
         _uiState.update { state ->
             state.copy(
                 isLoading = state.recentLogs.isEmpty() && state.isLoading,
@@ -146,16 +157,42 @@ class HomeViewModel @Inject constructor(
                 CaffeineSensitivity.SENSITIVE -> 6.0
                 CaffeineSensitivity.NORMAL -> 5.0
                 CaffeineSensitivity.LOW -> 4.0
-                else -> 5.0
             }
 
-            PhoneNotificationHelper.schedulePhoneAlarms(
-                context = context,
-                currentResidual = residualDouble,
-                halfLifeHours = halfLife,
-                targetBedTimeMillis = profile.userSleepTime,
-                isNotificationEnabled = true
-            )
+            if (shouldScheduleAlarm) {
+                val targetBedTimeMillis = convertSleepTimeToMillis(profile.userSleepTime)
+
+                if (shouldScheduleAlarm) {
+                    val targetBedTimeMillis = convertSleepTimeToMillis(profile.userSleepTime)
+
+                    Log.d("ALARM_TEST", "알림 예약 시도")
+                    Log.d("ALARM_TEST", "residual=$residualDouble")
+                    Log.d("ALARM_TEST", "halfLife=$halfLife")
+                    Log.d("ALARM_TEST", "userSleepTime=${profile.userSleepTime}")
+                    Log.d(
+                        "ALARM_TEST",
+                        "targetBedTime=${
+                            SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.KOREA)
+                                .format(Date(targetBedTimeMillis))
+                        }"
+                    )
+                    Log.d("ALARM_TEST", "notificationEnabled=${profile.notificationEnabled}")
+
+                    NotificationHelper(context).scheduleCaffeineAlarms(
+                        currentResidual = residualDouble,
+                        halfLifeHours = halfLife,
+                        targetBedTimeMillis = targetBedTimeMillis,
+                        isNotificationEnabled = profile.notificationEnabled
+                    )
+                }
+
+                NotificationHelper(context).scheduleCaffeineAlarms(
+                    currentResidual = residualDouble,
+                    halfLifeHours = halfLife,
+                    targetBedTimeMillis = targetBedTimeMillis,
+                    isNotificationEnabled = profile.notificationEnabled
+                )
+            }
         }.onFailure { throwable ->
             _uiState.update { state ->
                 state.copy(
@@ -296,6 +333,23 @@ class HomeViewModel @Inject constructor(
             }.average()
 
         return averageResidual.toInt()
+    }
+    private fun convertSleepTimeToMillis(userSleepTime: Long): Long {
+        val sleepTimeText = userSleepTime.toString().padStart(4, '0')
+
+        val hour = sleepTimeText.substring(0, 2).toIntOrNull() ?: 22
+        val minute = sleepTimeText.substring(2, 4).toIntOrNull() ?: 30
+
+        return Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, hour)
+            set(Calendar.MINUTE, minute)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+
+            if (timeInMillis <= System.currentTimeMillis()) {
+                add(Calendar.DAY_OF_MONTH, 1)
+            }
+        }.timeInMillis
     }
     private fun getRiskLevel(
         residualMg: Double

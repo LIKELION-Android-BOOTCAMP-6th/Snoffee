@@ -16,4 +16,7 @@ class UserProfileLocalDataSourceImpl @Inject constructor(
     override suspend fun getUserProfile(): UserProfileEntity? {
         return userProfileDao.getUserProfileOnce()
     }
+    override suspend fun updateNotificationEnabled(enabled: Boolean) {
+        userProfileDao.updateNotificationEnabled(enabled)
+    }
 }

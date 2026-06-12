@@ -81,6 +81,8 @@ fun SettingScreen(
 
     val userProfile by viewModel.userProfile.collectAsState()
 
+    val notificationEnabled = userProfile?.notificationEnabled ?: true
+
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -203,10 +205,21 @@ fun SettingScreen(
                     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                 ) {
                     Column {
-                        MenuRowItem(
+                        MenuRowItemWithSwitch(
                             title = "알림 설정",
                             iconRes = R.drawable.ic_setting_bell,
-                            onClick = onNotificationSettingClick
+                            checked = notificationEnabled,
+                            onCheckedChange = {
+                                viewModel.updateNotificationEnabled(it) { success ->
+                                    if (!success) {
+                                        scope.launch {
+                                            snackbarHostState.showSnackbar(
+                                                "알림 설정 저장에 실패했습니다."
+                                            )
+                                        }
+                                    }
+                                }
+                            }
                         )
 
                         MenuRowItem(

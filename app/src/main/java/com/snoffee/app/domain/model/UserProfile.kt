@@ -11,7 +11,8 @@ data class UserProfile(
     val userSleepTime: Long,                // 목표 수면 시각
     val wakeTime: Long,                     // 기상 시각
     val sensitivity: CaffeineSensitivity,   // 카페인 민감도
-    val cutoffTime: Long                    // 마지막으로 산출된 컷오프 시각 (캐싱용, 없을 수 있음)
+    val cutoffTime: Long,                    // 마지막으로 산출된 컷오프 시각 (캐싱용, 없을 수 있음)
+    val notificationEnabled: Boolean = true
 )
 enum class CaffeineSensitivity(
     val halfLifeHours: Double

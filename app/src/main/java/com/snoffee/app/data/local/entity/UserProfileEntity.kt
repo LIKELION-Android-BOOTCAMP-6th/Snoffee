@@ -22,5 +22,8 @@ data class UserProfileEntity(
     val targetSleepTime: String,
 
     @ColumnInfo(name = "target_wake_time")
-    val targetWakeTime: String
+    val targetWakeTime: String,
+
+    @ColumnInfo(name = "notification_enabled")
+    val notificationEnabled: Boolean = true
 )
