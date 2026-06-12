@@ -2,14 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-feature android:name="android.hardware.type.watch" />
-
     <uses-permission android:name="android.permission.VIBRATE" />
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-
-    <queries>
-        <package android:name="com.snoffee.app" />
-    </queries>
 
     <application
         android:name=".WearApp"
@@ -23,25 +16,6 @@
             android:name="com.google.android.wearable.standalone"
             android:value="true" />
 
-        <receiver
-            android:name=".receiver.NotificationDismissReceiver"
-            android:exported="false" />
-
-        <receiver
-            android:name=".receiver.CutoffAlarmReceiver"
-            android:exported="false" />
-
-        <receiver
-            android:name=".receiver.RemainderAlarmReceiver"
-            android:exported="false" />
-        <receiver
-            android:name=".receiver.BootReceiver"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED" />
-            </intent-filter>
-        </receiver>
-
         <activity
             android:name=".presentation.WearMainActivity"
             android:exported="true"
@@ -51,19 +25,5 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <service
-            android:name=".service.WearDataListenerService"
-            android:exported="true"
-            android:permission="com.google.android.gms.wearable.BIND_LISTENER">
-            <intent-filter>
-                <action android:name="com.google.android.gms.wearable.DATA_CHANGED" />
-                <data
-                    android:host="*"
-                    android:pathPrefix="/caffeine"
-                    android:scheme="wear" />
-            </intent-filter>
-        </service>
     </application>
-
 </manifest>
