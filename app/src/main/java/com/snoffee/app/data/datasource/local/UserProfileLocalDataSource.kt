@@ -7,4 +7,5 @@ import com.snoffee.app.data.local.entity.UserProfileEntity
 interface UserProfileLocalDataSource {
     suspend fun saveUserProfile(entity: UserProfileEntity)
     suspend fun getUserProfile(): UserProfileEntity?
+    suspend fun updateNotificationEnabled(enabled: Boolean)
 }

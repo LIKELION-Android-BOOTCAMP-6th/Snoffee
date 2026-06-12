@@ -3,7 +3,7 @@ package com.snoffee.app
 import android.app.Application
 import com.google.android.gms.wearable.Wearable
 import com.snoffee.app.data.initializer.CaffeineDataInitializer
-import com.snoffee.app.service.PhoneNotificationHelper
+import com.snoffee.app.presentation.notification.NotificationHelper
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -18,7 +18,7 @@ class SnoffeeApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        PhoneNotificationHelper.createNotificationChannels(this)
+        NotificationHelper(this)
         // 앱 시작 시점에 CoroutineScope를 통해 음료 데이터 roomDB 저장 (캐싱)
         CoroutineScope(Dispatchers.IO).launch {
             initializer.initializeIfEmpty()

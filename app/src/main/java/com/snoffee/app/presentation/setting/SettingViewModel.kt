@@ -112,6 +112,21 @@ class SettingViewModel @Inject constructor(
             }
         }
     }
+    fun updateNotificationEnabled(enabled: Boolean, onResult: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            val current = _userProfile.value ?: createDefaultProfile()
+            val updated = current.copy(notificationEnabled = enabled)
+
+            try {
+                userProfileRepository.saveUserProfile(updated)
+                _userProfile.value = updated
+                onResult(true)
+            } catch (e: Exception) {
+                Log.e("SettingViewModel", "알림 설정 저장 실패", e)
+                onResult(false)
+            }
+        }
+    }
 
     private fun createDefaultProfile(): UserProfile {
         return UserProfile(
@@ -123,7 +138,8 @@ class SettingViewModel @Inject constructor(
             userSleepTime = 0L,
             wakeTime = 0L,
             sensitivity = CaffeineSensitivity.NORMAL,
-            cutoffTime = 0L
+            cutoffTime = 0L,
+            notificationEnabled = true
         )
     }
 }

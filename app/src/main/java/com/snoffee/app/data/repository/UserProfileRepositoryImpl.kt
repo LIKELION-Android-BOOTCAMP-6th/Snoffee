@@ -24,7 +24,8 @@ class UserProfileRepositoryImpl @Inject constructor(
                 CaffeineSensitivity.NORMAL -> "NORMAL"
             },
             targetSleepTime = userProfile.userSleepTime.toString(),
-            targetWakeTime = userProfile.wakeTime.toString()
+            targetWakeTime = userProfile.wakeTime.toString(),
+            notificationEnabled = userProfile.notificationEnabled
         )
         localDataSource.saveUserProfile(entity)
     }
@@ -47,7 +48,12 @@ class UserProfileRepositoryImpl @Inject constructor(
             userSleepTime = entity.targetSleepTime.toLongOrNull() ?: 0L,
             wakeTime = entity.targetWakeTime.toLongOrNull() ?: 0L,
             sensitivity = sensitivityEnum,
-            cutoffTime = 0L // 초기
+            cutoffTime = 0L, // 초기
+            notificationEnabled = entity.notificationEnabled
         )
+    }
+
+    override suspend fun updateNotificationEnabled(enabled: Boolean) {
+        localDataSource.updateNotificationEnabled(enabled)
     }
 }
