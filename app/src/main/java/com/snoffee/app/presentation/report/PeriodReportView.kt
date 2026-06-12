@@ -21,6 +21,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.snoffee.app.core.ui.component.InsightCard
 import com.snoffee.app.core.ui.theme.SnoffeeSurface
 import com.snoffee.app.core.ui.theme.SnoffeeTextMain
 import com.snoffee.app.core.ui.theme.SnoffeeTextMuted
@@ -138,6 +139,14 @@ fun PeriodReportView(
                     }
                 }
             }
+        }
+
+        item {
+            InsightCard(
+                insight = uiState.periodInsight,
+                isLoading = uiState.isPeriodInsightLoading,
+                onRefreshClick = onRefreshPeriodInsight
+            )
         }
     }
 }
