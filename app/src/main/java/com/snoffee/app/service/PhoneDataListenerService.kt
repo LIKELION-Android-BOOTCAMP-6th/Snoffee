@@ -47,16 +47,15 @@ class PhoneDataListenerService : WearableListenerService() {
                 val dataMap = DataMapItem.fromDataItem(event.dataItem).dataMap
                 val name = dataMap.getString("name") ?: "알 수 없음"
                 val amount = dataMap.getInt("amount")
-                val currentTime = System.currentTimeMillis()
+                val consumedAt = dataMap.getLong("timestamp")
 
                 CoroutineScope(Dispatchers.IO + exceptionHandler).launch {
-                    caffeineRepository.processAndInsertCaffeine(name, amount, currentTime)
-                    Log.d("SnoffeeSave", "✍️ DB 적재 성공: $name, $amount mg")
-
-                    val since24HoursAgo = currentTime - (24 * 60 * 60 * 1000L)
-                    val recentRecords =
-                        caffeineRepository.getCaffeineRecordsSince(since24HoursAgo).first()
-                    syncWithWatch(currentTime, recentRecords)
+                    caffeineRepository.processAndInsertCaffeine(name, amount, consumedAt)
+                    Log.d("SnoffeeSave", "✍️ DB 적재 성공: $name, $amount mg, 시간: $consumedAt")
+                    syncWithWatch(
+                        consumedAt,
+                        caffeineRepository.getCaffeineRecordsSince(consumedAt - 86400000L).first()
+                    )
                 }
             }
         }
