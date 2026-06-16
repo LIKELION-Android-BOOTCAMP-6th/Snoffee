@@ -86,6 +86,8 @@ fun CaffeineInputScreen(
                 val rawInput = inputCharSequence.toString().trim()
                 if (rawInput.length > 10) {
                     Toast.makeText(context, "이름은 최대 10자까지 입력 가능합니다.", Toast.LENGTH_SHORT).show()
+                } else {
+                    drinkName = rawInput
                 }
             }
         }
