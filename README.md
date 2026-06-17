@@ -101,7 +101,6 @@ Snoffee는 사용자의 카페인 섭취 기록과 수면 데이터를 분석하
 | DI             | Hilt                               |
 | Local Storage  | Room                               |
 | Cloud Database | Firebase Firestore                 |
-| Authentication | Firebase Auth                      |
 | Analytics      | Firebase Analytics                 |
 | AI             | Gemini API                         |
 | Health Data    | Health Connect                     |
